@@ -38,6 +38,11 @@ type Options struct {
 	Check bool
 	// DryRun prints the planned write without performing it.
 	DryRun bool
+	// EnableSecurityFixes turns on the repository's automated security
+	// fixes (Dependabot security updates) via the GitHub API after a
+	// successful run. Requires GITHUB_TOKEN or GH_TOKEN in the
+	// environment; without a token it is skipped with a note.
+	EnableSecurityFixes bool
 }
 
 // Result reports what a run found and did.
@@ -56,6 +61,54 @@ type Result struct {
 	// constructs this tool does not model; repair becomes suggest-only so
 	// a rewrite can never silently drop user customizations.
 	UnsafeRepair bool
+	// SecurityFixes is the outcome of the optional security-fixes
+	// enablement: "" (not requested), "enabled", "skipped-no-token",
+	// or the API error string.
+	SecurityFixes string
+}
+
+// findingJSON is the stable wire shape of one finding for --json output.
+type findingJSON struct {
+	Rule       string `json:"rule"`
+	Message    string `json:"message"`
+	Severity   string `json:"severity"`
+	File       string `json:"file"`
+	Suggestion string `json:"suggestion,omitempty"`
+}
+
+// resultJSON is the stable wire shape of --json output.
+type resultJSON struct {
+	Findings      []findingJSON `json:"findings"`
+	Wrote         bool          `json:"wrote"`
+	PlannedWrite  bool          `json:"planned_write"`
+	Unchanged     bool          `json:"unchanged"`
+	UnsafeRepair  bool          `json:"unsafe_repair"`
+	SecurityFixes string        `json:"security_fixes,omitempty"`
+}
+
+// MarshalJSONResult renders a Result for --json consumers. Field names are
+// a contract: renaming them breaks the sweep script.
+func MarshalJSONResult(r Result) ([]byte, error) {
+	out := resultJSON{
+		Findings:      make([]findingJSON, 0, len(r.Findings)),
+		Wrote:         r.Wrote,
+		PlannedWrite:  r.PlannedWrite,
+		Unchanged:     r.Unchanged,
+		UnsafeRepair:  r.UnsafeRepair,
+		SecurityFixes: r.SecurityFixes,
+	}
+
+	for _, f := range r.Findings {
+		out.Findings = append(out.Findings, findingJSON{
+			Rule:       string(f.Rule),
+			Message:    f.Message,
+			Severity:   string(f.Severity),
+			File:       string(f.File),
+			Suggestion: f.Suggestion,
+		})
+	}
+
+	return json.Marshal(out)
 }
 
 // ChangesNeeded reports whether any finding or planned write is pending.

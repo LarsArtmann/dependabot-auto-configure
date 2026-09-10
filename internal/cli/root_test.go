@@ -74,7 +74,7 @@ func TestErrorOnMissingRoot(t *testing.T) {
 	cmd, code := cli.NewRootCmdForTest()
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})
-	cmd.SetArgs("--check", "--root", filepath.Join(t.TempDir(), "missing"))
+	cmd.SetArgs([]string{"--check", "--root", filepath.Join(t.TempDir(), "missing")})
 
 	if err := cmd.Execute(); err == nil {
 		t.Error("expected error for missing root, got nil")
