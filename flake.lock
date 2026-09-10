@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "buildflow": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788895615,
+        "narHash": "sha256-EN6qGxgg4nuxbFno2oau/Pr+LqnqFSjeOX0dDXhGpKQ=",
+        "ref": "master",
+        "rev": "d7c94705394d1899a118b91e5ce02085ce0f8b3d",
+        "revCount": 5867,
+        "type": "git",
+        "url": "ssh://git@github.com/LarsArtmann/BuildFlow"
+      },
+      "original": {
+        "ref": "master",
+        "type": "git",
+        "url": "ssh://git@github.com/LarsArtmann/BuildFlow"
+      }
+    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
@@ -58,6 +75,23 @@
         "type": "github"
       }
     },
+    "go-error-family": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1785079049,
+        "narHash": "sha256-aKL1tjQ8AQzIV6g5+361HTTOOdtgzfWwwfQCZHwaojo=",
+        "owner": "LarsArtmann",
+        "repo": "go-error-family",
+        "rev": "4546000adb032fe450d4ea9bfbb2a9f359af3857",
+        "type": "github"
+      },
+      "original": {
+        "owner": "LarsArtmann",
+        "ref": "v0.10.0",
+        "repo": "go-error-family",
+        "type": "github"
+      }
+    },
     "go-finding": {
       "flake": false,
       "locked": {
@@ -99,6 +133,23 @@
         "type": "github"
       }
     },
+    "linter-autoconfigure-sdk": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788916955,
+        "narHash": "sha256-tbJdL6z6D+Q0RUQ5W9OQQi6F8zjXjx59hWan8NAbY+o=",
+        "owner": "LarsArtmann",
+        "repo": "linter-autoconfigure-sdk",
+        "rev": "d4928e53ffad630b1d74d5a0e0c56e5213140b02",
+        "type": "github"
+      },
+      "original": {
+        "owner": "LarsArtmann",
+        "ref": "master",
+        "repo": "linter-autoconfigure-sdk",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1788881743,
@@ -117,10 +168,13 @@
     },
     "root": {
       "inputs": {
+        "buildflow": "buildflow",
         "flake-parts": "flake-parts",
         "go-atomic-write": "go-atomic-write",
+        "go-error-family": "go-error-family",
         "go-finding": "go-finding",
         "go-nix-helpers": "go-nix-helpers",
+        "linter-autoconfigure-sdk": "linter-autoconfigure-sdk",
         "nixpkgs": "nixpkgs"
       }
     },

@@ -19,8 +19,23 @@
       flake = false;
     };
 
+    go-error-family = {
+      url = "github:LarsArtmann/go-error-family/v0.10.0";
+      flake = false;
+    };
+
     go-finding = {
       url = "github:LarsArtmann/go-finding/v1.9.2";
+      flake = false;
+    };
+
+    linter-autoconfigure-sdk = {
+      url = "github:LarsArtmann/linter-autoconfigure-sdk/master";
+      flake = false;
+    };
+
+    buildflow = {
+      url = "git+ssh://git@github.com/LarsArtmann/BuildFlow?ref=master";
       flake = false;
     };
   };
@@ -29,6 +44,11 @@
     inputs@{
       self,
       flake-parts,
+      go-atomic-write,
+      go-error-family,
+      go-finding,
+      linter-autoconfigure-sdk,
+      buildflow,
       ...
     }:
     let
@@ -41,15 +61,18 @@
 
       go-standard = {
         pname = "dependabot-auto-configure";
-        vendorHash = "";
+        vendorHash = "sha256-dxM9l1WueMK5HCJN/GCatqY50MzLpJ5b4UNNTXEOx44=";
 
         description = "Auto-configure .github/dependabot.yml for the detected repository shape";
         enableCheck = false;
         subPackages = [ "cmd/dependabot-auto-configure" ];
 
         deps = {
-          "github.com/larsartmann/go-atomic-write" = inputs.go-atomic-write;
-          "github.com/larsartmann/go-finding" = inputs.go-finding;
+          "github.com/larsartmann/go-atomic-write" = go-atomic-write;
+          "github.com/larsartmann/go-error-family" = go-error-family;
+          "github.com/larsartmann/go-finding" = go-finding;
+          "github.com/larsartmann/linter-autoconfigure-sdk" = linter-autoconfigure-sdk;
+          "github.com/larsartmann/buildflow/tool-sdk" = "${buildflow}/tool-sdk";
         };
 
         src = inputs.nixpkgs.lib.fileset.toSource {

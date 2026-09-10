@@ -15,7 +15,7 @@ import (
 
 	"github.com/larsartmann/dependabot-auto-configure/pkg/dependabot"
 	"github.com/larsartmann/dependabot-auto-configure/pkg/detect"
-	"github.com/larsartmann/go-atomic-write"
+	atomicwrite "github.com/larsartmann/go-atomic-write"
 	"github.com/larsartmann/go-finding"
 	autoconfigure "github.com/larsartmann/linter-autoconfigure-sdk"
 )
