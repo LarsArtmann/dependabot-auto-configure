@@ -3,11 +3,11 @@
     "buildflow": {
       "flake": false,
       "locked": {
-        "lastModified": 1789002311,
-        "narHash": "sha256-AdWee8TV6h44zdHGTTiftT04yrBNOguY7qTyp1W1wuw=",
+        "lastModified": 1789003127,
+        "narHash": "sha256-adQ+Hs36tX2/4Hy+U3P3R4aq39lNg0dySFH7LTreLBw=",
         "ref": "master",
-        "rev": "f11bfb9d9407ac3f8d31caba444c3058bc226bb6",
-        "revCount": 5874,
+        "rev": "f70150710a65f5ff92742af76ad788e3525db33a",
+        "revCount": 5878,
         "type": "git",
         "url": "ssh://git@github.com/LarsArtmann/BuildFlow"
       },

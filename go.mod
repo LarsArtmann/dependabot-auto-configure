@@ -39,7 +39,7 @@ require (
 require (
 	charm.land/fang/v2 v2.0.1
 	github.com/go-faster/yaml v0.4.6
-	github.com/larsartmann/buildflow/tool-sdk v0.0.0-20260910010511-f11bfb9d9407
+	github.com/larsartmann/buildflow/tool-sdk v0.0.0-20260910011847-f70150710a65
 	github.com/larsartmann/go-atomic-write v0.5.1
 	github.com/larsartmann/go-finding v1.9.2
 	github.com/larsartmann/linter-autoconfigure-sdk v0.0.0-20260909012235-d4928e53ffad
