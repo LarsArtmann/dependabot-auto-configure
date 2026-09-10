@@ -47,8 +47,8 @@ github.com/google/pprof v0.0.0-20260802141513-ef3492d7dac3 h1:LMLX+LgTNWpfvCBdFe
 github.com/google/pprof v0.0.0-20260802141513-ef3492d7dac3/go.mod h1:jl5iWTm0/hd5PjEYEOuwAJ57L/CibdZfrqZ5XA5GrCk=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
-github.com/larsartmann/buildflow/tool-sdk v0.0.0-20260910011847-f70150710a65 h1:hl/JZ91BOGznvw6nAI6aYIX6Fdqi1JOvSxT8cdo6MLc=
-github.com/larsartmann/buildflow/tool-sdk v0.0.0-20260910011847-f70150710a65/go.mod h1:YQWChxNKV5jCWiMpyTurDWk3V4CFrSLM2i8lLt6xWtQ=
+github.com/larsartmann/buildflow/tool-sdk v0.0.0-20260910023557-3715439f92fc h1:e3rD0aJaFy7Yi/z4UpNqhh80twHL0LVGab2uZPUhigg=
+github.com/larsartmann/buildflow/tool-sdk v0.0.0-20260910023557-3715439f92fc/go.mod h1:YQWChxNKV5jCWiMpyTurDWk3V4CFrSLM2i8lLt6xWtQ=
 github.com/larsartmann/go-atomic-write v0.5.1 h1:bMJY+/hpcbjyjFBLtzONX5/aN3F4TkTIB5DG1NmXY+Q=
 github.com/larsartmann/go-atomic-write v0.5.1/go.mod h1:pkmHWPaCXUdJstjggiHCQufE1vquDCfwYsQfHPywxNI=
 github.com/larsartmann/go-error-family v0.10.0 h1:xGPT8WzPr9EJ+SHCasLtZ2mJ7drVxmfkyM6kjzHoAWo=
