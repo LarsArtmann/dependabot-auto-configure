@@ -25,17 +25,13 @@
     };
 
     go-finding = {
-      url = "github:LarsArtmann/go-finding/v1.9.2";
+      # v1.10.0 is the first tag carrying the toolsdk/ sub-module.
+      url = "github:LarsArtmann/go-finding?ref=refs/tags/v1.10.0";
       flake = false;
     };
 
     linter-autoconfigure-sdk = {
-      url = "github:LarsArtmann/linter-autoconfigure-sdk/master";
-      flake = false;
-    };
-
-    buildflow = {
-      url = "git+ssh://git@github.com/LarsArtmann/BuildFlow?ref=master";
+      url = "github:LarsArtmann/linter-autoconfigure-sdk?ref=refs/tags/v0.1.0";
       flake = false;
     };
   };
@@ -48,7 +44,6 @@
       go-error-family,
       go-finding,
       linter-autoconfigure-sdk,
-      buildflow,
       ...
     }:
     let
@@ -59,7 +54,7 @@
 
       go-standard = {
         pname = "dependabot-auto-configure";
-        vendorHash = "sha256-ed4608FJxM8YPpIBkFh/yGdOVu7RwZhJk8zdqwX5RR4=";
+        vendorHash = "sha256-OaIZzelnM0MJcY4+21+hY5Ee2yNjxMHvCEaqQvlSgqg=";
 
         description = "Auto-configure .github/dependabot.yml for the detected repository shape";
         enableCheck = false;
@@ -70,7 +65,6 @@
           "github.com/larsartmann/go-error-family" = go-error-family;
           "github.com/larsartmann/go-finding" = go-finding;
           "github.com/larsartmann/linter-autoconfigure-sdk" = linter-autoconfigure-sdk;
-          "github.com/larsartmann/buildflow/tool-sdk" = "${buildflow}/tool-sdk";
         };
 
         src = inputs.nixpkgs.lib.fileset.toSource {

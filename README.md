@@ -45,7 +45,7 @@ Exit codes: `0` clean or repaired, `1` changes needed (under `--check`),
 
 ## BuildFlow
 
-`pkg/provider` registers a `buildflow/tool-sdk` Spec (Detect + Repair,
+`pkg/provider` registers a `go-finding/toolsdk` Spec (Detect + Repair,
 dry-run aware). BuildFlow consumes it via a blank import:
 
 ```go

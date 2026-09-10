@@ -1,22 +1,5 @@
 {
   "nodes": {
-    "buildflow": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1789007757,
-        "narHash": "sha256-vtttw0ab0/3JyyWlp638u/l2W+Gi+NbCNS3Kzvt/xRw=",
-        "ref": "master",
-        "rev": "3715439f92fc543e2c33711e5db0cd03d400a89b",
-        "revCount": 5885,
-        "type": "git",
-        "url": "ssh://git@github.com/LarsArtmann/BuildFlow"
-      },
-      "original": {
-        "ref": "master",
-        "type": "git",
-        "url": "ssh://git@github.com/LarsArtmann/BuildFlow"
-      }
-    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
@@ -95,16 +78,16 @@
     "go-finding": {
       "flake": false,
       "locked": {
-        "lastModified": 1788911509,
-        "narHash": "sha256-MTMhDldRHcoMiEpYPn6DhKVcP97zKlMPe7OhYggqHaI=",
+        "lastModified": 1789007954,
+        "narHash": "sha256-mcpAgNn/aFIzN9y4RdrMVNXao2tvytOcC0/C5fHz5kg=",
         "owner": "LarsArtmann",
         "repo": "go-finding",
-        "rev": "232fe0ed28889991f0e6584c8d4e532da11bd89c",
+        "rev": "fc627fbb00b11005374e04627a2866b8527eb4ea",
         "type": "github"
       },
       "original": {
         "owner": "LarsArtmann",
-        "ref": "v1.9.2",
+        "ref": "refs/tags/v1.10.0",
         "repo": "go-finding",
         "type": "github"
       }
@@ -136,16 +119,16 @@
     "linter-autoconfigure-sdk": {
       "flake": false,
       "locked": {
-        "lastModified": 1788916955,
-        "narHash": "sha256-tbJdL6z6D+Q0RUQ5W9OQQi6F8zjXjx59hWan8NAbY+o=",
+        "lastModified": 1789019897,
+        "narHash": "sha256-z2HvDWJ1/vIHx2WZg8rvum1d0fq9+AD2EBmcBgiT9dA=",
         "owner": "LarsArtmann",
         "repo": "linter-autoconfigure-sdk",
-        "rev": "d4928e53ffad630b1d74d5a0e0c56e5213140b02",
+        "rev": "477bac0f22326155914db665c425ffb5ece1d1fe",
         "type": "github"
       },
       "original": {
         "owner": "LarsArtmann",
-        "ref": "master",
+        "ref": "refs/tags/v0.1.0",
         "repo": "linter-autoconfigure-sdk",
         "type": "github"
       }
@@ -168,7 +151,6 @@
     },
     "root": {
       "inputs": {
-        "buildflow": "buildflow",
         "flake-parts": "flake-parts",
         "go-atomic-write": "go-atomic-write",
         "go-error-family": "go-error-family",
