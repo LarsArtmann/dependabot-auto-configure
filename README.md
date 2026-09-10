@@ -83,5 +83,4 @@ go build ./cmd/dependabot-auto-configure
 
 ## License
 
-Proprietary — see [LICENSE](LICENSE).
-All rights reserved.
+MIT — see [LICENSE](LICENSE).
