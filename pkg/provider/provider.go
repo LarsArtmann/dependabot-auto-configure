@@ -1,5 +1,5 @@
 // Package provider wires dependabot-auto-configure into BuildFlow's DAG via
-// the buildflow/tool-sdk Spec contract. BuildFlow discovers this Provider
+// the go-finding/toolsdk Spec contract. BuildFlow discovers this Provider
 // automatically through toolsdk.All() when a consumer blank-imports this
 // package:
 //
@@ -10,7 +10,7 @@ import (
 	"context"
 	"fmt"
 
-	toolsdk "github.com/larsartmann/buildflow/tool-sdk"
+	toolsdk "github.com/larsartmann/go-finding/toolsdk"
 	"github.com/larsartmann/dependabot-auto-configure/pkg/configure"
 	"github.com/larsartmann/go-finding"
 )
