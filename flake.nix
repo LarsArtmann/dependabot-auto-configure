@@ -39,56 +39,49 @@
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [ inputs.go-nix-helpers.flakeModules.go-standard ];
 
-      systems = [
-        "x86_64-linux"
-        "aarch64-linux"
-        "aarch64-darwin"
-        "x86_64-darwin"
-      ];
+      go-standard = {
+        pname = "dependabot-auto-configure";
+        vendorHash = "";
 
-      perSystem.go-standard = {
-        moduleName = "github.com/larsartmann/dependabot-auto-configure";
+        description = "Auto-configure .github/dependabot.yml for the detected repository shape";
+        enableCheck = false;
+        subPackages = [ "cmd/dependabot-auto-configure" ];
+
+        deps = {
+          "github.com/larsartmann/go-atomic-write" = inputs.go-atomic-write;
+          "github.com/larsartmann/go-finding" = inputs.go-finding;
+        };
+
+        src = inputs.nixpkgs.lib.fileset.toSource {
+          root = ./.;
+          fileset = inputs.nixpkgs.lib.fileset.unions [
+            ./go.mod
+            ./go.sum
+            ./cmd
+            ./internal
+            ./pkg
+          ];
+        };
+
+        ldflags = [
+          "-s"
+          "-w"
+          "-X github.com/larsartmann/dependabot-auto-configure/internal/cli.Version=${version}"
+        ];
+
+        extraBuildAttrs.preBuild = "export GOEXPERIMENT=jsonv2";
+
+        shellExtraEnv = {
+          GOEXPERIMENT = "jsonv2";
+        };
+
+        devShellExtraPackages = pkgs: [
+          pkgs.gopls
+          pkgs.gotools
+          pkgs.golangci-lint
+        ];
 
         enableNixfmt = true;
       };
-
-      perSystem =
-        {
-          config,
-          pkgs,
-          lib,
-          ...
-        }:
-        {
-          packages.default = config.packages."dependabot-auto-configure";
-
-          packages."dependabot-auto-configure" = config.goBuild {
-            src = ./.;
-            moduleName = "github.com/larsartmann/dependabot-auto-configure";
-            mainPackage = "./cmd/dependabot-auto-configure";
-
-            ldflags = [
-              "-s"
-              "-w"
-              "-X github.com/larsartmann/dependabot-auto-configure/internal/cli.Version=${version}"
-            ];
-
-            extraBuildAttrs.preBuild = "export GOEXPERIMENT=jsonv2";
-
-            shellExtraEnv = {
-              GOEXPERIMENT = "jsonv2";
-            };
-
-            devShellExtraPackages = pkgs: [
-              pkgs.gopls
-              pkgs.gotools
-              pkgs.golangci-lint
-            ];
-          };
-
-          checks.test = config.packages.default.overrideAttrs (_old: {
-            doCheck = true;
-          });
-        };
     };
 }
