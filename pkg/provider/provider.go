@@ -10,8 +10,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/larsartmann/dependabot-auto-configure/pkg/configure"
 	toolsdk "github.com/larsartmann/buildflow/tool-sdk"
+	"github.com/larsartmann/dependabot-auto-configure/pkg/configure"
 	"github.com/larsartmann/go-finding"
 )
 

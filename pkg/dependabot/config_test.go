@@ -29,18 +29,20 @@ func TestDecodeCanonicalConfig(t *testing.T) {
 			wantUnknownTop: []string{"registries"},
 		},
 		{
-			name:       "unknown entry field is audited unsafe",
-			yaml:       "version: 2\nupdates:\n  - package-ecosystem: npm\n    directory: /\n    labels:\n      - dependencies\n",
-			wantUnsafe: true,
+			name:        "unknown entry field is audited unsafe",
+			yaml:        "version: 2\nupdates:\n  - package-ecosystem: npm\n    directory: /\n    labels:\n      - dependencies\n",
+			wantUnsafe:  true,
+			wantUpdates: 1,
 		},
 		{
-			name:       "unknown group name is audited unsafe",
-			yaml:       "version: 2\nupdates:\n  - package-ecosystem: npm\n    directory: /\n    groups:\n      everything:\n        patterns:\n          - \"*\"\n",
-			wantUnsafe: true,
+			name:        "unknown group name is audited unsafe",
+			yaml:        "version: 2\nupdates:\n  - package-ecosystem: npm\n    directory: /\n    groups:\n      everything:\n        patterns:\n          - \"*\"\n",
+			wantUnsafe:  true,
+			wantUpdates: 1,
 		},
 		{
-			name:       "minimal entry decodes with missing optional fields",
-			yaml:       "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n",
+			name:        "minimal entry decodes with missing optional fields",
+			yaml:        "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n",
 			wantUpdates: 1,
 		},
 	}
@@ -60,11 +62,11 @@ func TestDecodeCanonicalConfig(t *testing.T) {
 				t.Errorf("Decode() unsafe = %v, want %v", dec.Unsafe, tt.wantUnsafe)
 			}
 
-			if tt.wantGroups && dec.Config.Updates[0].Groups.Empty() {
+			if tt.wantGroups && (len(dec.Config.Updates) == 0 || dec.Config.Updates[0].Groups.Empty()) {
 				t.Error("Decode() groups empty, want populated")
 			}
 
-			if !tt.wantGroups && len(tt.yaml) > 0 && !strings.Contains(tt.yaml, "groups:") && !dec.Config.Updates[0].Groups.Empty() {
+			if tt.wantUpdates > 0 && !tt.wantGroups && !strings.Contains(tt.yaml, "groups:") && !dec.Config.Updates[0].Groups.Empty() {
 				t.Error("Decode() groups populated, want empty")
 			}
 		})

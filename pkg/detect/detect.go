@@ -15,10 +15,10 @@ import (
 // meaningful module manifests: VCS internals, package managers' output,
 // and Go's convention for fixtures.
 var skippedSegments = map[string]bool{
-	".git":        true,
+	".git":         true,
 	"node_modules": true,
-	"testdata":    true,
-	"vendor":      true,
+	"testdata":     true,
+	"vendor":       true,
 }
 
 // Detector detects the repository shape under Root.

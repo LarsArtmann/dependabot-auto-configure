@@ -133,8 +133,8 @@ func TestDiff(t *testing.T) {
 		wantRules []string
 	}{
 		{
-			name:     "missing config",
-			existing: nil,
+			name:      "missing config",
+			existing:  nil,
 			wantRules: []string{"dependabot-config-missing"},
 		},
 		{
@@ -202,7 +202,7 @@ func TestDiff(t *testing.T) {
 				"          - patch",
 				"",
 			}, "\n")),
-			wantRules: []string{"dependabot-version-outdated"},
+			wantRules: []string{"dependabot-version-outdated", "dependabot-entry-missing"},
 		},
 		{
 			name: "orphan entry preserved with info",
@@ -225,7 +225,7 @@ func TestDiff(t *testing.T) {
 				"      interval: weekly",
 				"",
 			}, "\n")),
-			wantRules: []string{"dependabot-entry-orphan"},
+			wantRules: []string{"dependabot-entry-missing", "dependabot-entry-orphan"},
 		},
 	}
 

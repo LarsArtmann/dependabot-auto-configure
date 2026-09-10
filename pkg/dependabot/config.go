@@ -144,11 +144,11 @@ type DecodeResult struct {
 
 // knownEntryFields is every updates-entry field this tool understands.
 var knownEntryFields = map[string]bool{
-	"package-ecosystem":       true,
-	"directory":               true,
-	"schedule":                true,
+	"package-ecosystem":        true,
+	"directory":                true,
+	"schedule":                 true,
 	"open-pull-requests-limit": true,
-	"groups":                  true,
+	"groups":                   true,
 }
 
 // knownTopLevelFields is every top-level field this tool understands.

@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 
+	"charm.land/fang/v2"
 	"github.com/larsartmann/dependabot-auto-configure/pkg/configure"
 	"github.com/spf13/cobra"
-	"charm.land/fang/v2"
 )
 
 // Exit codes: 0 = nothing to do or repaired, 1 = changes needed (--check),

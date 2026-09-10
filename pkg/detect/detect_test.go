@@ -28,11 +28,11 @@ func writeTree(t *testing.T, files ...string) string {
 
 func TestShape(t *testing.T) {
 	tests := []struct {
-		name           string
-		files          []string
-		wantModules    []string
-		wantActions    bool
-		wantNPM        bool
+		name        string
+		files       []string
+		wantModules []string
+		wantActions bool
+		wantNPM     bool
 	}{
 		{
 			name:        "root module, actions, npm",
