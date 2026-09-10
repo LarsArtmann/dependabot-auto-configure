@@ -19,43 +19,43 @@
 
 ## Repository detection
 
-| Feature                        | Status                | Notes                                                                                |
-| ------------------------------ | --------------------- | ------------------------------------------------------------------------------------ |
-| Go module detection            | 🟢 `FULLY_FUNCTIONAL` | Root + nested `go.mod`, reported as directories; `pkg/detect/detect.go`              |
-| GitHub Actions detection       | 🟢 `FULLY_FUNCTIONAL` | `.github/workflows/*.yml` and `*.yaml`; `pkg/detect/detect.go:69`                    |
-| npm detection (root only)      | 🟢 `FULLY_FUNCTIONAL` | Root `package.json` only; nested ones deliberately ignored (`detect_test.go`)        |
-| Skip noise directories         | 🟢 `FULLY_FUNCTIONAL` | `testdata`, `vendor`, `node_modules`, `.git`, hidden dirs except `.github`           |
-| npm workspace member detection | ⚪ `PLANNED`          | Documented as future work at `pkg/detect/detect.go:36`; no code exists               |
+| Feature                        | Status                | Notes                                                                         |
+| ------------------------------ | --------------------- | ----------------------------------------------------------------------------- |
+| Go module detection            | 🟢 `FULLY_FUNCTIONAL` | Root + nested `go.mod`, reported as directories; `pkg/detect/detect.go`       |
+| GitHub Actions detection       | 🟢 `FULLY_FUNCTIONAL` | `.github/workflows/*.yml` and `*.yaml`; `pkg/detect/detect.go:69`             |
+| npm detection (root only)      | 🟢 `FULLY_FUNCTIONAL` | Root `package.json` only; nested ones deliberately ignored (`detect_test.go`) |
+| Skip noise directories         | 🟢 `FULLY_FUNCTIONAL` | `testdata`, `vendor`, `node_modules`, `.git`, hidden dirs except `.github`    |
+| npm workspace member detection | ⚪ `PLANNED`          | Documented as future work at `pkg/detect/detect.go:36`; no code exists        |
 
 ## Configuration generation
 
-| Feature                        | Status                | Notes                                                                          |
-| ------------------------------ | --------------------- | ------------------------------------------------------------------------------ |
-| Canonical config generation    | 🟢 `FULLY_FUNCTIONAL` | Weekly schedule, PR limit 5, minor+patch groups (pattern group for actions)    |
-| Stable entry ordering          | 🟢 `FULLY_FUNCTIONAL` | Root gomod first, sorted module dirs, then actions, then npm                   |
-| Module cap                     | 🟢 `FULLY_FUNCTIONAL` | >20 modules → root-only entry + `dependabot-modules-capped` finding            |
-| Deterministic YAML encoding    | 🟢 `FULLY_FUNCTIONAL` | Two-space indent, stable field order, trailing newline (`Config.Encode`)       |
+| Feature                     | Status                | Notes                                                                       |
+| --------------------------- | --------------------- | --------------------------------------------------------------------------- |
+| Canonical config generation | 🟢 `FULLY_FUNCTIONAL` | Weekly schedule, PR limit 5, minor+patch groups (pattern group for actions) |
+| Stable entry ordering       | 🟢 `FULLY_FUNCTIONAL` | Root gomod first, sorted module dirs, then actions, then npm                |
+| Module cap                  | 🟢 `FULLY_FUNCTIONAL` | >20 modules → root-only entry + `dependabot-modules-capped` finding         |
+| Deterministic YAML encoding | 🟢 `FULLY_FUNCTIONAL` | Two-space indent, stable field order, trailing newline (`Config.Encode`)    |
 
 ## Repair and safety contract
 
-| Feature                          | Status                | Notes                                                                                 |
-| -------------------------------- | --------------------- | ------------------------------------------------------------------------------------- |
-| Fill-missing-only repair         | 🟢 `FULLY_FUNCTIONAL` | Monthly schedules and custom choices preserved; only absent fields filled             |
-| Orphan entry preservation        | 🟢 `FULLY_FUNCTIONAL` | Entries for undetected ecosystems kept as-is, reported as info findings               |
-| Unsafe-config suggest-only mode  | 🟢 `FULLY_FUNCTIONAL` | Unknown top-level keys, entry fields, or group names → findings, never a write        |
-| Unparseable config suggest-only  | 🟢 `FULLY_FUNCTIONAL` | YAML the tool cannot decode → findings, never a write                                 |
-| Semantic idempotence             | 🟢 `FULLY_FUNCTIONAL` | Semantically canonical configs are no-ops regardless of formatting                    |
-| Check mode (`--check`)           | 🟢 `FULLY_FUNCTIONAL` | Never writes; exits 1 when changes are pending                                        |
-| Dry-run mode (`--dry-run`)       | 🟢 `FULLY_FUNCTIONAL` | Holds the write back; exits 0                                                         |
-| Atomic writes                    | 🟢 `FULLY_FUNCTIONAL` | Via `go-atomic-write` (`planOrWrite` in `pkg/configure/configure.go`)                 |
+| Feature                         | Status                | Notes                                                                          |
+| ------------------------------- | --------------------- | ------------------------------------------------------------------------------ |
+| Fill-missing-only repair        | 🟢 `FULLY_FUNCTIONAL` | Monthly schedules and custom choices preserved; only absent fields filled      |
+| Orphan entry preservation       | 🟢 `FULLY_FUNCTIONAL` | Entries for undetected ecosystems kept as-is, reported as info findings        |
+| Unsafe-config suggest-only mode | 🟢 `FULLY_FUNCTIONAL` | Unknown top-level keys, entry fields, or group names → findings, never a write |
+| Unparseable config suggest-only | 🟢 `FULLY_FUNCTIONAL` | YAML the tool cannot decode → findings, never a write                          |
+| Semantic idempotence            | 🟢 `FULLY_FUNCTIONAL` | Semantically canonical configs are no-ops regardless of formatting             |
+| Check mode (`--check`)          | 🟢 `FULLY_FUNCTIONAL` | Never writes; exits 1 when changes are pending                                 |
+| Dry-run mode (`--dry-run`)      | 🟢 `FULLY_FUNCTIONAL` | Holds the write back; exits 0                                                  |
+| Atomic writes                   | 🟢 `FULLY_FUNCTIONAL` | Via `go-atomic-write` (`planOrWrite` in `pkg/configure/configure.go`)          |
 
 ## Interfaces
 
-| Feature                       | Status                | Notes                                                                                   |
-| ----------------------------- | --------------------- | --------------------------------------------------------------------------------------- |
-| CLI                           | 🟢 `FULLY_FUNCTIONAL` | `--root`, `--config-path`, `--check`, `--dry-run`, version; fang-powered help. Exit codes 0/1/2 (`internal/cli/root.go:16`) |
-| BuildFlow provider            | 🟡 `PARTIALLY_FUNCTIONAL` | `toolsdk.Spec` registered in `pkg/provider/provider.go`; Detect runs check-mode, Repair honors dry-run. Not exercised by any in-repo test; consumed externally by BuildFlow |
-| Findings SDK integration      | 🟢 `FULLY_FUNCTIONAL` | Issues converted via `linter-autoconfigure-sdk.FindingsFromIssues` so suggestions arrive as fixable findings |
+| Feature                  | Status                    | Notes                                                                                                                                                                       |
+| ------------------------ | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CLI                      | 🟢 `FULLY_FUNCTIONAL`     | `--root`, `--config-path`, `--check`, `--dry-run`, version; fang-powered help. Exit codes 0/1/2 (`internal/cli/root.go:16`)                                                 |
+| BuildFlow provider       | 🟡 `PARTIALLY_FUNCTIONAL` | `toolsdk.Spec` registered in `pkg/provider/provider.go`; Detect runs check-mode, Repair honors dry-run. Not exercised by any in-repo test; consumed externally by BuildFlow |
+| Findings SDK integration | 🟢 `FULLY_FUNCTIONAL`     | Issues converted via `linter-autoconfigure-sdk.FindingsFromIssues` so suggestions arrive as fixable findings                                                                |
 
 ---
 

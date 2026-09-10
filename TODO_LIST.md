@@ -15,19 +15,19 @@
 
 ## High Impact
 
-| Task                                                       | Status    | Impact | Effort | Evidence                                                                                  |
-| ---------------------------------------------------------- | --------- | ------ | ------ | ----------------------------------------------------------------------------------------- |
+| Task                                                                                                                                                   | Status    | Impact | Effort | Evidence                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- | ------ | ------ | -------------------------------------------------------------------------- |
 | Make the public install path real: the flake depends on the private `BuildFlow` repo over SSH, so `nix run github:...` fails for anyone without access | 🔴 `TODO` | High   | 2-4h   | `flake.nix:38` (`git+ssh://` to private repo), `README.md` Install section |
-| Add CI (build + test + lint) for the now-public GitHub repo | 🔴 `TODO` | High   | 1-2h   | No `.github/workflows/` exists in this repo                                               |
+| Add CI (build + test + lint) for the now-public GitHub repo                                                                                            | 🔴 `TODO` | High   | 1-2h   | No `.github/workflows/` exists in this repo                                |
 
 ## Medium Impact
 
-| Task                                                        | Status    | Impact | Effort | Evidence                                                                                   |
-| ----------------------------------------------------------- | --------- | ------ | ------ | ------------------------------------------------------------------------------------------ |
-| Add CLI-layer tests (exit codes, flag wiring, output lines)  | 🔴 `TODO` | Med    | 1-2h   | `internal/cli` has no test files; exit codes 0/1/2 are untested (`internal/cli/root.go:16`) |
-| Cover the BuildFlow provider with a test (Detect check-mode, Repair dry-run) | 🔴 `TODO` | Med | 1h | `pkg/provider` coverage is 0% (`go test -cover ./pkg/...`)                                  |
-| Drop the local `replace` and pin the SDK version now that it is on the module proxy | 🔴 `TODO` | Med | 30min | `go.mod:49` (`replace ... => ../linter-autoconfigure-sdk`); SDK resolves on the proxy |
-| Dogfood: generate `.github/dependabot.yml` for this repo     | 🔴 `TODO` | Med    | 10min  | `./dependabot-auto-configure --dry-run` reports `dependabot-config-missing` (gomod only)   |
+| Task                                                                                | Status    | Impact | Effort | Evidence                                                                                    |
+| ----------------------------------------------------------------------------------- | --------- | ------ | ------ | ------------------------------------------------------------------------------------------- |
+| Add CLI-layer tests (exit codes, flag wiring, output lines)                         | 🔴 `TODO` | Med    | 1-2h   | `internal/cli` has no test files; exit codes 0/1/2 are untested (`internal/cli/root.go:16`) |
+| Cover the BuildFlow provider with a test (Detect check-mode, Repair dry-run)        | 🔴 `TODO` | Med    | 1h     | `pkg/provider` coverage is 0% (`go test -cover ./pkg/...`)                                  |
+| Drop the local `replace` and pin the SDK version now that it is on the module proxy | 🔴 `TODO` | Med    | 30min  | `go.mod:49` (`replace ... => ../linter-autoconfigure-sdk`); SDK resolves on the proxy       |
+| Dogfood: generate `.github/dependabot.yml` for this repo                            | 🔴 `TODO` | Med    | 10min  | `./dependabot-auto-configure --dry-run` reports `dependabot-config-missing` (gomod only)    |
 
 ---
 

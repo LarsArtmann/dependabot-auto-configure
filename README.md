@@ -54,7 +54,7 @@ import _ "github.com/larsartmann/dependabot-auto-configure/pkg/provider"
 
 ## Install
 
-From source (canonical gate):
+Via Nix:
 
 ```sh
 nix run github:LarsArtmann/dependabot-auto-configure

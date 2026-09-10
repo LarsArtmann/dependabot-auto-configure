@@ -11,10 +11,28 @@ Thanks for your interest in contributing!
 
 ## Development Setup
 
-Run the following commands to set up your development environment:
+The canonical build and test gate is the Nix flake:
 
-    go test ./... -race
-    golangci-lint run ./...
+```sh
+nix build
+nix flake check
+```
+
+Or with a plain Go toolchain (1.26+):
+
+```sh
+GOEXPERIMENT=jsonv2 go test ./...
+```
+
+Lint and format:
+
+```sh
+golangci-lint run ./...
+dprint check
+```
+
+The `nix develop` shell ships Go, `golangci-lint`, and `gopls` with
+`GOEXPERIMENT=jsonv2` preset.
 
 ## Reporting Issues
 

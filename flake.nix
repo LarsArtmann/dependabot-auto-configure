@@ -59,7 +59,7 @@
 
       go-standard = {
         pname = "dependabot-auto-configure";
-        vendorHash = "sha256-dxM9l1WueMK5HCJN/GCatqY50MzLpJ5b4UNNTXEOx44=";
+        vendorHash = "sha256-ed4608FJxM8YPpIBkFh/yGdOVu7RwZhJk8zdqwX5RR4=";
 
         description = "Auto-configure .github/dependabot.yml for the detected repository shape";
         enableCheck = false;
