@@ -11,6 +11,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 
 	"github.com/larsartmann/dependabot-auto-configure/pkg/dependabot"
 	"github.com/larsartmann/dependabot-auto-configure/pkg/detect"
@@ -90,6 +91,12 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 			return result, fmt.Errorf("convert findings: %w", err)
 		}
 
+		if len(desired.Updates) == 0 {
+			result.Unchanged = true
+
+			return result, nil
+		}
+
 		out, encErr := desired.Encode()
 		if encErr != nil {
 			return result, encErr
@@ -120,6 +127,12 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 	}
 
 	reconciled := dependabot.Reconcile(existing, desired)
+
+	if reflect.DeepEqual(existing, reconciled) {
+		result.Unchanged = true
+
+		return result, nil
+	}
 
 	out, encErr := reconciled.Encode()
 	if encErr != nil {

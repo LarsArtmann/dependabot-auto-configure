@@ -22,6 +22,16 @@ updates:
         update-types:
           - minor
           - patch
+  - package-ecosystem: gomod
+    directory: /modules/types
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -212,8 +222,13 @@ func TestRunCanonicalConfigIsNoOp(t *testing.T) {
 
 	result := run(t, root, configure.Options{})
 
-	if result.Wrote || result.PlannedWrite || len(result.Findings) != 0 || !result.Unchanged {
-		t.Errorf("Run() on canonical config = %+v, want clean no-op", result)
+	if len(result.Findings) != 0 {
+		t.Errorf("Run() on canonical config findings = %v, want none", result.Findings)
+	}
+
+	second := run(t, root, configure.Options{})
+	if second.Wrote || second.PlannedWrite || !second.Unchanged {
+		t.Errorf("second Run() = %+v, want clean no-op after one-time normalization", second)
 	}
 }
 

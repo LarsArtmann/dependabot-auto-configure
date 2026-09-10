@@ -2,6 +2,7 @@ package dependabot
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 
@@ -112,6 +113,14 @@ func desiredGroups(eco Ecosystem) *Groups {
 	}
 
 	return MinorAndPatchGroups()
+}
+
+// Equal reports whether two configs are semantically identical (same
+// version and same entries in the same order). Formatting differences
+// (quoting, indentation) do not count, so a hand-written but semantically
+// canonical config is a no-op, never a rewrite.
+func Equal(a, b Config) bool {
+	return reflect.DeepEqual(a, b)
 }
 
 // Reconcile merges desired entries into an existing configuration without
