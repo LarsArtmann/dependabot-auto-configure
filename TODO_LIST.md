@@ -22,11 +22,10 @@
 
 ## Medium Impact
 
-| Task                                                                                | Status    | Impact | Effort | Evidence                                                                                    |
-| ----------------------------------------------------------------------------------- | --------- | ------ | ------ | ------------------------------------------------------------------------------------------- |
-| Add CLI-layer tests (exit codes, flag wiring, output lines)                         | 🔴 `TODO` | Med    | 1-2h   | `internal/cli` has no test files; exit codes 0/1/2 are untested (`internal/cli/root.go:16`) |
-| Cover the BuildFlow provider with a test (Detect check-mode, Repair dry-run)        | 🔴 `TODO` | Med    | 1h     | `pkg/provider` coverage is 0% (`go test -cover ./pkg/...`)                                  |
-| Drop the local `replace` and pin the SDK version now that it is on the module proxy | 🔴 `TODO` | Med    | 30min  | `go.mod:49` (`replace ... => ../linter-autoconfigure-sdk`); SDK resolves on the proxy       |
+| Task                                                                         | Status    | Impact | Effort | Evidence                                                                                    |
+| ---------------------------------------------------------------------------- | --------- | ------ | ------ | ------------------------------------------------------------------------------------------- |
+| Add CLI-layer tests (exit codes, flag wiring, output lines)                  | 🔴 `TODO` | Med    | 1-2h   | `internal/cli` has no test files; exit codes 0/1/2 are untested (`internal/cli/root.go:16`) |
+| Cover the BuildFlow provider with a test (Detect check-mode, Repair dry-run) | 🔴 `TODO` | Med    | 1h     | `pkg/provider` coverage is 0% (`go test -cover ./pkg/...`)                                  |
 
 ---
 
