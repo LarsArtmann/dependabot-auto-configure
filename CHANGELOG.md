@@ -32,3 +32,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 
 - Relicensed from proprietary (all rights reserved) to MIT
+- Dropped the local `replace` directive for `linter-autoconfigure-sdk`;
+  the module is now pinned to its published version on the Go module proxy

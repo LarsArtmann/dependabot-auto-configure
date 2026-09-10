@@ -54,8 +54,9 @@ from markdown formatting.
 ## Ecosystem wiring
 
 - Findings are emitted via `linter-autoconfigure-sdk.FindingsFromIssues`
-  (local replace in go.mod for local SDK iteration; the SDK is public and
-  on the module proxy as of 2026-09). This repo is the SDK's
+  (SDK pinned to the module proxy — no local replace; use `go mod edit
+  -replace=...=../linter-autoconfigure-sdk` temporarily when iterating on
+  the SDK locally). This repo is the SDK's
   first consumer — if `FindingFromIssue` semantics need to change, change the
   SDK, not this call site.
 - The repo is public on GitHub, but the flake fetches its BuildFlow input

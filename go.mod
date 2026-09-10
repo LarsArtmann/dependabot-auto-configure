@@ -45,5 +45,3 @@ require (
 	github.com/larsartmann/linter-autoconfigure-sdk v0.0.0-20260909012235-d4928e53ffad
 	github.com/spf13/cobra v1.10.2
 )
-
-replace github.com/larsartmann/linter-autoconfigure-sdk => ../linter-autoconfigure-sdk
