@@ -24,6 +24,26 @@ var Version = "dev"
 
 // Execute runs the CLI and returns the process exit code.
 func Execute(ctx context.Context) int {
+	rootCmd, code := newRootCmd()
+	if err := fang.Execute(ctx, rootCmd, fang.WithVersion(Version)); err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, err)
+
+		if *code == exitChanges {
+			return exitChanges
+		}
+
+		return exitError
+	}
+
+	return *code
+}
+
+// newRootCmd builds the command. The pointed-to int receives the process
+// exit code (default 0, 1 when --check found changes; Execute maps errors
+// to 2), so tests can invoke the command without os.Exit.
+func newRootCmd() (*cobra.Command, *int) {
+	code := exitOK
+
 	var (
 		root       string
 		configPath string
@@ -40,7 +60,7 @@ func Execute(ctx context.Context) int {
 			"configs with unknown constructs are reported but never rewritten.",
 		Version: Version,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			result, err := configure.Run(ctx, configure.Options{
+			result, err := configure.Run(cmd.Context(), configure.Options{
 				Root:       root,
 				ConfigPath: configPath,
 				Check:      check,
@@ -69,7 +89,7 @@ func Execute(ctx context.Context) int {
 			}
 
 			if check && result.ChangesNeeded() {
-				os.Exit(exitChanges)
+				code = exitChanges
 			}
 
 			return nil
@@ -81,11 +101,5 @@ func Execute(ctx context.Context) int {
 	rootCmd.Flags().BoolVar(&check, "check", false, "report pending changes without writing; exit 1 when changes are needed")
 	rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "print the planned write without performing it")
 
-	if err := fang.Execute(ctx, rootCmd, fang.WithVersion(Version)); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-
-		return exitError
-	}
-
-	return exitOK
+	return rootCmd, &code
 }

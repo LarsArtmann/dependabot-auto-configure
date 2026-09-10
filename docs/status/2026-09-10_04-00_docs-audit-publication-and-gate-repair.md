@@ -1,0 +1,141 @@
+# Status Report — Docs Audit, Public Launch & Gate Repair
+
+**Generated:** 2026-09-10 04:00 CEST
+**Repo:** `LarsArtmann/dependabot-auto-configure` (public since 2026-09-10 ~03:30)
+**Session scope:** repo publication → docs-health AUDIT → gate repair → status report
+**Working tree:** clean at `0d97c41` (all session work committed by auto-commit daemon)
+
+---
+
+## a) FULLY DONE
+
+| # | Work | Evidence |
+|---|------|----------|
+| 1 | Repo published to GitHub as **public**, `master` pushed and tracking `origin/master` | `gh repo view` → `PUBLIC`, `master...origin/master` in sync |
+| 2 | Full docs-health AUDIT: **every file in the repo read**, every concrete doc claim verified against code | All 4 existing .md files + all 10 Go files + flake.nix + configs read; claims traced to `file:line` |
+| 3 | README license lie fixed: claimed MIT, LICENSE is PROPRIETARY → now says Proprietary | README.md §License; verified against `LICENSE` |
+| 4 | README broken install claim fixed: `nix run github:...` cannot work for outsiders (private BuildFlow flake input) → honest note + pointer to TODO_LIST | flake.nix:38 (`git+ssh://` to private repo); `gh repo view LarsArtmann/BuildFlow` → `PRIVATE` |
+| 5 | CHANGELOG fabricated release removed: `[0.1.0] - 2026-01-01` had **no git tag** → truthful `[Unreleased]` with real entries | `git tag` → empty; CHANGELOG.md rewritten |
+| 6 | AGENTS.md stale "GOEXPERIMENT=jsonv2 REQUIRED" claim corrected (verified empirically: clean-cache `go test ./...` passes without it on Go 1.26.7, despite SDK importing `encoding/json/v2`) | `go clean -testcache && go test -count=1 ./...` → ok; `rg "encoding/json/v2" linter-autoconfigure-sdk/autoconfigure.go` → 1 match |
+| 7 | AGENTS.md coverage claim made precise (`pkg/provider` is 0%, was claimed "80%+ on pkg/*") | `go test -cover ./pkg/...` → configure 81.7%, dependabot 91.4%, detect 95.8%, **provider 0.0%** |
+| 8 | AGENTS.md enriched: Layout section, public-repo/private-dep gotcha, dprint note | AGENTS.md (~2.5 KB, lean) |
+| 9 | **FEATURES.md built from code** — 4 domains, honest statuses (provider = PARTIALLY_FUNCTIONAL, npm workspaces = PLANNED) | Every row cites `file:line` |
+| 10 | **TODO_LIST.md built** — 6 bounded, code-verified tasks with evidence | Each cites `file:line` + observed facts |
+| 11 | **ROADMAP.md built** — 3 themes + 4 explicit non-goals | Template-conformant |
+| 12 | CONTRIBUTING.md rewritten with **verified** commands (nix build/flake check, GOEXPERIMENT test, golangci-lint, dprint, nix develop) | All commands executed this session |
+| 13 | 5 × errcheck violations fixed in `internal/cli/root.go` (`_, _ =` on stdout writes) | `golangci-lint run ./...` → **0 issues** |
+| 14 | Dead test helper `strPtr` removed from generate_test.go | Same lint run |
+| 15 | **Stale `vendorHash` repaired** — canonical gate `nix flake check` was failing (go.mod drifted after pinning in `d880425`) → updated hash, now **"all checks passed"** | nix error `sha256-dxM9…` vs got `ed4608…`; rerun green (incl. treefmt check) |
+| 16 | Binary exercised end-to-end: `--check` → exit 1 with correct finding; `--dry-run` → exit 0, no write | Built via `go build -o /tmp/dac`; ran against this repo |
+| 17 | Quality gates green at session end: gofmt clean, `go vet` OK, golangci-lint 0 issues, dprint check OK, `nix flake check` pass, tests pass | All run post-fix |
+| 18 | SDK fact established: `linter-autoconfigure-sdk` is **public and on the module proxy** (`v0.0.0-20260909012235-d4928e53ffad` = local commit `d4928e5`, clean tree) | `go list -m …@latest`; earlier stale AGENTS.md claim fixed |
+
+## b) PARTIALLY DONE
+
+| Item | Works | Remaining | Blocker | Effort |
+|------|-------|-----------|---------|--------|
+| **Public install path** | Repo is public; `nix run github:...` works for people with BuildFlow SSH access | Outsiders still cannot install: flake input `git+ssh://git@github.com/LarsArtmann/BuildFlow` is private; same for `go install` (tool-sdk dep) | Needs a decision (extract tool-sdk to a public module / make BuildFlow public / vendor) — see question g1 | M |
+| **BuildFlow provider** (`pkg/provider`) | `toolsdk.Spec` registered correctly; Detect runs check-mode, Repair honors dry-run; code reviewed line-by-line | 0% test coverage; never executed against real BuildFlow | BuildFlow is a private external consumer; no in-repo harness exists | S |
+| **CLI layer** (`internal/cli`) | Verified working by hand (exit codes 0/1, flags, output); `--check` exit-1 contract confirmed | No automated tests at all (`[no test files]`) | None — just unstarted work | S |
+| **Documentation set** | All 6 living docs exist, verified, cross-consistent, dprint-clean | `docs/DOMAIN_LANGUAGE.md` deliberately skipped (small CLI; vocabulary is localized in `pkg/dependabot` doc comments) — revisit if the domain grows | None | S |
+| **HARVEST loop for this report** | Section (f) below is harvested-ready | TODO_LIST.md/ROADMAP.md not yet updated with new items from (f) — user said "write report, then wait" | Waiting for instructions | S |
+
+## c) NOT STARTED
+
+| Item | Why not started | Still wanted? |
+|------|-----------------|---------------|
+| CI workflow (`.github/workflows/`) — repo is public with zero CI | Out of docs-audit scope; TODO_LIST High Impact item | Yes — next session's first code task |
+| First tagged release (`v0.1.0`) + GitHub Release | No tags exist; CHANGELOG was only just made truthful | Yes — cheap, high signal |
+| `docs/DOMAIN_LANGUAGE.md` | Judged not yet warranted (see b) | Later |
+| Ecosystem expansion (cargo/pip/docker/terraform) | ROADMAP theme, not refined | Yes, long-term |
+| npm workspace detection | Documented as future work in `detect.go:36` since inception | Yes, medium-term |
+| `.github/dependabot.yml` for this repo (dogfood) | Deliberately TODO'd: activates Dependabot PRs on this repo — behavior change the user should opt into | Awaiting user decision (g3) |
+| ADRs (e.g. `docs/adr/0001-suggest-only-unsafe-configs.md`) | The safety contract is documented in AGENTS/FEATURES but not as a formal ADR | Nice-to-have |
+
+## d) TOTALLY FUCKED UP
+
+Nothing in the repo is currently broken — gates are green. Radical honesty about what remains structurally wrong:
+
+1. **The public repo's headline install command is a lie for 99% of visitors.** `nix run github:LarsArtmann/dependabot-auto-configure` (README §Install) requires SSH access to the **private** `BuildFlow` repo. Severity: blocks all external adoption. Root cause: flake depends on a private monorepo input. Mitigation: honest note in README + TODO_LIST item. Real fix needs a dependency-strategy decision (g1).
+2. **The safety-critical provider has zero tests.** `pkg/provider` (the code BuildFlow will actually execute) is 0% covered — the one package a regression would silently break externally has no in-repo verification. Severity: high for the BuildFlow integration path. Mitigation: none. Fix: provider tests (S).
+3. **The canonical gate silently rotted once already.** `vendorHash` went stale when go.mod changed (`d880425` pinned, `c36be1b`/`113df6b` broke it) and nobody noticed because nothing CI-shaped runs `nix flake check` automatically. Severity: the "canonical gate" only works when someone remembers to run it. Mitigation: fixed the hash; the systemic fix is CI (c).
+
+## e) WHAT WE SHOULD IMPROVE
+
+Process lessons from this session (including my own misses):
+
+1. **Run the canonical gate FIRST, not last.** I ran `nix flake check` at the very end of the audit and found the broken vendorHash then. Running it at audit start would have surfaced the Critical gate failure in minute one, not minute fifty. Rule candidate: "new session → run `nix flake check` (or project equivalent) before reading docs."
+2. **Trust LSP diagnostics less, CLI more — but restart the LSP after fixes.** golangci_lint_ls kept showing stale errcheck warnings for files I'd already fixed; ground truth was `golangci-lint run` → 0 issues. An `lsp_restart` after lint fixes would keep the editor view honest.
+3. **Author → format → verify loop.** dprint reformatted two of my freshly written docs after the fact. Cheaper: run `dprint fmt` immediately after writing docs, before the verify pass.
+4. **Empty docs/ directories should exist from day one.** There was no `docs/status/` at all — status reports had nowhere to land. Suggest scaffolding `docs/{status,adr}` in every public repo at creation.
+5. **README marketing claims need a "verification pass" discipline.** Three of the four README problems (MIT lie, broken install, over-broad npm claim) were marketing-tone drift — exactly the failure mode the ownership matrix predicts. The fix that stuck: every README claim must map to a `file:line` or an executed command.
+6. **Auto-commit daemon vs. meaningful history.** 11 of 13 commits are `chore: auto-commit … (heuristic)`. The daemon guarantees nothing is lost (good), but history reads as noise; meaningful commits (`Finalize docs…`) are the exception. Consider teaching the daemon to skip commits while a session is actively editing, or to use conventional-commit messages derived from the changed paths.
+
+## f) TOP 50 NEXT TASKS (ranked by impact)
+
+> Brainstorm, not commitment. Items 1–8 are TODO_LIST-grade (bounded); 9+ are progressively ROADMAP-fuel. HARVEST should route accordingly.
+
+| # | Task | Impact | Effort | Category |
+|---|------|--------|--------|----------|
+| 1 | Resolve the public-dependency strategy: extract `buildflow/tool-sdk` into a public module, make BuildFlow public, or vendor it — then fix the flake input | Critical | L | Feature |
+| 2 | Add CI workflow: `nix flake check`, `GOEXPERIMENT=jsonv2 go test ./...`, golangci-lint, dprint check | Critical | M | Quality |
+| 3 | Add `pkg/provider` tests: Detect returns check-mode findings, Repair honors dry-run context | High | S | Quality |
+| 4 | Add CLI tests: exit codes 0/1/2, flag wiring, output lines (`internal/cli`) | High | S | Quality |
+| 5 | Drop local `replace` in go.mod:49, pin SDK to proxy version | High | S | Cleanup |
+| 6 | Tag `v0.1.0`, create GitHub Release, date the CHANGELOG entry | High | S | Release |
+| 7 | Dogfood: generate `.github/dependabot.yml` for this repo (see g3) | Medium | S | Feature |
+| 8 | Write `docs/adr/0001-suggest-only-unsafe-configs.md` (the core safety decision) | Medium | S | Documentation |
+| 9 | Create `docs/DOMAIN_LANGUAGE.md` (shape, entry, orphan, reconcile, unsafe, canonical) | Medium | S | Documentation |
+| 10 | Pin a repo-owned `.golangci.yml` so lint results don't depend on machine config | Medium | S | Quality |
+| 11 | Add README example: show a generated `dependabot.yml` block | Medium | S | Documentation |
+| 12 | Add `.github/ISSUE_TEMPLATE` + PR template | Medium | S | Documentation |
+| 13 | Add README CI badge (after task 2) | Low | S | Documentation |
+| 14 | Verify nix `apps`/`packages` outputs so `nix run .` and `nix run github:` both work; document | Medium | S | Feature |
+| 15 | Make flake check pass for `--all-systems` (aarch64-darwin/linux, x86_64-darwin currently omitted) | Medium | M | Quality |
+| 16 | Windows robustness: test `detect.Shape` path handling with Windows separators | Medium | S | Quality |
+| 17 | Fuzz `dependabot.Decode` with arbitrary YAML (it's the parse boundary) | Medium | M | Quality |
+| 18 | Property test: `Reconcile` is idempotent (`Reconcile(r, d) == r`) | Medium | S | Quality |
+| 19 | Integration test: atomic-write failure path (read-only dir) in `planOrWrite` | Medium | S | Quality |
+| 20 | Table test: Diff-level schedule preservation (daily/monthly intervals survive) | Medium | S | Quality |
+| 21 | Add `--json` output flag for machine-readable findings | Medium | M | Feature |
+| 22 | Add `--fail-on <severity>` flag for CI policy control | Medium | M | Feature |
+| 23 | Decide exit-code semantics for unsafe configs (currently 0; suggest-only might warrant a distinct code) | Medium | S | Feature |
+| 24 | Shell completions: verify fang/cobra completion surface, document installation | Low | S | Feature |
+| 25 | Man page: go.mod already pulls mango/marocchino-era deps — expose a `man` command or document `--help` as canonical | Low | S | Feature |
+| 26 | GitHub repo metadata: description/topics (`go`, `dependabot`, `devtools`, `nix`), website link | Low | S | Documentation |
+| 27 | Social preview image for the repo | Low | S | Documentation |
+| 28 | LICENSE: add a usage-grant preamble clarifying what "public + proprietary" means for visitors (see g2) | Medium | S | Documentation |
+| 29 | Tag the SDK `v1.0.0` (linter-autoconfigure-sdk) so consumers pin stable instead of pseudo-versions | Medium | S | Release |
+| 30 | Audit sibling dep versions (go-finding, go-atomic-write, go-error-family) for stale pins in flake.nix | Low | S | Cleanup |
+| 31 | npm workspace member detection (`workspaces` in root package.json) | Medium | M | Feature |
+| 32 | Detect Cargo.toml ecosystem (weekly grouped, like gomod) | Medium | M | Feature |
+| 33 | Detect pip (requirements.txt / pyproject.toml) ecosystem | Medium | M | Feature |
+| 34 | Detect Docker (Dockerfile / compose) ecosystem | Low | M | Feature |
+| 35 | Detect Terraform ecosystem | Low | M | Feature |
+| 36 | Smarter module-cap behavior: tiered/summarized entries instead of root-only beyond 20 | Low | L | Feature |
+| 37 | `go install ./cmd/dependabot-auto-configure@latest` support once deps are public (depends on #1) | High | M | Feature |
+| 38 | Release workflow (nix-based or GoReleaser) producing binaries on tag | Medium | M | Release |
+| 39 | GitHub Action wrapper (`uses: larsartmann/dependabot-auto-configure@v1`) | Medium | M | Feature |
+| 40 | Homebrew tap formula | Low | M | Feature |
+| 41 | nixpkgs upstream submission | Low | L | Feature |
+| 42 | Coverage reporting in CI (codecov or job summary) with the 80% target enforced | Medium | S | Quality |
+| 43 | Add `--version` smoke test (ldflags-injected version string renders) | Low | S | Quality |
+| 44 | Symlink-loop safety check for `detect.Shape` walk | Low | S | Quality |
+| 45 | Error-message audit against the user-error standard (what/why/fix) for all finding suggestions | Low | S | Quality |
+| 46 | Consider `--root` defaulting to git toplevel instead of CWD | Low | S | Feature |
+| 47 | Rename default branch `master` → `main` while repo is fresh (see g3) | Low | S | Cleanup |
+| 48 | Benchmark/soak test Generate with many-module shapes (cap path correctness at boundary 20/21) | Low | S | Quality |
+| 49 | Add SECURITY.md (private disclosure contact) | Low | S | Documentation |
+| 50 | Teach the auto-commit daemon better messages or session-aware batching (process tooling, cross-repo) | Medium | L | Cleanup |
+
+**HARVEST note:** items 2–7, 10–12, 14 are TODO_LIST-grade and should be merged into `TODO_LIST.md` on the next docs-health HARVEST pass; 31–41 belong in ROADMAP themes. Not yet harvested — waiting for instructions.
+
+## g) QUESTIONS I CANNOT ANSWER MYSELF
+
+1. **BuildFlow dependency strategy:** What is the long-term plan for `LarsArtmann/BuildFlow` (private)? Extract `tool-sdk` into its own public module, make BuildFlow public, or vendor the SDK into this repo? This decides task #1 and whether the public install path can ever work. I checked visibility (private), the flake input shape, and the module proxy — the strategy itself is yours to call.
+2. **License intent:** The repo is public but LICENSE is all-rights-reserved proprietary. Is that intentional showcase-only (add a "no rights granted" preamble?), or is a license change (MIT/Apache-2.0) planned once the dependency story is public? I can't infer distribution intent from the files.
+3. **Dogfood + branch naming, both one-way doors while the repo is fresh:** (a) generate `.github/dependabot.yml` for this repo now (activates weekly grouped Dependabot PRs here), and (b) rename the default branch `master` → `main`? I will not do either without your call.
+
+---
+
+*Self-contained snapshot. When bringing this report current later, use docs-health ANNOTATE (inline strikethrough + `done at <hash>`), never rewrite. Section (f) is the HARVEST input for TODO_LIST/ROADMAP.*
