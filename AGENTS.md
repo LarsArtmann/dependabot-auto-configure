@@ -42,7 +42,8 @@ Use the flake (`nix build`, `nix flake check`) for the canonical gate.
 ## Ecosystem wiring
 
 - Findings are emitted via `linter-autoconfigure-sdk.FindingsFromIssues`
-  (local replace in go.mod; the SDK is unpublished). This repo is the SDK's
+  (local replace in go.mod for local SDK iteration; the SDK is public and
+  on the module proxy as of 2026-09). This repo is the SDK's
   first consumer — if `FindingFromIssue` semantics need to change, change the
   SDK, not this call site.
 - BuildFlow integration is the toolsdk contract: `pkg/provider` registers a
