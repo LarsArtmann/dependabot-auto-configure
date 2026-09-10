@@ -53,8 +53,6 @@
     }:
     let
       version = self.rev or self.dirtyRev or "dev";
-      commit = self.shortRev or self.dirtyShortRev or "unknown";
-      date = builtins.substring 0 8 (self.lastModifiedDate or "19700101");
     in
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [ inputs.go-nix-helpers.flakeModules.go-standard ];

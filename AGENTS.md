@@ -12,7 +12,7 @@ Sibling to `golangci-lint-auto-configure` and `oxlint-auto-configure`.
 
 - **Never destroy user intent.** Existing non-canonical choices (monthly
   schedules, custom limits, orphan entries for ecosystems we did not detect)
-  are preserved byte-for-value. Only *missing* fields are filled.
+  are preserved byte-for-value. Only _missing_ fields are filled.
 - **Unsafe configs are suggest-only.** When `Decode` reports unknown top-level
   keys, unknown entry fields, or unknown group names (`DecodeResult.Unsafe`),
   repair MUST NOT write. A rewrite would silently drop the user's

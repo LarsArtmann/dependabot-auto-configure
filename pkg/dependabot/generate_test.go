@@ -139,7 +139,7 @@ func TestDiff(t *testing.T) {
 		},
 		{
 			name: "canonical config has zero issues",
-			existing: strPtr(strings.Join([]string{
+			existing: new(strings.Join([]string{
 				"version: 2",
 				"updates:",
 				"  - package-ecosystem: gomod",
@@ -167,7 +167,7 @@ func TestDiff(t *testing.T) {
 		},
 		{
 			name: "bare entries report every gap",
-			existing: strPtr(strings.Join([]string{
+			existing: new(strings.Join([]string{
 				"version: 2",
 				"updates:",
 				"  - package-ecosystem: gomod",
@@ -187,7 +187,7 @@ func TestDiff(t *testing.T) {
 		},
 		{
 			name: "outdated version",
-			existing: strPtr(strings.Join([]string{
+			existing: new(strings.Join([]string{
 				"version: 1",
 				"updates:",
 				"  - package-ecosystem: gomod",
@@ -206,7 +206,7 @@ func TestDiff(t *testing.T) {
 		},
 		{
 			name: "orphan entry preserved with info",
-			existing: strPtr(strings.Join([]string{
+			existing: new(strings.Join([]string{
 				"version: 2",
 				"updates:",
 				"  - package-ecosystem: gomod",
@@ -318,6 +318,7 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
+//go:fix inline
 func strPtr(s string) *string {
-	return &s
+	return new(s)
 }

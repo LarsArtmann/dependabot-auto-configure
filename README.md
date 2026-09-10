@@ -59,13 +59,13 @@ flake).
 
 ## Safety contract
 
-| Situation                             | Behavior                                   |
-| ------------------------------------- | ------------------------------------------ |
-| No config, repo has ecosystems         | Generates grouped weekly config             |
-| No config, repo has nothing to watch   | No-op                                       |
-| Config missing fields                  | Fills missing fields, preserves your intent |
-| Config semantically canonical          | No-op (formatting is never rewritten)       |
-| Config with unknown constructs         | Findings only — never rewritten             |
+| Situation                            | Behavior                                    |
+| ------------------------------------ | ------------------------------------------- |
+| No config, repo has ecosystems       | Generates grouped weekly config             |
+| No config, repo has nothing to watch | No-op                                       |
+| Config missing fields                | Fills missing fields, preserves your intent |
+| Config semantically canonical        | No-op (formatting is never rewritten)       |
+| Config with unknown constructs       | Findings only — never rewritten             |
 
 ## License
 
