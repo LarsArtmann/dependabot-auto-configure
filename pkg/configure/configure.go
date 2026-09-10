@@ -109,7 +109,24 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 
 	dec, decErr := dependabot.Decode(data)
 	if decErr != nil {
-		return result, decErr
+		issue := []autoconfigure.ConfigIssue{
+			{
+				Rule:       "dependabot-config-unparseable",
+				Message:    fmt.Sprintf("existing config cannot be parsed by this tool (%v); treated as suggest-only", decErr),
+				Severity:   finding.SeverityWarning,
+				File:       finding.FilePath(configPath),
+				Suggestion: "align the config with the documented Dependabot schema or extend this tool's schema",
+			},
+		}
+
+		result.Findings, err = autoconfigure.FindingsFromIssues(ToolName, issue)
+		if err != nil {
+			return result, fmt.Errorf("convert findings: %w", err)
+		}
+
+		result.UnsafeRepair = true
+
+		return result, nil
 	}
 
 	existing := dec.Config

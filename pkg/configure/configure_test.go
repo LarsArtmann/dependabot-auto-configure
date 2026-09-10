@@ -241,3 +241,18 @@ func TestRunOnEmptyRepoIsNoOp(t *testing.T) {
 		t.Errorf("Run() on empty repo = %+v, want no findings and no write", result)
 	}
 }
+
+func TestRunUnparseableConfigIsSuggestOnly(t *testing.T) {
+	seqGroups := "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    groups:\n      - everything:\n          patterns:\n            - \"*\"\n"
+	root := repoWithConfig(t, configure.DefaultConfigPath, seqGroups)
+
+	result := run(t, root, configure.Options{})
+
+	if !result.UnsafeRepair || result.Wrote {
+		t.Errorf("Run() on unparseable config = unsafe=%v wrote=%v, want suggest-only", result.UnsafeRepair, result.Wrote)
+	}
+
+	if len(result.Findings) == 0 || result.Findings[0].Rule != "dependabot-config-unparseable" {
+		t.Errorf("Run() findings = %v, want dependabot-config-unparseable", result.Findings)
+	}
+}
