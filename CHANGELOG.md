@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.1.0] - 2026-09-10
+
+First tagged release. The BuildFlow provider plugin contract now targets
+`github.com/larsartmann/go-finding/toolsdk` v1.10.0 (migrated from the
+deleted `buildflow/tool-sdk`), the flake pins `go-finding` v1.10.0 and
+`linter-autoconfigure-sdk` v0.1.0 (replacing `git+ssh://...ref=master`
+and raw-commit pseudo-versions), and the dead `buildflow` flake input is
+removed. Nix build verified green after the migration.
+
+### Changed
+
+- Provider SDK: `buildflow/tool-sdk` → `go-finding/toolsdk` v1.10.0
+- go-finding v1.9.2 → v1.10.0; linter-autoconfigure-sdk pseudo-version → v0.1.0
+- Flake inputs: `git+ssh://...ref=master` → `github:` + release tags
+
+[0.1.0]: https://github.com/larsartmann/dependabot-auto-configure/releases/tag/v0.1.0
+
 ## [Unreleased]
 
 ### Added
