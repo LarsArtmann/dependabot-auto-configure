@@ -112,12 +112,12 @@ func EnableSecurityFixes(ctx context.Context, root string) (string, error) {
 
 	defer func() { _ = resp.Body.Close() }()
 
-	switch {
-	case resp.StatusCode == http.StatusNoContent:
+	switch resp.StatusCode {
+	case http.StatusNoContent:
 		return SecurityFixesEnabled, nil
-	case resp.StatusCode == http.StatusNotFound:
+	case http.StatusNotFound:
 		return SecurityFixesNotFound, nil
-	case resp.StatusCode == http.StatusForbidden:
+	case http.StatusForbidden:
 		return SecurityFixesForbidden, nil
 	default:
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))

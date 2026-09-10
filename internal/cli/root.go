@@ -86,8 +86,7 @@ func newRootCmd() (*cobra.Command, *int) {
 					return marshalErr
 				}
 
-				_, _ = cmd.OutOrStdout().Write(append(out, []byte("
-")))
+				_, _ = cmd.OutOrStdout().Write(append(out, '\n'))
 
 				if check && result.ChangesNeeded() {
 					code = exitChanges
