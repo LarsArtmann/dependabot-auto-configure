@@ -15,7 +15,8 @@ bounded configuration.
 ## What it does
 
 - Detects **Go modules** (root + every `go.mod`, skipping `testdata`,
-  `vendor`, `node_modules`), **GitHub Actions** workflows, and **npm**
+  `vendor`, `node_modules`, `.git`, and hidden dirs except `.github`),
+  **GitHub Actions** workflows, and root-level **npm**
 - Generates weekly grouped updates (minor+patch in one PR, actions by
   pattern) with an explicit `open-pull-requests-limit: 5`
 - Repairs existing configs by filling only what is missing — a monthly
@@ -39,6 +40,9 @@ dependabot-auto-configure --dry-run
 dependabot-auto-configure --root /path/to/repo
 ```
 
+Exit codes: `0` clean or repaired, `1` changes needed (under `--check`),
+`2` operational error.
+
 ## BuildFlow
 
 `pkg/provider` registers a `buildflow/tool-sdk` Spec (Detect + Repair,
@@ -50,12 +54,22 @@ import _ "github.com/larsartmann/dependabot-auto-configure/pkg/provider"
 
 ## Install
 
+From source (canonical gate):
+
 ```sh
 nix run github:LarsArtmann/dependabot-auto-configure
 ```
 
-Requires Go 1.26+ with `GOEXPERIMENT=jsonv2` (set automatically by the
-flake).
+> Note: the flake currently depends on the private `BuildFlow` repository
+> over SSH, so the command above only works with access to it. See
+> `TODO_LIST.md` for the plan to ship a fully public install path.
+
+Or build directly (Go 1.26+; the source uses `encoding/json/v2` via the
+auto-configure SDK):
+
+```sh
+go build ./cmd/dependabot-auto-configure
+```
 
 ## Safety contract
 
@@ -69,4 +83,5 @@ flake).
 
 ## License
 
-MIT
+Proprietary — see [LICENSE](LICENSE).
+All rights reserved.

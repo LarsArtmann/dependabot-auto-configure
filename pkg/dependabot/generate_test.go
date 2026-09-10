@@ -317,8 +317,3 @@ func TestReconcile(t *testing.T) {
 		t.Error("Reconcile() dropped orphan pip entry")
 	}
 }
-
-//go:fix inline
-func strPtr(s string) *string {
-	return new(s)
-}

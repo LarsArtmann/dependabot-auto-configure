@@ -51,21 +51,21 @@ func Execute(ctx context.Context) int {
 			}
 
 			for _, f := range result.Findings {
-				fmt.Fprintf(cmd.OutOrStdout(), "%s: %s\n", f.Rule, f.Message)
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s: %s\n", f.Rule, f.Message)
 				if f.Suggestion != "" {
-					fmt.Fprintf(cmd.OutOrStdout(), "  fix: %s\n", f.Suggestion)
+					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  fix: %s\n", f.Suggestion)
 				}
 			}
 
 			switch {
 			case result.Wrote:
-				fmt.Fprintln(cmd.OutOrStdout(), "wrote .github/dependabot.yml")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "wrote .github/dependabot.yml")
 			case result.PlannedWrite:
-				fmt.Fprintln(cmd.OutOrStdout(), "changes planned (held back by --check/--dry-run)")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "changes planned (held back by --check/--dry-run)")
 			case result.UnsafeRepair:
-				fmt.Fprintln(cmd.OutOrStdout(), "config uses unknown constructs; repair is suggest-only")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "config uses unknown constructs; repair is suggest-only")
 			case result.Unchanged && len(result.Findings) == 0:
-				fmt.Fprintln(cmd.OutOrStdout(), "configuration already canonical")
+				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "configuration already canonical")
 			}
 
 			if check && result.ChangesNeeded() {

@@ -7,19 +7,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
-- Initial project structure
 
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
-
-## [0.1.0] - 2026-01-01
-
-### Added
-- Initial release
+- Repository shape detection: Go modules (root + nested, skipping `testdata`,
+  `vendor`, `node_modules`, `.git`, hidden dirs except `.github`), GitHub
+  Actions workflows, and root-level npm
+- Canonical `.github/dependabot.yml` generation: weekly grouped updates
+  (minor+patch group, pattern group for actions), explicit
+  `open-pull-requests-limit: 5`, stable entry ordering, 20-module cap
+- Repair that never destroys user intent: existing schedules, limits, and
+  orphan entries are preserved; only missing fields are filled
+- Safety contract: unknown constructs (top-level keys, entry fields, group
+  names) and unparseable configs are suggest-only; `--check` and `--dry-run`
+  never write; semantically canonical configs are no-ops
+- CLI (`--root`, `--config-path`, `--check`, `--dry-run`) with exit codes
+  0 (clean/repaired), 1 (changes needed under `--check`), 2 (error)
+- BuildFlow provider registering a `buildflow/tool-sdk` Spec (Detect runs
+  check-mode; Repair honors dry-run)
+- Atomic writes via `go-atomic-write`
+- Project documentation: README, AGENTS, FEATURES, TODO_LIST, ROADMAP,
+  CONTRIBUTING, Nix flake, and tests (table-driven + `t.TempDir` integration)
