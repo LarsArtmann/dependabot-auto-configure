@@ -6,13 +6,17 @@ import (
 	"strings"
 
 	"github.com/larsartmann/go-finding"
-	"github.com/larsartmann/linter-autoconfigure-sdk"
+	autoconfigure "github.com/larsartmann/linter-autoconfigure-sdk"
 )
 
 // MaxModuleEntries caps how many gomod entries generation creates. Beyond
 // this, Dependabot's per-repo PR budget gets absurd; the cap is reported as
 // a finding instead of silently generating dozens of entries.
 const MaxModuleEntries = 20
+
+// ConfigIssue is this package's issue vocabulary, aliased from the shared
+// autoconfigure SDK so findings and suggestions speak one shape.
+type ConfigIssue = autoconfigure.ConfigIssue
 
 // RepoShape is what detection knows about a repository: the inputs
 // generation needs. GoModuleDirs holds directories containing a go.mod,
@@ -152,9 +156,9 @@ func Reconcile(existing, desired Config) Config {
 // Diff compares an existing configuration (nil = file missing) against the
 // desired one and returns the issues a user or BuildFlow should see. Issues
 // carry suggestions so they arrive as fixable findings, not dead ends.
-func Diff(existing *Config, dec DecodeResult, desired Config, cap CapInfo) []ConfigIssue {
-	file := ".github/dependabot.yml"
-	issues := make([]ConfigIssue, 0, 4)
+func Diff(existing *Config, dec DecodeResult, desired Config, cap CapInfo) []autoconfigure.ConfigIssue {
+	file := finding.FilePath(".github/dependabot.yml")
+	issues := make([]autoconfigure.ConfigIssue, 0, 4)
 
 	if existing == nil {
 		if len(desired.Updates) == 0 {

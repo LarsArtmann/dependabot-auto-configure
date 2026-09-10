@@ -68,6 +68,19 @@ type TypeGroup struct {
 	UpdateTypes []UpdateType `yaml:"update-types"`
 }
 
+// PatternGroup groups updates by dependency name pattern.
+type PatternGroup struct {
+	Patterns []string `yaml:"patterns"`
+}
+
+// Groups is the set of update groups on an entry. Pointer fields keep unset
+// groups out of the YAML instead of emitting empty mappings; unknown group
+// names from existing configs are audited by Decode, never modeled.
+type Groups struct {
+	MinorAndPatch *TypeGroup    `yaml:"minor-and-patch,omitempty"`
+	Actions       *PatternGroup `yaml:"actions,omitempty"`
+}
+
 // MinorAndPatchGroups builds the canonical minor+patch group.
 func MinorAndPatchGroups() *Groups {
 	return &Groups{
@@ -87,11 +100,6 @@ func ActionGroups() *Groups {
 // Empty reports whether no group is configured.
 func (g *Groups) Empty() bool {
 	return g == nil || (g.MinorAndPatch == nil && g.Actions == nil)
-}
-
-// PatternGroup groups updates by dependency name pattern.
-type PatternGroup struct {
-	Patterns []string `yaml:"patterns"`
 }
 
 // Update is one entry under "updates:". A nil Schedule, a zero
