@@ -49,6 +49,8 @@ func newRootCmd() (*cobra.Command, *int) {
 		configPath string
 		check      bool
 		dryRun     bool
+		jsonOut    bool
+		secFixes   bool
 	)
 
 	rootCmd := &cobra.Command{
@@ -61,13 +63,37 @@ func newRootCmd() (*cobra.Command, *int) {
 		Version: Version,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			result, err := configure.Run(cmd.Context(), configure.Options{
-				Root:       root,
-				ConfigPath: configPath,
-				Check:      check,
-				DryRun:     dryRun,
+				Root:                root,
+				ConfigPath:          configPath,
+				Check:               check,
+				DryRun:              dryRun,
+				EnableSecurityFixes: secFixes,
 			})
 			if err != nil {
 				return err
+			}
+
+			if secFixes && !check && !dryRun {
+				result.SecurityFixes, err = configure.EnableSecurityFixes(cmd.Context(), root)
+				if err != nil {
+					return err
+				}
+			}
+
+			if jsonOut {
+				out, marshalErr := configure.MarshalJSONResult(result)
+				if marshalErr != nil {
+					return marshalErr
+				}
+
+				_, _ = cmd.OutOrStdout().Write(append(out, []byte("
+")))
+
+				if check && result.ChangesNeeded() {
+					code = exitChanges
+				}
+
+				return nil
 			}
 
 			for _, f := range result.Findings {
@@ -100,6 +126,8 @@ func newRootCmd() (*cobra.Command, *int) {
 	rootCmd.Flags().StringVar(&configPath, "config-path", configure.DefaultConfigPath, "configuration file path relative to --root")
 	rootCmd.Flags().BoolVar(&check, "check", false, "report pending changes without writing; exit 1 when changes are needed")
 	rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "print the planned write without performing it")
+	rootCmd.Flags().BoolVar(&jsonOut, "json", false, "print the result as JSON instead of text")
+	rootCmd.Flags().BoolVar(&secFixes, "enable-security-fixes", false, "also enable Dependabot security updates via the GitHub API (needs GITHUB_TOKEN/GH_TOKEN)")
 
 	return rootCmd, &code
 }

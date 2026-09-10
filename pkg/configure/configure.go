@@ -6,6 +6,7 @@ package configure
 import (
 	"bytes"
 	"context"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -103,7 +104,7 @@ func MarshalJSONResult(r Result) ([]byte, error) {
 			Rule:       string(f.Rule),
 			Message:    f.Message,
 			Severity:   string(f.Severity),
-			File:       string(f.File),
+			File:       string(f.Position.File),
 			Suggestion: f.Suggestion,
 		})
 	}
