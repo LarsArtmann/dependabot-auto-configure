@@ -144,6 +144,10 @@ func planOrWrite(result *Result, opts Options, absConfig string, out []byte) err
 		return nil
 	}
 
+	if err := os.MkdirAll(filepath.Dir(absConfig), 0o755); err != nil {
+		return fmt.Errorf("create config directory %s: %w", filepath.Dir(absConfig), err)
+	}
+
 	if err := atomicwrite.Write(absConfig, out); err != nil {
 		return fmt.Errorf("write %s: %w", absConfig, err)
 	}
