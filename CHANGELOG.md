@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Added
+
+- Typed domain error system: every failure is a typed error with family
+  (rejection/transient/corruption/infrastructure), machine-readable code,
+  and structured context — `UnparseableConfigError`, `EncodeError`,
+  `InvalidEntryError` (naming exactly which required fields an entry
+  misses), `ShapeDetectionError`, `ConfigReadError`, `ConfigWriteError`,
+  `FindingsConversionError`, `GitHubRequestError`, `APITransportError`,
+  `UnexpectedStatusError` (family derived from the status: 5xx transient,
+  else rejection), and `cli.OutputError`
+- `EnableSecurityFixes` now returns a typed `SecurityFixesOutcome` instead
+  of a bare string
+
+### Changed
+
+- All errors carry their full context (paths, entry indexes, URLs, status
+  codes) in message and structured form; response-body read failures are
+  reported instead of silently discarded, as are stdout/stderr write
+  failures and success-path response-body close failures
+- `erraudit` (typed error gate) goes from 41 violations to zero
+
 ## [0.2.0] - 2026-09-11
 
 ### Added

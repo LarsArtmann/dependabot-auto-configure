@@ -64,6 +64,47 @@ Use the flake (`nix build`, `nix flake check`) for the canonical gate.
 dprint formats markdown/json/yaml (`dprint check`); CHANGELOG.md is excluded
 from markdown formatting.
 
+## Typed error system (DDD)
+
+Errors are domain objects, not strings. Each bounded context owns its
+vocabulary in an `errors.go`: `pkg/dependabot/errors.go` (the config
+document), `pkg/configure/errors.go` (orchestration + GitHub adapter),
+`internal/cli/errors.go` (reporting). Every type carries typed fields
+(index, path, status code), an `ErrorFamily()` (Rejection = bad user input,
+Transient = retryable transport, Corruption = unparseable/unrepresentable
+document, Infrastructure = environment), a machine-readable `ErrorCode()`
+(`config.*`, `shape.detect`, `findings.convert`, `github.*`, `cli.output`,
+`provider.*`), and `ErrorContext()` structured data. Causes chain via
+`Unwrap`, so `errors.Is`/`errors.AsType` work through the whole stack.
+
+The gate is `erraudit` with zero violations expected:
+
+```sh
+GOEXPERIMENT=jsonv2 erraudit ./... --type-aware --enforce-go-error-family \
+  --no-suppress --enforce-samber-oops --enforce-generic-return
+```
+
+Non-obvious rules the flags enforce (empirically verified 2026-09-11):
+
+- **No stdlib error constructors** (`--enforce-samber-oops`): never write
+  `fmt.Errorf`/`errors.New`/`errors.Join` — not even for sentinels. Build a
+  typed error value, or wrap with `errorfamily.Wrap*` constructors.
+- **Concrete values must flow to return sites** (`--enforce-generic-return`):
+  function signatures stay `error`, but each failure return returns a
+  concrete typed value. Do NOT switch signatures to concrete pointer types —
+  that invites the typed-nil-in-interface trap (sibling
+  `golangci-lint-auto-configure` shipped two bugs from it).
+- **No lost context** (`--enforce-go-error-family`): every in-scope variable
+  on an error path must appear in the message or structured context. Human
+  messages use user-facing values (e.g. relative `configPath`);
+  `WithContext("config_path", absConfig)` carries the precise one — that key
+  is also what error-family's FilesystemRule matches for diagnostics.
+- **No blank-identifier discards** (`--no-suppress` surfaces them): check
+  every write/close/read; a best-effort read failure becomes a field
+  (`UnexpectedStatusError.BodyErr`), a stdout failure becomes
+  `*cli.OutputError`, a success-path body-close failure becomes a transport
+  error. Conditional discards need an explicit `&& err == nil` guard.
+
 ## Ecosystem wiring
 
 - Findings are emitted via `linter-autoconfigure-sdk.FindingsFromIssues`
