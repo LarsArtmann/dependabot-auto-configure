@@ -2,11 +2,14 @@ package configure_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
+
+	ef "github.com/larsartmann/go-error-family"
 
 	"github.com/larsartmann/dependabot-auto-configure/pkg/configure"
 )
@@ -77,7 +80,7 @@ func TestEnableSecurityFixesOutcomes(t *testing.T) {
 	tests := []struct {
 		name       string
 		status     int
-		want       string
+		want       configure.SecurityFixesOutcome
 		wantErr    bool
 		wantMethod string
 	}{
@@ -116,6 +119,19 @@ func TestEnableSecurityFixesOutcomes(t *testing.T) {
 			if tt.wantErr {
 				if err == nil {
 					t.Fatalf("EnableSecurityFixes() error = nil, want one (outcome %q)", outcome)
+				}
+
+				statusErr, ok := errors.AsType[*configure.UnexpectedStatusError](err)
+				if !ok {
+					t.Fatalf("EnableSecurityFixes() error = %T, want *configure.UnexpectedStatusError", err)
+				}
+
+				if statusErr.StatusCode != tt.status {
+					t.Errorf("status = %d, want %d", statusErr.StatusCode, tt.status)
+				}
+
+				if family := ef.Classify(err); family != ef.Transient {
+					t.Errorf("family = %v, want transient for server-side status %d", family, tt.status)
 				}
 
 				return

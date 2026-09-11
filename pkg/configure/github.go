@@ -11,15 +11,6 @@ import (
 	"time"
 )
 
-// Security-fix enablement outcome values for Result.SecurityFixes.
-const (
-	SecurityFixesEnabled   = "enabled"
-	SecurityFixesNoToken   = "skipped-no-token"
-	SecurityFixesNoRemote  = "skipped-no-remote"
-	SecurityFixesNotFound  = "skipped-repo-not-found"
-	SecurityFixesForbidden = "skipped-forbidden"
-)
-
 // repoSlugFromGit extracts "owner/repo" from the origin remote of the git
 // repository at root. Supports HTTPS and SSH GitHub URL shapes and returns
 // "" when no origin remote exists or the URL is not a GitHub repository.
@@ -90,10 +81,10 @@ var githubAPIBase = "https://api.github.com"
 var githubAPIClient = &http.Client{Timeout: 15 * time.Second}
 
 // EnableSecurityFixes turns on automated security fixes for the repository
-// at root via the GitHub API. The returned string is one of the
-// SecurityFixes* outcome values; an error is returned only for unexpected
-// transport failures.
-func EnableSecurityFixes(ctx context.Context, root string) (string, error) {
+// at root via the GitHub API. The returned outcome is one of the
+// SecurityFixes* values; an error is returned only for unexpected
+// transport failures, each a typed error from this package.
+func EnableSecurityFixes(ctx context.Context, root string) (SecurityFixesOutcome, error) {
 	slug := repoSlugFromGit(root)
 	if slug == "" {
 		return SecurityFixesNoRemote, nil
@@ -108,7 +99,7 @@ func EnableSecurityFixes(ctx context.Context, root string) (string, error) {
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, nil)
 	if err != nil {
-		return "", fmt.Errorf("build request: %w", err)
+		return "", &GitHubRequestError{URL: url, Cause: err}
 	}
 
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -117,11 +108,21 @@ func EnableSecurityFixes(ctx context.Context, root string) (string, error) {
 
 	resp, err := githubAPIClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("call %s: %w", url, err)
+		return "", &APITransportError{Op: TransportOpCall, URL: url, Cause: err}
 	}
 
-	defer func() { _ = resp.Body.Close() }()
+	outcome, outcomeErr := securityFixesOutcome(resp, url)
+	if closeErr := resp.Body.Close(); closeErr != nil && outcomeErr == nil {
+		return "", &APITransportError{Op: TransportOpCloseResponse, URL: url, Cause: closeErr}
+	}
 
+	return outcome, outcomeErr
+}
+
+// securityFixesOutcome maps an API response to its enablement outcome.
+// The modeled statuses are success and the two skip conditions; anything
+// else is an UnexpectedStatusError carrying the (truncated) body.
+func securityFixesOutcome(resp *http.Response, url string) (SecurityFixesOutcome, error) {
 	switch resp.StatusCode {
 	case http.StatusNoContent:
 		return SecurityFixesEnabled, nil
@@ -130,8 +131,8 @@ func EnableSecurityFixes(ctx context.Context, root string) (string, error) {
 	case http.StatusForbidden:
 		return SecurityFixesForbidden, nil
 	default:
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		body, bodyErr := io.ReadAll(io.LimitReader(resp.Body, 512))
 
-		return "", fmt.Errorf("unexpected status %d: %s", resp.StatusCode, string(body))
+		return "", &UnexpectedStatusError{URL: url, StatusCode: resp.StatusCode, Body: string(body), BodyErr: bodyErr}
 	}
 }

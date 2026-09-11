@@ -16,6 +16,7 @@ import (
 	"github.com/larsartmann/dependabot-auto-configure/pkg/dependabot"
 	"github.com/larsartmann/dependabot-auto-configure/pkg/detect"
 	atomicwrite "github.com/larsartmann/go-atomic-write"
+	ef "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/go-finding"
 	autoconfigure "github.com/larsartmann/linter-autoconfigure-sdk"
 )
@@ -128,7 +129,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 
 	shape, err := detect.NewDetector(opts.Root).Shape()
 	if err != nil {
-		return result, fmt.Errorf("detect repository shape in %s: %w", opts.Root, err)
+		return result, &ShapeDetectionError{Root: opts.Root, Cause: err}
 	}
 
 	desired, capInfo := dependabot.Generate(shape)
@@ -142,7 +143,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 		issues := dependabot.Diff(nil, dependabot.DecodeResult{}, desired, shape, capInfo, file)
 		result.Findings, err = autoconfigure.FindingsFromIssues(ToolName, issues)
 		if err != nil {
-			return result, fmt.Errorf("convert findings: %w", err)
+			return result, &FindingsConversionError{Tool: ToolName, Cause: err}
 		}
 
 		if len(desired.Updates) == 0 {
@@ -153,12 +154,12 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 
 		out, encErr := desired.Encode()
 		if encErr != nil {
-			return result, encErr
+			return result, ef.WrapCorruptionf(encErr, "config.encode", "encode desired configuration for %s", absConfig)
 		}
 
 		return result, planOrWrite(&result, opts, absConfig, out)
 	case readErr != nil:
-		return result, fmt.Errorf("read %s: %w", absConfig, readErr)
+		return result, &ConfigReadError{Path: absConfig, Cause: readErr}
 	}
 
 	dec, decErr := dependabot.Decode(data)
@@ -175,7 +176,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 
 		result.Findings, err = autoconfigure.FindingsFromIssues(ToolName, issue)
 		if err != nil {
-			return result, fmt.Errorf("convert findings: %w", err)
+			return result, &FindingsConversionError{Tool: ToolName, Cause: err}
 		}
 
 		result.UnsafeRepair = true
@@ -188,7 +189,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 	issues := dependabot.Diff(&existing, dec, desired, shape, capInfo, file)
 	result.Findings, err = autoconfigure.FindingsFromIssues(ToolName, issues)
 	if err != nil {
-		return result, fmt.Errorf("convert findings: %w", err)
+		return result, &FindingsConversionError{Tool: ToolName, Cause: err}
 	}
 
 	if dec.Unsafe {
@@ -215,7 +216,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 
 	out, encErr := reconciled.Encode()
 	if encErr != nil {
-		return result, encErr
+		return result, ef.WrapCorruptionf(encErr, "config.encode", "encode reconciled configuration for %s", absConfig)
 	}
 
 	if bytes.Equal(out, data) {
@@ -236,12 +237,13 @@ func planOrWrite(result *Result, opts Options, absConfig string, out []byte) err
 		return nil
 	}
 
-	if err := os.MkdirAll(filepath.Dir(absConfig), 0o755); err != nil {
-		return fmt.Errorf("create config directory %s: %w", filepath.Dir(absConfig), err)
+	dir := filepath.Dir(absConfig)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return &ConfigWriteError{Path: dir, Step: WriteStepCreateDirectory, Cause: err}
 	}
 
 	if err := atomicwrite.Write(absConfig, out); err != nil {
-		return fmt.Errorf("write %s: %w", absConfig, err)
+		return &ConfigWriteError{Path: absConfig, Step: WriteStepWrite, Cause: err}
 	}
 
 	result.Wrote = true
