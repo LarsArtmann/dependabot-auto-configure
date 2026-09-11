@@ -80,6 +80,10 @@ func githubToken() string {
 	return os.Getenv("GH_TOKEN")
 }
 
+// githubAPIBase is the API root for security-fix enablement; a variable so
+// tests can point the client at a stub server.
+var githubAPIBase = "https://api.github.com"
+
 // githubAPIClient bounds the security-fixes call so a stalled GitHub API
 // cannot hang the CLI indefinitely; the request context still governs
 // cancellation.
@@ -100,7 +104,7 @@ func EnableSecurityFixes(ctx context.Context, root string) (string, error) {
 		return SecurityFixesNoToken, nil
 	}
 
-	url := fmt.Sprintf("https://api.github.com/repos/%s/automated-security-fixes", slug)
+	url := fmt.Sprintf("%s/repos/%s/automated-security-fixes", githubAPIBase, slug)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, nil)
 	if err != nil {
