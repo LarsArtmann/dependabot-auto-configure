@@ -4,6 +4,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	"charm.land/fang/v2"
@@ -26,7 +27,9 @@ var Version = "dev"
 func Execute(ctx context.Context) int {
 	rootCmd, code := newRootCmd()
 	if err := fang.Execute(ctx, rootCmd, fang.WithVersion(Version)); err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err)
+		if _, printErr := fmt.Fprintln(os.Stderr, err); printErr != nil {
+			return exitError
+		}
 
 		if *code == exitChanges {
 			return exitChanges
@@ -36,6 +39,16 @@ func Execute(ctx context.Context) int {
 	}
 
 	return *code
+}
+
+// writeOut renders one line of the text report, surfacing write failures
+// instead of dropping them: a report the user never saw did not happen.
+func writeOut(w io.Writer, format string, args ...any) error {
+	if _, err := fmt.Fprintf(w, format, args...); err != nil {
+		return &OutputError{Stream: "stdout", Cause: err}
+	}
+
+	return nil
 }
 
 // newRootCmd builds the command. The pointed-to int receives the process
@@ -74,11 +87,15 @@ func newRootCmd() (*cobra.Command, *int) {
 			}
 
 			if secFixes && !check && !dryRun {
-				result.SecurityFixes, err = configure.EnableSecurityFixes(cmd.Context(), root)
-				if err != nil {
-					return err
+				outcome, secErr := configure.EnableSecurityFixes(cmd.Context(), root)
+				if secErr != nil {
+					return secErr
 				}
+
+				result.SecurityFixes = string(outcome)
 			}
+
+			stdout := cmd.OutOrStdout()
 
 			if jsonOut {
 				out, marshalErr := configure.MarshalJSONResult(result)
@@ -86,7 +103,9 @@ func newRootCmd() (*cobra.Command, *int) {
 					return marshalErr
 				}
 
-				_, _ = cmd.OutOrStdout().Write(append(out, '\n'))
+				if _, writeErr := stdout.Write(append(out, '\n')); writeErr != nil {
+					return &OutputError{Stream: "stdout", Cause: writeErr}
+				}
 
 				if check && result.ChangesNeeded() {
 					code = exitChanges
@@ -96,25 +115,39 @@ func newRootCmd() (*cobra.Command, *int) {
 			}
 
 			for _, f := range result.Findings {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s: %s\n", f.Rule, f.Message)
+				if err := writeOut(stdout, "%s: %s\n", f.Rule, f.Message); err != nil {
+					return err
+				}
+
 				if f.Suggestion != "" {
-					_, _ = fmt.Fprintf(cmd.OutOrStdout(), "  fix: %s\n", f.Suggestion)
+					if err := writeOut(stdout, "  fix: %s\n", f.Suggestion); err != nil {
+						return err
+					}
 				}
 			}
 
+			var status string
 			switch {
 			case result.Wrote:
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "wrote .github/dependabot.yml")
+				status = "wrote .github/dependabot.yml"
 			case result.PlannedWrite:
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "changes planned (held back by --check/--dry-run)")
+				status = "changes planned (held back by --check/--dry-run)"
 			case result.UnsafeRepair:
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "config uses unknown constructs; repair is suggest-only")
+				status = "config uses unknown constructs; repair is suggest-only"
 			case result.Unchanged && len(result.Findings) == 0:
-				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "configuration already canonical")
+				status = "configuration already canonical"
+			}
+
+			if status != "" {
+				if err := writeOut(stdout, "%s\n", status); err != nil {
+					return err
+				}
 			}
 
 			if result.SecurityFixes != "" {
-				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "security fixes: %s\n", result.SecurityFixes)
+				if err := writeOut(stdout, "security fixes: %s\n", result.SecurityFixes); err != nil {
+					return err
+				}
 			}
 
 			if check && result.ChangesNeeded() {

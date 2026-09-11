@@ -11,6 +11,7 @@ import (
 	"fmt"
 
 	"github.com/larsartmann/dependabot-auto-configure/pkg/configure"
+	ef "github.com/larsartmann/go-error-family"
 	"github.com/larsartmann/go-finding"
 	toolsdk "github.com/larsartmann/go-finding/toolsdk"
 )
@@ -47,7 +48,7 @@ var Provider = toolsdk.Register(toolsdk.Spec{
 	Detect: finding.NamedDetectorFunc(configure.ToolName, func(ctx context.Context) ([]finding.Finding, error) {
 		result, err := configure.Run(ctx, configure.Options{Root: workingDir(ctx), Check: true})
 		if err != nil {
-			return nil, fmt.Errorf("%s detect: %w", configure.ToolName, err)
+			return nil, ef.WrapInfrastructuref(err, "provider.detect", "%s detect", configure.ToolName)
 		}
 
 		return result.Findings, nil
@@ -60,7 +61,7 @@ var Provider = toolsdk.Register(toolsdk.Spec{
 			DryRun: dryRun,
 		})
 		if err != nil {
-			return toolsdk.RepairResult{}, fmt.Errorf("%s repair: %w", configure.ToolName, err)
+			return toolsdk.RepairResult{}, ef.WrapInfrastructuref(err, "provider.repair", "%s repair", configure.ToolName)
 		}
 
 		switch {
