@@ -113,6 +113,10 @@ func newRootCmd() (*cobra.Command, *int) {
 				_, _ = fmt.Fprintln(cmd.OutOrStdout(), "configuration already canonical")
 			}
 
+			if result.SecurityFixes != "" {
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "security fixes: %s\n", result.SecurityFixes)
+			}
+
 			if check && result.ChangesNeeded() {
 				code = exitChanges
 			}

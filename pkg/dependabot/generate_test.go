@@ -246,7 +246,7 @@ func TestDiff(t *testing.T) {
 				dec = decoded
 			}
 
-			issues := dependabot.Diff(existing, dec, desired, dependabot.CapInfo{})
+			issues := dependabot.Diff(existing, dec, desired, dependabot.CapInfo{}, ".github/dependabot.yml")
 
 			var gotRules []string
 			for _, issue := range issues {
@@ -267,7 +267,7 @@ func TestDiff(t *testing.T) {
 }
 
 func TestDiffMissingConfigButEmptyShape(t *testing.T) {
-	issues := dependabot.Diff(nil, dependabot.DecodeResult{}, dependabot.Config{}, dependabot.CapInfo{})
+	issues := dependabot.Diff(nil, dependabot.DecodeResult{}, dependabot.Config{}, dependabot.CapInfo{}, ".github/dependabot.yml")
 	if len(issues) != 0 {
 		t.Errorf("Diff() on empty shape = %v issues, want 0", len(issues))
 	}

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // Security-fix enablement outcome values for Result.SecurityFixes.
@@ -79,6 +80,11 @@ func githubToken() string {
 	return os.Getenv("GH_TOKEN")
 }
 
+// githubAPIClient bounds the security-fixes call so a stalled GitHub API
+// cannot hang the CLI indefinitely; the request context still governs
+// cancellation.
+var githubAPIClient = &http.Client{Timeout: 15 * time.Second}
+
 // EnableSecurityFixes turns on automated security fixes for the repository
 // at root via the GitHub API. The returned string is one of the
 // SecurityFixes* outcome values; an error is returned only for unexpected
@@ -105,7 +111,7 @@ func EnableSecurityFixes(ctx context.Context, root string) (string, error) {
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := githubAPIClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("call %s: %w", url, err)
 	}

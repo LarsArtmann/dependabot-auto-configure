@@ -51,13 +51,13 @@ func canonicalDir(dir string) string {
 // CapInfo reports the cap.
 func Generate(shape RepoShape) (Config, CapInfo) {
 	cfg := Config{Version: CurrentVersion}
-	cap := CapInfo{TotalModules: len(shape.GoModuleDirs)}
+	capInfo := CapInfo{TotalModules: len(shape.GoModuleDirs)}
 
 	dirs := make([]string, 0, len(shape.GoModuleDirs))
 	dirs = append(dirs, shape.GoModuleDirs...)
 
 	if len(dirs) > MaxModuleEntries {
-		cap.Capped = true
+		capInfo.Capped = true
 		dirs = []string{""}
 	} else {
 		sort.Slice(dirs, func(i, j int) bool {
@@ -103,7 +103,7 @@ func Generate(shape RepoShape) (Config, CapInfo) {
 		})
 	}
 
-	return cfg, cap
+	return cfg, capInfo
 }
 
 // desiredGroups returns the canonical groups for an ecosystem.
@@ -123,6 +123,13 @@ func Equal(a, b Config) bool {
 	return reflect.DeepEqual(a, b)
 }
 
+// scheduleMissing reports whether an entry has no usable schedule: either
+// no schedule block at all or one with an empty interval, which GitHub
+// rejects.
+func scheduleMissing(u Update) bool {
+	return u.Schedule == nil || u.Schedule.Interval == ""
+}
+
 // Reconcile merges desired entries into an existing configuration without
 // destroying user intent: existing entries keep their non-canonical choices
 // (a monthly schedule stays monthly), only missing fields are filled from
@@ -136,7 +143,7 @@ func Reconcile(existing, desired Config) Config {
 	for _, u := range existing.Updates {
 		idx := desired.Find(u.PackageEcosystem, u.Directory)
 
-		if u.Schedule == nil && idx >= 0 {
+		if scheduleMissing(u) && idx >= 0 {
 			u.Schedule = &Schedule{Interval: IntervalWeekly}
 		}
 
@@ -164,9 +171,9 @@ func Reconcile(existing, desired Config) Config {
 
 // Diff compares an existing configuration (nil = file missing) against the
 // desired one and returns the issues a user or BuildFlow should see. Issues
-// carry suggestions so they arrive as fixable findings, not dead ends.
-func Diff(existing *Config, dec DecodeResult, desired Config, cap CapInfo) []autoconfigure.ConfigIssue {
-	file := finding.FilePath(".github/dependabot.yml")
+// carry suggestions so they arrive as fixable findings, not dead ends. file
+// is the config path findings should point at.
+func Diff(existing *Config, dec DecodeResult, desired Config, capInfo CapInfo, file finding.FilePath) []autoconfigure.ConfigIssue {
 	issues := make([]autoconfigure.ConfigIssue, 0, 4)
 
 	if existing == nil {
@@ -183,6 +190,16 @@ func Diff(existing *Config, dec DecodeResult, desired Config, cap CapInfo) []aut
 		})
 
 		return issues
+	}
+
+	if invalid := dec.Config.Validate(); invalid != nil {
+		issues = append(issues, ConfigIssue{
+			Rule:       "dependabot-entry-invalid",
+			Message:    fmt.Sprintf("existing config has an invalid entry and was left untouched: %v", invalid),
+			Severity:   finding.SeverityError,
+			File:       file,
+			Suggestion: "give every updates entry a package-ecosystem and a directory, or remove the broken entry",
+		})
 	}
 
 	if dec.Config.Version != CurrentVersion {
@@ -211,7 +228,7 @@ func Diff(existing *Config, dec DecodeResult, desired Config, cap CapInfo) []aut
 
 		got := existing.Updates[idx]
 
-		if got.Schedule == nil {
+		if scheduleMissing(got) {
 			issues = append(issues, ConfigIssue{
 				Rule:       "dependabot-schedule-missing",
 				Message:    fmt.Sprintf("entry %q/%q has no schedule interval", want.PackageEcosystem, want.Directory),
@@ -253,10 +270,10 @@ func Diff(existing *Config, dec DecodeResult, desired Config, cap CapInfo) []aut
 		}
 	}
 
-	if cap.Capped {
+	if capInfo.Capped {
 		issues = append(issues, ConfigIssue{
 			Rule:       "dependabot-modules-capped",
-			Message:    fmt.Sprintf("repository has %d Go modules; generation capped at %d entries (root only)", cap.TotalModules, MaxModuleEntries),
+			Message:    fmt.Sprintf("repository has %d Go modules; generation capped at %d entries (root only)", capInfo.TotalModules, MaxModuleEntries),
 			Severity:   finding.SeverityInfo,
 			File:       file,
 			Suggestion: fmt.Sprintf("configure the remaining module directories manually or raise the %d-entry cap", MaxModuleEntries),
