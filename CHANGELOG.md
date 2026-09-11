@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-11
+
 ### Added
 
 - Entry `labels` and schedule `day`/`time`/`timezone` are now modeled
@@ -15,6 +17,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   schedule day (found dogfooding on BuildFlow's own config)
 - Unknown schedule keys (outside `interval`/`day`/`time`/`timezone`) are
   audited unsafe — previously they were silently dropped by a rewrite
+
+### Fixed
+
+- Orphan detection compares existing entries against the DETECTED
+  repository shape instead of the (possibly capped) desired config: with
+  more than 20 Go modules, entries for genuinely detected module
+  directories were mislabeled "matches nothing detected" while the cap
+  finding simultaneously advised configuring them manually
 
 ### Fixed
 
