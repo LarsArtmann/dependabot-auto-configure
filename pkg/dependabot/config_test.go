@@ -112,7 +112,7 @@ func TestEncodeRoundTrip(t *testing.T) {
 		t.Errorf("round-trip not stable:\nfirst:\n%s\nsecond:\n%s", first, second)
 	}
 
-	if !bytesEqualLines(first, []byte(strings.Join([]string{
+	if string(first) != strings.Join([]string{
 		"version: 2",
 		"updates:",
 		"  - package-ecosystem: gomod",
@@ -126,12 +126,7 @@ func TestEncodeRoundTrip(t *testing.T) {
 		"          - minor",
 		"          - patch",
 		"",
-	}, "\n"))) {
+	}, "\n") {
 		t.Errorf("canonical output mismatch:\n%s", first)
 	}
-}
-
-// bytesEqualLines compares byte slices line-wise so failures name the line.
-func bytesEqualLines(got, want []byte) bool {
-	return string(got) == string(want)
 }

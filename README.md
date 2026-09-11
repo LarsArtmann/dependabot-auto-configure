@@ -23,6 +23,8 @@ bounded configuration.
   schedule you chose stays monthly
 - Refuses to rewrite configs containing constructs it does not model
   (registries, labels, custom groups): those get findings, not silent drops
+- Optional `--enable-security-fixes` flips on Dependabot security updates
+  for the repo via the GitHub API (needs `GITHUB_TOKEN`/`GH_TOKEN`)
 
 ## Usage
 
@@ -35,6 +37,13 @@ dependabot-auto-configure --check
 
 # show the planned file without writing
 dependabot-auto-configure --dry-run
+
+# machine-readable findings for scripts and CI summaries
+dependabot-auto-configure --json
+
+# also enable Dependabot security updates via the GitHub API
+# (needs GITHUB_TOKEN or GH_TOKEN)
+dependabot-auto-configure --enable-security-fixes
 
 # operate on another checkout
 dependabot-auto-configure --root /path/to/repo

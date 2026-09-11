@@ -256,3 +256,54 @@ func TestRunUnparseableConfigIsSuggestOnly(t *testing.T) {
 		t.Errorf("Run() findings = %v, want dependabot-config-unparseable", result.Findings)
 	}
 }
+
+func TestRunInvalidEntryIsSuggestOnly(t *testing.T) {
+	invalid := "version: 2\nupdates:\n  - package-ecosystem: gomod\n"
+	root := repoWithConfig(t, configure.DefaultConfigPath, invalid)
+
+	result := run(t, root, configure.Options{})
+
+	if !result.UnsafeRepair || result.Wrote {
+		t.Fatalf("Run() on invalid entry = unsafe=%v wrote=%v, want suggest-only", result.UnsafeRepair, result.Wrote)
+	}
+
+	got, err := os.ReadFile(filepath.Join(root, ".github", "dependabot.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(got) != invalid {
+		t.Error("Run() modified a config with an invalid entry")
+	}
+
+	found := false
+	for _, f := range result.Findings {
+		if string(f.Rule) == "dependabot-entry-invalid" {
+			found = true
+		}
+	}
+
+	if !found {
+		t.Errorf("Run() findings = %v, want a dependabot-entry-invalid finding", result.Findings)
+	}
+}
+
+func TestRunFillsEmptyScheduleInterval(t *testing.T) {
+	emptyInterval := "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    schedule: {}\n"
+	root := repoWithConfig(t, configure.DefaultConfigPath, emptyInterval)
+
+	result := run(t, root, configure.Options{})
+
+	if !result.Wrote {
+		t.Fatal("Run() did not fill the empty schedule interval")
+	}
+
+	got, err := os.ReadFile(filepath.Join(root, ".github", "dependabot.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(string(got), "interval: weekly") {
+		t.Errorf("repaired config missing weekly interval:\n%s", got)
+	}
+}

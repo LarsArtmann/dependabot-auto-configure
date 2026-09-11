@@ -50,7 +50,10 @@ Things we are deliberately NOT pursuing and why:
   about user intent is the failure mode this tool exists to prevent.
 - **Creating commits or pull requests**: this tool writes (at most) one
   config file; lifecycle automation belongs to Dependabot itself.
-- **Talking to the GitHub API**: file-level correctness only; no network.
+- **Network calls beyond the opt-in security-fixes flag**: file-level
+  correctness needs no network. The one exception is
+  `--enable-security-fixes`, an explicit opt-in that talks to the GitHub
+  API; everything else stays offline.
 - **Per-repo policy config files** (an `.autorc`-style override layer):
   convention-over-configuration is why the tool needs no setup today.
   Revisit only if the defaults prove too rigid in practice.

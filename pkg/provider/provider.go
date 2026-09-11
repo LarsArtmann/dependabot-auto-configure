@@ -10,9 +10,9 @@ import (
 	"context"
 	"fmt"
 
-	toolsdk "github.com/larsartmann/go-finding/toolsdk"
 	"github.com/larsartmann/dependabot-auto-configure/pkg/configure"
 	"github.com/larsartmann/go-finding"
+	toolsdk "github.com/larsartmann/go-finding/toolsdk"
 )
 
 // workingDir resolves the project directory from the context, falling back
@@ -53,9 +53,11 @@ var Provider = toolsdk.Register(toolsdk.Spec{
 		return result.Findings, nil
 	}),
 	Repair: toolsdk.RepairerFunc(func(ctx context.Context) (toolsdk.RepairResult, error) {
+		dryRun := toolsdk.DryRunFromContext(ctx)
+
 		result, err := configure.Run(ctx, configure.Options{
 			Root:   workingDir(ctx),
-			DryRun: toolsdk.DryRunFromContext(ctx),
+			DryRun: dryRun,
 		})
 		if err != nil {
 			return toolsdk.RepairResult{}, fmt.Errorf("%s repair: %w", configure.ToolName, err)
@@ -70,9 +72,13 @@ var Provider = toolsdk.Register(toolsdk.Spec{
 			return toolsdk.RepairResult{Description: "wrote grouped weekly .github/dependabot.yml"}, nil
 		case result.Unchanged && len(result.Findings) == 0:
 			return toolsdk.RepairResult{Description: "configuration already canonical, nothing to do"}, nil
-		default:
+		case dryRun:
 			return toolsdk.RepairResult{
 				Description: fmt.Sprintf("held back by dry-run: %d finding(s) pending", len(result.Findings)),
+			}, nil
+		default:
+			return toolsdk.RepairResult{
+				Description: fmt.Sprintf("nothing to write; %d informational finding(s) reported", len(result.Findings)),
 			}, nil
 		}
 	}),

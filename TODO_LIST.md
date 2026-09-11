@@ -24,8 +24,8 @@
 
 | Task                                                                         | Status    | Impact | Effort | Evidence                                                                                    |
 | ---------------------------------------------------------------------------- | --------- | ------ | ------ | ------------------------------------------------------------------------------------------- |
-| Add CLI-layer tests (exit codes, flag wiring, output lines)                  | 🔴 `TODO` | Med    | 1-2h   | `internal/cli` has no test files; exit codes 0/1/2 are untested (`internal/cli/root.go:16`) |
 | Cover the BuildFlow provider with a test (Detect check-mode, Repair dry-run) | 🔴 `TODO` | Med    | 1h     | `pkg/provider` coverage is 0% (`go test -cover ./pkg/...`)                                  |
+| Pin a repo-owned `.golangci.yml` so lint results do not depend on machine config | 🔴 `TODO` | Med    | 30min  | No `.golangci.yml` exists; `internal/cli` import order drifted past gofmt (fixed by hand)  |
 
 ---
 

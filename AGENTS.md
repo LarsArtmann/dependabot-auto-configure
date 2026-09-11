@@ -11,10 +11,14 @@ Sibling to `golangci-lint-auto-configure` and `oxlint-auto-configure`.
 ## Layout
 
 - `cmd/dependabot-auto-configure` — binary entry point
-- `internal/cli` — cobra/fang command wiring, exit codes 0/1/2
+- `internal/cli` — cobra/fang command wiring, exit codes 0/1/2, flags:
+  `--root`, `--config-path`, `--check`, `--dry-run`, `--json`,
+  `--enable-security-fixes`
 - `pkg/detect` — repository shape detection (read-only)
 - `pkg/dependabot` — typed config model: Generate, Reconcile, Diff, Encode
-- `pkg/configure` — orchestrator shared by CLI and provider (`Run`)
+- `pkg/configure` — orchestrator shared by CLI and provider (`Run`);
+  `github.go` is the opt-in GitHub API adapter behind
+  `--enable-security-fixes` (reads `GITHUB_TOKEN`/`GH_TOKEN`)
 - `pkg/provider` — BuildFlow `toolsdk.Spec` registration
 
 ## Hard design rules
@@ -28,9 +32,13 @@ Sibling to `golangci-lint-auto-configure` and `oxlint-auto-configure`.
   customizations (labels, registries, custom groups). This is tested in
   `pkg/configure/configure_test.go`.
 - **Semantic idempotence, not byte idempotence.** A hand-written config that
-  parses to the same `Config` is a no-op (`dependabot.Equal`); quoting or
-  indentation differences never trigger rewrites. Byte comparison is only the
-  secondary fast path.
+  parses to the same `Config` is a no-op (`dependabot.Equal` on the reconcile
+  result); quoting or indentation differences never trigger rewrites. Byte
+  comparison is only the secondary fast path.
+- **Invalid entries are suggest-only too.** `Config.Validate` gates repair:
+  an existing entry missing `package-ecosystem` or `directory` gets a
+  `dependabot-entry-invalid` finding and the file is never rewritten.
+  `Diff` owns the issue vocabulary; findings always flow through it.
 - **Skip directories with a `testdata` / `vendor` / `node_modules` / `.git`
   segment** during detection (see `pkg/detect/detect.go`).
 - **Module cap = 20** (`dependabot.MaxModuleEntries`). Beyond that, generate
