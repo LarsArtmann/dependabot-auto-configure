@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Entry `labels` and schedule `day`/`time`/`timezone` are now modeled
+  customizations: decoded, preserved verbatim by repair, never generated,
+  and invisible to detection — a config carrying them is no longer
+  suggest-only, so repair converges on repos that label PRs or pin a
+  schedule day (found dogfooding on BuildFlow's own config)
+- Unknown schedule keys (outside `interval`/`day`/`time`/`timezone`) are
+  audited unsafe — previously they were silently dropped by a rewrite
+
 ### Fixed
 
 - Repair now honors `Config.Validate`: an existing entry missing

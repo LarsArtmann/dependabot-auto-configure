@@ -30,8 +30,14 @@ func TestDecodeCanonicalConfig(t *testing.T) {
 		},
 		{
 			name:        "unknown entry field is audited unsafe",
-			yaml:        "version: 2\nupdates:\n  - package-ecosystem: npm\n    directory: /\n    labels:\n      - dependencies\n",
+			yaml:        "version: 2\nupdates:\n  - package-ecosystem: npm\n    directory: /\n    assignees:\n      - someone\n",
 			wantUnsafe:  true,
+			wantUpdates: 1,
+		},
+		{
+			name:        "labels and schedule day are modeled customizations, safe",
+			yaml:        "version: 2\nupdates:\n  - package-ecosystem: npm\n    directory: /\n    schedule:\n      interval: weekly\n      day: monday\n    labels:\n      - dependencies\n",
+			wantUnsafe:  false,
 			wantUpdates: 1,
 		},
 		{

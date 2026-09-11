@@ -48,17 +48,17 @@
 | Check mode (`--check`)          | 🟢 `FULLY_FUNCTIONAL` | Never writes; exits 1 when changes are pending                                 |
 | Dry-run mode (`--dry-run`)      | 🟢 `FULLY_FUNCTIONAL` | Holds the write back; exits 0                                                  |
 | Atomic writes                   | 🟢 `FULLY_FUNCTIONAL` | Via `go-atomic-write` (`planOrWrite` in `pkg/configure/configure.go`)          |
-| Invalid-entry protection        | 🟢 `FULLY_FUNCTIONAL` | Entries missing `package-ecosystem`/`directory` → suggest-only finding        |
+| Invalid-entry protection        | 🟢 `FULLY_FUNCTIONAL` | Entries missing `package-ecosystem`/`directory` → suggest-only finding         |
 
 ## Interfaces
 
-| Feature                  | Status                    | Notes                                                                                                                                                                       |
-| ------------------------ | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CLI                      | 🟢 `FULLY_FUNCTIONAL`     | `--root`, `--config-path`, `--check`, `--dry-run`, `--json`, `--enable-security-fixes`, version; fang-powered help. Exit codes 0/1/2 (`internal/cli/root.go:16`) |
-| JSON output (`--json`)    | 🟢 `FULLY_FUNCTIONAL`     | Stable wire shape (`resultJSON` in `pkg/configure/configure.go`); field names are a contract for the sweep script |
-| Security-fixes enablement | 🟢 `FULLY_FUNCTIONAL`     | `--enable-security-fixes` PUTs `automated-security-fixes` via the GitHub API; bounded 15s client; outcome reported in text and JSON (`pkg/configure/github.go`) |
-| BuildFlow provider       | 🟡 `PARTIALLY_FUNCTIONAL` | `toolsdk.Spec` registered in `pkg/provider/provider.go`; Detect runs check-mode, Repair honors dry-run. Not exercised by any in-repo test; consumed externally by BuildFlow |
-| Findings SDK integration | 🟢 `FULLY_FUNCTIONAL`     | Issues converted via `linter-autoconfigure-sdk.FindingsFromIssues` so suggestions arrive as fixable findings                                                                |
+| Feature                   | Status                    | Notes                                                                                                                                                                       |
+| ------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CLI                       | 🟢 `FULLY_FUNCTIONAL`     | `--root`, `--config-path`, `--check`, `--dry-run`, `--json`, `--enable-security-fixes`, version; fang-powered help. Exit codes 0/1/2 (`internal/cli/root.go:16`)            |
+| JSON output (`--json`)    | 🟢 `FULLY_FUNCTIONAL`     | Stable wire shape (`resultJSON` in `pkg/configure/configure.go`); field names are a contract for the sweep script                                                           |
+| Security-fixes enablement | 🟢 `FULLY_FUNCTIONAL`     | `--enable-security-fixes` PUTs `automated-security-fixes` via the GitHub API; bounded 15s client; outcome reported in text and JSON (`pkg/configure/github.go`)             |
+| BuildFlow provider        | 🟡 `PARTIALLY_FUNCTIONAL` | `toolsdk.Spec` registered in `pkg/provider/provider.go`; Detect runs check-mode, Repair honors dry-run. Not exercised by any in-repo test; consumed externally by BuildFlow |
+| Findings SDK integration  | 🟢 `FULLY_FUNCTIONAL`     | Issues converted via `linter-autoconfigure-sdk.FindingsFromIssues` so suggestions arrive as fixable findings                                                                |
 
 ---
 

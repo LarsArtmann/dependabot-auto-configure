@@ -29,8 +29,13 @@ Sibling to `golangci-lint-auto-configure` and `oxlint-auto-configure`.
 - **Unsafe configs are suggest-only.** When `Decode` reports unknown top-level
   keys, unknown entry fields, or unknown group names (`DecodeResult.Unsafe`),
   repair MUST NOT write. A rewrite would silently drop the user's
-  customizations (labels, registries, custom groups). This is tested in
-  `pkg/configure/configure_test.go`.
+  customizations (registries, custom groups). This is tested in
+  `pkg/configure/configure_test.go`. Modeled customizations — entry `labels`
+  and schedule `day`/`time`/`timezone` — are the exception: since v0.2.0 they
+  are decoded, preserved verbatim by Reconcile, never generated, and invisible
+  to Diff, so a config carrying them decodes Safe and repair converges
+  (`pkg/dependabot/customization_test.go`). Unknown schedule keys are audited
+  unsafe for the same reason: a rewrite would drop them.
 - **Semantic idempotence, not byte idempotence.** A hand-written config that
   parses to the same `Config` is a no-op (`dependabot.Equal` on the reconcile
   result); quoting or indentation differences never trigger rewrites. Byte
