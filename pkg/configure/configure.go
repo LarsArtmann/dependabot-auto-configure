@@ -139,7 +139,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 	data, readErr := os.ReadFile(absConfig)
 	switch {
 	case errors.Is(readErr, fs.ErrNotExist):
-		issues := dependabot.Diff(nil, dependabot.DecodeResult{}, desired, capInfo, file)
+		issues := dependabot.Diff(nil, dependabot.DecodeResult{}, desired, shape, capInfo, file)
 		result.Findings, err = autoconfigure.FindingsFromIssues(ToolName, issues)
 		if err != nil {
 			return result, fmt.Errorf("convert findings: %w", err)
@@ -185,7 +185,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 
 	existing := dec.Config
 
-	issues := dependabot.Diff(&existing, dec, desired, capInfo, file)
+	issues := dependabot.Diff(&existing, dec, desired, shape, capInfo, file)
 	result.Findings, err = autoconfigure.FindingsFromIssues(ToolName, issues)
 	if err != nil {
 		return result, fmt.Errorf("convert findings: %w", err)

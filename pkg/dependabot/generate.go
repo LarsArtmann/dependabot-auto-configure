@@ -169,11 +169,43 @@ func Reconcile(existing, desired Config) Config {
 	return out
 }
 
+// detectedDirs maps the canonical Dependabot directory of every detected
+// Go module. Orphan detection compares existing entries against detection,
+// NOT against the (possibly capped) desired config: when the module cap
+// truncates generation to root-only, entries for genuinely detected modules
+// are user-managed, not orphans.
+func detectedDirs(shape RepoShape) map[string]bool {
+	dirs := make(map[string]bool, len(shape.GoModuleDirs))
+	for _, dir := range shape.GoModuleDirs {
+		dirs[canonicalDir(dir)] = true
+	}
+	return dirs
+}
+
+// entryDetected reports whether an existing updates entry corresponds to
+// something detection found. Ecosystems RepoShape does not model (pip,
+// cargo, ...) are never "detected" — their entries are user-managed and
+// audited by the orphan rule instead of silently trusted.
+func entryDetected(u Update, dirs map[string]bool, shape RepoShape) bool {
+	switch u.PackageEcosystem {
+	case EcosystemGoModules:
+		return dirs[u.Directory]
+	case EcosystemGitHubActions:
+		return shape.HasGitHubActions
+	case EcosystemNPM:
+		return shape.HasNPM
+	default:
+		return false
+	}
+}
+
 // Diff compares an existing configuration (nil = file missing) against the
 // desired one and returns the issues a user or BuildFlow should see. Issues
 // carry suggestions so they arrive as fixable findings, not dead ends. file
-// is the config path findings should point at.
-func Diff(existing *Config, dec DecodeResult, desired Config, capInfo CapInfo, file finding.FilePath) []autoconfigure.ConfigIssue {
+// is the config path findings should point at. shape is the DETECTED
+// repository shape — orphan detection uses it rather than desired, so the
+// module cap never mislabels a real module entry as an orphan.
+func Diff(existing *Config, dec DecodeResult, desired Config, shape RepoShape, capInfo CapInfo, file finding.FilePath) []autoconfigure.ConfigIssue {
 	issues := make([]autoconfigure.ConfigIssue, 0, 4)
 
 	if existing == nil {
@@ -260,14 +292,16 @@ func Diff(existing *Config, dec DecodeResult, desired Config, capInfo CapInfo, f
 	}
 
 	for _, got := range existing.Updates {
-		if desired.Find(got.PackageEcosystem, got.Directory) < 0 {
-			issues = append(issues, ConfigIssue{
-				Rule:     "dependabot-entry-orphan",
-				Message:  fmt.Sprintf("entry for ecosystem %q in directory %q matches nothing detected in the repository (kept as-is)", got.PackageEcosystem, got.Directory),
-				Severity: finding.SeverityInfo,
-				File:     file,
-			})
+		if entryDetected(got, detectedDirs(shape), shape) {
+			continue
 		}
+
+		issues = append(issues, ConfigIssue{
+			Rule:     "dependabot-entry-orphan",
+			Message:  fmt.Sprintf("entry for ecosystem %q in directory %q matches nothing detected in the repository (kept as-is)", got.PackageEcosystem, got.Directory),
+			Severity: finding.SeverityInfo,
+			File:     file,
+		})
 	}
 
 	if capInfo.Capped {

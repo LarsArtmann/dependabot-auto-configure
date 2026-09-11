@@ -153,7 +153,7 @@ func TestDiffSilentOnCustomizations(t *testing.T) {
 		t.Fatalf("Decode() error = %v", err)
 	}
 
-	issues := dependabot.Diff(&existing, dec, desired, dependabot.CapInfo{}, ".github/dependabot.yml")
+	issues := dependabot.Diff(&existing, dec, desired, dependabot.RepoShape{GoModuleDirs: []string{""}}, dependabot.CapInfo{}, ".github/dependabot.yml")
 	if len(issues) != 0 {
 		t.Errorf("Diff() = %v, want no issues for canonical config carrying customizations", issues)
 	}

@@ -1,6 +1,7 @@
 package dependabot_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -125,7 +126,8 @@ func mustConfig(t *testing.T, yaml string) dependabot.Config {
 }
 
 func TestDiff(t *testing.T) {
-	desired, _ := dependabot.Generate(dependabot.RepoShape{GoModuleDirs: []string{""}, HasGitHubActions: true})
+	shape := dependabot.RepoShape{GoModuleDirs: []string{""}, HasGitHubActions: true}
+	desired, _ := dependabot.Generate(shape)
 
 	tests := []struct {
 		name      string
@@ -246,7 +248,7 @@ func TestDiff(t *testing.T) {
 				dec = decoded
 			}
 
-			issues := dependabot.Diff(existing, dec, desired, dependabot.CapInfo{}, ".github/dependabot.yml")
+			issues := dependabot.Diff(existing, dec, desired, shape, dependabot.CapInfo{}, ".github/dependabot.yml")
 
 			var gotRules []string
 			for _, issue := range issues {
@@ -267,9 +269,74 @@ func TestDiff(t *testing.T) {
 }
 
 func TestDiffMissingConfigButEmptyShape(t *testing.T) {
-	issues := dependabot.Diff(nil, dependabot.DecodeResult{}, dependabot.Config{}, dependabot.CapInfo{}, ".github/dependabot.yml")
+	issues := dependabot.Diff(nil, dependabot.DecodeResult{}, dependabot.Config{}, dependabot.RepoShape{}, dependabot.CapInfo{}, ".github/dependabot.yml")
 	if len(issues) != 0 {
 		t.Errorf("Diff() on empty shape = %v issues, want 0", len(issues))
+	}
+}
+
+// TestDiffCappedModuleEntryIsNotOrphan guards the orphan-vs-cap fix: with
+// more than MaxModuleEntries Go modules, Generate truncates desired to
+// root-only, but an existing entry for a genuinely DETECTED module is
+// user-managed, not an orphan. Flagging it would contradict the cap
+// finding's own advice to "configure the remaining module directories
+// manually" (observed dogfooding on BuildFlow: 32 modules, every module
+// entry mislabeled orphan).
+func TestDiffCappedModuleEntryIsNotOrphan(t *testing.T) {
+	dirs := make([]string, dependabot.MaxModuleEntries+1)
+	dirs[0] = ""
+	for i := 1; i < len(dirs); i++ {
+		dirs[i] = fmt.Sprintf("mod%d", i)
+	}
+
+	shape := dependabot.RepoShape{GoModuleDirs: dirs}
+	desired, capInfo := dependabot.Generate(shape)
+	if !capInfo.Capped {
+		t.Fatal("fixture not capped, want Capped=true")
+	}
+
+	cappedYAML := strings.Join([]string{
+		"version: 2",
+		"updates:",
+		"  - package-ecosystem: gomod",
+		"    directory: /",
+		"    schedule:",
+		"      interval: weekly",
+		"    open-pull-requests-limit: 5",
+		"    groups:",
+		"      minor-and-patch:",
+		"        update-types:",
+		"          - minor",
+		"          - patch",
+		"  - package-ecosystem: gomod",
+		"    directory: /mod1",
+		"    schedule:",
+		"      interval: weekly",
+		"  - package-ecosystem: gomod",
+		"    directory: /gone",
+		"    schedule:",
+		"      interval: weekly",
+		"",
+	}, "\n")
+
+	existing := mustConfig(t, cappedYAML)
+
+	decoded, err := dependabot.Decode([]byte(cappedYAML))
+	if err != nil {
+		t.Fatalf("Decode() error = %v", err)
+	}
+
+	issues := dependabot.Diff(&existing, decoded, desired, shape, capInfo, ".github/dependabot.yml")
+
+	var orphans []string
+	for _, issue := range issues {
+		if string(issue.Rule) == "dependabot-entry-orphan" {
+			orphans = append(orphans, issue.Message)
+		}
+	}
+
+	if len(orphans) != 1 || !strings.Contains(orphans[0], "/gone") {
+		t.Errorf("Diff() orphans = %v, want exactly /gone (detected /mod1 must NOT be orphan under the cap)", orphans)
 	}
 }
 
