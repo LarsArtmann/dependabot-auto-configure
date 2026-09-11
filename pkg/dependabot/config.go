@@ -58,9 +58,14 @@ const (
 	UpdateTypePatch UpdateType = "patch"
 )
 
-// Schedule controls when Dependabot runs an updates entry.
+// Schedule controls when Dependabot runs an updates entry. Day, Time, and
+// Timezone are user customizations: decoded, preserved verbatim by Reconcile,
+// and never generated — the canonical form schedules a plain weekly interval.
 type Schedule struct {
 	Interval Interval `yaml:"interval"`
+	Day      string   `yaml:"day,omitempty"`
+	Time     string   `yaml:"time,omitempty"`
+	Timezone string   `yaml:"timezone,omitempty"`
 }
 
 // TypeGroup groups updates by semver update type.
@@ -112,6 +117,10 @@ type Update struct {
 	Schedule              *Schedule `yaml:"schedule,omitempty"`
 	OpenPullRequestsLimit int       `yaml:"open-pull-requests-limit,omitempty"`
 	Groups                *Groups   `yaml:"groups,omitempty"`
+
+	// Labels are PR labels carried on the entry. User customizations:
+	// preserved by Reconcile, never generated, invisible to Diff.
+	Labels []string `yaml:"labels,omitempty"`
 }
 
 // Config is the whole .github/dependabot.yml document.
@@ -132,7 +141,8 @@ type DecodeResult struct {
 	UnknownTopLevel []string
 
 	// UnknownEntryFields reports entries carrying fields outside the known
-	// schema (labels, assignees, commit-message, ...).
+	// schema (assignees, commit-message, ...) or schedule blocks with keys
+	// outside {interval, day, time, timezone}.
 	UnknownEntryFields bool
 
 	// UnknownGroupNames lists group names other than the canonical two.
@@ -149,6 +159,18 @@ var knownEntryFields = map[string]bool{
 	"schedule":                 true,
 	"open-pull-requests-limit": true,
 	"groups":                   true,
+	"labels":                   true,
+}
+
+// knownScheduleFields is every schedule-block key this tool understands.
+// Unknown schedule keys are audited unsafe — modeling only the four standard
+// keys keeps a rewrite from silently dropping a schedule field the schema
+// does not carry.
+var knownScheduleFields = map[string]bool{
+	"interval": true,
+	"day":      true,
+	"time":     true,
+	"timezone": true,
 }
 
 // knownTopLevelFields is every top-level field this tool understands.
@@ -194,6 +216,14 @@ func Decode(data []byte) (DecodeResult, error) {
 		for key := range entryMap {
 			if !knownEntryFields[key] {
 				res.UnknownEntryFields = true
+			}
+		}
+
+		if schedule, ok := entryMap["schedule"].(map[string]any); ok {
+			for key := range schedule {
+				if !knownScheduleFields[key] {
+					res.UnknownEntryFields = true
+				}
 			}
 		}
 

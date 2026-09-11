@@ -79,34 +79,34 @@ Process lessons from this session (including my own misses):
 
 | #  | Task                                                                                                                                                      | Impact   | Effort | Category      |
 | -- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------ | ------------- |
-| 1  | Resolve the public-dependency strategy: extract `buildflow/tool-sdk` into a public module, make BuildFlow public, or vendor it — then fix the flake input | Critical | L      | Feature       |
+| ~~1~~  | ~~Resolve the public-dependency strategy: extract `buildflow/tool-sdk` into a public module, make BuildFlow public, or vendor it — then fix the flake input~~ done at `f80557d` | ~~Critical~~ | ~~L~~ | ~~Feature~~ |
 | 2  | Add CI workflow: `nix flake check`, `GOEXPERIMENT=jsonv2 go test ./...`, golangci-lint, dprint check                                                      | Critical | M      | Quality       |
 | 3  | Add `pkg/provider` tests: Detect returns check-mode findings, Repair honors dry-run context                                                               | High     | S      | Quality       |
-| 4  | Add CLI tests: exit codes 0/1/2, flag wiring, output lines (`internal/cli`)                                                                               | High     | S      | Quality       |
-| 5  | Drop local `replace` in go.mod:49, pin SDK to proxy version                                                                                               | High     | S      | Cleanup       |
+| ~~4~~  | ~~Add CLI tests: exit codes 0/1/2, flag wiring, output lines (`internal/cli`)~~ done — shipped in v0.1.0 (internal/cli/root_test.go + export_test.go) | ~~High~~ | ~~S~~ | ~~Quality~~ |
+| ~~5~~  | ~~Drop local `replace` in go.mod:49, pin SDK to proxy version~~ done — shipped in v0.1.0 - go.mod at the tag has no replace directive | ~~High~~ | ~~S~~ | ~~Cleanup~~ |
 | 6  | Tag `v0.1.0`, create GitHub Release, date the CHANGELOG entry                                                                                             | High     | S      | Release       |
-| 7  | Dogfood: generate `.github/dependabot.yml` for this repo (see g3)                                                                                         | Medium   | S      | Feature       |
+| ~~7~~  | ~~Dogfood: generate `.github/dependabot.yml` for this repo (see g3)~~ done — shipped in v0.1.0 (.github/dependabot.yml dogfood) | ~~Medium~~ | ~~S~~ | ~~Feature~~ |
 | 8  | Write `docs/adr/0001-suggest-only-unsafe-configs.md` (the core safety decision)                                                                           | Medium   | S      | Documentation |
-| 9  | Create `docs/DOMAIN_LANGUAGE.md` (shape, entry, orphan, reconcile, unsafe, canonical)                                                                     | Medium   | S      | Documentation |
+| ~~9~~  | ~~Create `docs/DOMAIN_LANGUAGE.md` (shape, entry, orphan, reconcile, unsafe, canonical)~~ **Won't implement — small CLI; vocabulary lives in pkg/dependabot doc comments (decision in section b).** | ~~Medium~~ | ~~S~~ | ~~Documentation~~ |
 | 10 | Pin a repo-owned `.golangci.yml` so lint results don't depend on machine config                                                                           | Medium   | S      | Quality       |
 | 11 | Add README example: show a generated `dependabot.yml` block                                                                                               | Medium   | S      | Documentation |
 | 12 | Add `.github/ISSUE_TEMPLATE` + PR template                                                                                                                | Medium   | S      | Documentation |
 | 13 | Add README CI badge (after task 2)                                                                                                                        | Low      | S      | Documentation |
-| 14 | Verify nix `apps`/`packages` outputs so `nix run .` and `nix run github:` both work; document                                                             | Medium   | S      | Feature       |
+| ~~14~~ | ~~Verify nix `apps`/`packages` outputs so `nix run .` and `nix run github:` both work; document~~ done — nix build/run verified; README Install documents the commands | ~~Medium~~ | ~~S~~ | ~~Feature~~ |
 | 15 | Make flake check pass for `--all-systems` (aarch64-darwin/linux, x86_64-darwin currently omitted)                                                         | Medium   | M      | Quality       |
 | 16 | Windows robustness: test `detect.Shape` path handling with Windows separators                                                                             | Medium   | S      | Quality       |
 | 17 | Fuzz `dependabot.Decode` with arbitrary YAML (it's the parse boundary)                                                                                    | Medium   | M      | Quality       |
 | 18 | Property test: `Reconcile` is idempotent (`Reconcile(r, d) == r`)                                                                                         | Medium   | S      | Quality       |
 | 19 | Integration test: atomic-write failure path (read-only dir) in `planOrWrite`                                                                              | Medium   | S      | Quality       |
-| 20 | Table test: Diff-level schedule preservation (daily/monthly intervals survive)                                                                            | Medium   | S      | Quality       |
-| 21 | Add `--json` output flag for machine-readable findings                                                                                                    | Medium   | M      | Feature       |
+| ~~20~~ | ~~Table test: Diff-level schedule preservation (daily/monthly intervals survive)~~ done — covered by TestReconcile (monthly preserved); Diff never flags non-weekly intervals | ~~Medium~~ | ~~S~~ | ~~Quality~~ |
+| ~~21~~ | ~~Add `--json` output flag for machine-readable findings~~ done — shipped in v0.1.0 | ~~Medium~~ | ~~M~~ | ~~Feature~~ |
 | 22 | Add `--fail-on <severity>` flag for CI policy control                                                                                                     | Medium   | M      | Feature       |
 | 23 | Decide exit-code semantics for unsafe configs (currently 0; suggest-only might warrant a distinct code)                                                   | Medium   | S      | Feature       |
-| 24 | Shell completions: verify fang/cobra completion surface, document installation                                                                            | Low      | S      | Feature       |
+| ~~24~~ | ~~Shell completions: verify fang/cobra completion surface, document installation~~ done — fang ships the completion subcommand (verified); README documents it | ~~Low~~ | ~~S~~ | ~~Feature~~ |
 | 25 | Man page: go.mod already pulls mango/marocchino-era deps — expose a `man` command or document `--help` as canonical                                       | Low      | S      | Feature       |
 | 26 | GitHub repo metadata: description/topics (`go`, `dependabot`, `devtools`, `nix`), website link                                                            | Low      | S      | Documentation |
 | 27 | Social preview image for the repo                                                                                                                         | Low      | S      | Documentation |
-| 28 | LICENSE: add a usage-grant preamble clarifying what "public + proprietary" means for visitors (see g2)                                                    | Medium   | S      | Documentation |
+| ~~28~~ | ~~LICENSE: add a usage-grant preamble clarifying what "public + proprietary" means for visitors (see g2)~~ **Won't implement — license switched to MIT this session - preamble moot.** | ~~Medium~~ | ~~S~~ | ~~Documentation~~ |
 | 29 | Tag the SDK `v1.0.0` (linter-autoconfigure-sdk) so consumers pin stable instead of pseudo-versions                                                        | Medium   | S      | Release       |
 | 30 | Audit sibling dep versions (go-finding, go-atomic-write, go-error-family) for stale pins in flake.nix                                                     | Low      | S      | Cleanup       |
 | 31 | npm workspace member detection (`workspaces` in root package.json)                                                                                        | Medium   | M      | Feature       |
@@ -115,20 +115,20 @@ Process lessons from this session (including my own misses):
 | 34 | Detect Docker (Dockerfile / compose) ecosystem                                                                                                            | Low      | M      | Feature       |
 | 35 | Detect Terraform ecosystem                                                                                                                                | Low      | M      | Feature       |
 | 36 | Smarter module-cap behavior: tiered/summarized entries instead of root-only beyond 20                                                                     | Low      | L      | Feature       |
-| 37 | `go install ./cmd/dependabot-auto-configure@latest` support once deps are public (depends on #1)                                                          | High     | M      | Feature       |
+| ~~37~~ | ~~`go install ./cmd/dependabot-auto-configure@latest` support once deps are public (depends on #1)~~ done — all dep repos public; proxy.golang.org serves v0.1.0; documented in README | ~~High~~ | ~~M~~ | ~~Feature~~ |
 | 38 | Release workflow (nix-based or GoReleaser) producing binaries on tag                                                                                      | Medium   | M      | Release       |
 | 39 | GitHub Action wrapper (`uses: larsartmann/dependabot-auto-configure@v1`)                                                                                  | Medium   | M      | Feature       |
 | 40 | Homebrew tap formula                                                                                                                                      | Low      | M      | Feature       |
 | 41 | nixpkgs upstream submission                                                                                                                               | Low      | L      | Feature       |
 | 42 | Coverage reporting in CI (codecov or job summary) with the 80% target enforced                                                                            | Medium   | S      | Quality       |
-| 43 | Add `--version` smoke test (ldflags-injected version string renders)                                                                                      | Low      | S      | Quality       |
-| 44 | Symlink-loop safety check for `detect.Shape` walk                                                                                                         | Low      | S      | Quality       |
+| ~~43~~ | ~~Add `--version` smoke test (ldflags-injected version string renders)~~ done — verified - --version prints the ldflags-injected version | ~~Low~~ | ~~S~~ | ~~Quality~~ |
+| ~~44~~ | ~~Symlink-loop safety check for `detect.Shape` walk~~ done — filepath.WalkDir never follows symlinks - no code needed | ~~Low~~ | ~~S~~ | ~~Quality~~ |
 | 45 | Error-message audit against the user-error standard (what/why/fix) for all finding suggestions                                                            | Low      | S      | Quality       |
 | 46 | Consider `--root` defaulting to git toplevel instead of CWD                                                                                               | Low      | S      | Feature       |
-| 47 | Rename default branch `master` → `main` while repo is fresh (see g3)                                                                                      | Low      | S      | Cleanup       |
-| 48 | Benchmark/soak test Generate with many-module shapes (cap path correctness at boundary 20/21)                                                             | Low      | S      | Quality       |
+| ~~47~~ | ~~Rename default branch `master` → `main` while repo is fresh (see g3)~~ **Won't implement — user decided to keep master (decision g3 this session).** | ~~Low~~ | ~~S~~ | ~~Cleanup~~ |
+| ~~48~~ | ~~Benchmark/soak test Generate with many-module shapes (cap path correctness at boundary 20/21)~~ done — TestGenerateCapsModuleCount covers the 20/21 boundary | ~~Low~~ | ~~S~~ | ~~Quality~~ |
 | 49 | Add SECURITY.md (private disclosure contact)                                                                                                              | Low      | S      | Documentation |
-| 50 | Teach the auto-commit daemon better messages or session-aware batching (process tooling, cross-repo)                                                      | Medium   | L      | Cleanup       |
+| ~~50~~ | ~~Teach the auto-commit daemon better messages or session-aware batching (process tooling, cross-repo)~~ **Won't implement — external process tooling - not this repo work.** | ~~Medium~~ | ~~L~~ | ~~Cleanup~~ |
 
 **HARVEST note:** items 2–7, 10–12, 14 are TODO_LIST-grade and should be merged into `TODO_LIST.md` on the next docs-health HARVEST pass; 31–41 belong in ROADMAP themes. Not yet harvested — waiting for instructions.
 

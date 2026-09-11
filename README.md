@@ -63,15 +63,17 @@ import _ "github.com/larsartmann/dependabot-auto-configure/pkg/provider"
 
 ## Install
 
-Via Nix:
+Via Nix (all flake inputs are public):
 
 ```sh
 nix run github:LarsArtmann/dependabot-auto-configure
 ```
 
-> Note: the flake currently depends on the private `BuildFlow` repository
-> over SSH, so the command above only works with access to it. See
-> `TODO_LIST.md` for the plan to ship a fully public install path.
+Via Go (every dependency is on the public module proxy):
+
+```sh
+go install github.com/larsartmann/dependabot-auto-configure@latest
+```
 
 Or build directly (Go 1.26+; the source uses `encoding/json/v2` via the
 auto-configure SDK):
@@ -79,6 +81,9 @@ auto-configure SDK):
 ```sh
 go build ./cmd/dependabot-auto-configure
 ```
+
+Shell completions ship via the standard `completion` subcommand, e.g.
+`dependabot-auto-configure completion bash`.
 
 ## Safety contract
 

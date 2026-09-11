@@ -67,10 +67,8 @@ from markdown formatting.
   the SDK locally). This repo is the SDK's
   first consumer — if `FindingFromIssue` semantics need to change, change the
   SDK, not this call site.
-- The repo is public on GitHub, but the flake fetches its BuildFlow input
-  over SSH from that private repo, so `nix run github:...` only works for
-  people with access. A fully public install path is tracked in
-  `TODO_LIST.md`.
+- The repo and every dependency (flake inputs and Go modules) are public,
+  so `nix run github:...` and `go install ...@latest` work for anyone.
 - BuildFlow integration is the toolsdk contract: `pkg/provider` registers a
   `toolsdk.Spec`; BuildFlow blank-imports it in
   `tools/providers/sdk_imports.go`. Detect runs check-mode; Repair honors

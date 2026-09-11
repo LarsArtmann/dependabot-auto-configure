@@ -30,16 +30,22 @@ Raw ideas:
 - npm workspace member detection (`workspaces` in package.json)
 - Detect ecosystems from directory contents rather than single files
 - Smarter cap behavior: summarize or tier entries instead of root-only
+- `--root` defaulting to the git toplevel instead of the CWD
 
 ### 3. Frictionless distribution
 
 The tool should be installable by strangers with zero private dependencies.
+Both `go install ...@latest` and `nix run github:...` already work (all
+dependency repos are public); what remains is breadth of channels.
 
 Raw ideas:
 
-- `go install` support once the dependency tree is fully public
 - Homebrew / nixpkgs packaging
 - GitHub Action wrapper (`uses: larsartmann/dependabot-auto-configure@v1`)
+- Release workflow producing binaries on tag (nix-based or GoReleaser)
+- Man page or a documented `--help`-as-canonical stance (fang already
+  ships a `completion` subcommand for shells)
+- Social preview image for the repo
 
 ## Non-goals
 
