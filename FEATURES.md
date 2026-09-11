@@ -38,17 +38,18 @@
 
 ## Repair and safety contract
 
-| Feature                         | Status                | Notes                                                                          |
-| ------------------------------- | --------------------- | ------------------------------------------------------------------------------ |
-| Fill-missing-only repair        | 🟢 `FULLY_FUNCTIONAL` | Monthly schedules and custom choices preserved; only absent fields filled      |
-| Orphan entry preservation       | 🟢 `FULLY_FUNCTIONAL` | Entries for undetected ecosystems kept as-is, reported as info findings        |
-| Unsafe-config suggest-only mode | 🟢 `FULLY_FUNCTIONAL` | Unknown top-level keys, entry fields, or group names → findings, never a write |
-| Unparseable config suggest-only | 🟢 `FULLY_FUNCTIONAL` | YAML the tool cannot decode → findings, never a write                          |
-| Semantic idempotence            | 🟢 `FULLY_FUNCTIONAL` | Semantically canonical configs are no-ops regardless of formatting             |
-| Check mode (`--check`)          | 🟢 `FULLY_FUNCTIONAL` | Never writes; exits 1 when changes are pending                                 |
-| Dry-run mode (`--dry-run`)      | 🟢 `FULLY_FUNCTIONAL` | Holds the write back; exits 0                                                  |
-| Atomic writes                   | 🟢 `FULLY_FUNCTIONAL` | Via `go-atomic-write` (`planOrWrite` in `pkg/configure/configure.go`)          |
-| Invalid-entry protection        | 🟢 `FULLY_FUNCTIONAL` | Entries missing `package-ecosystem`/`directory` → suggest-only finding         |
+| Feature                         | Status                | Notes                                                                                                                                                                       |
+| ------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fill-missing-only repair        | 🟢 `FULLY_FUNCTIONAL` | Monthly schedules and custom choices preserved; only absent fields filled                                                                                                   |
+| Modeled customizations          | 🟢 `FULLY_FUNCTIONAL` | Entry `labels` and schedule `day`/`time`/`timezone` decoded and preserved verbatim; repair converges instead of going suggest-only (`pkg/dependabot/customization_test.go`) |
+| Orphan entry preservation       | 🟢 `FULLY_FUNCTIONAL` | Entries for undetected ecosystems kept as-is, reported as info findings; judged against the detected shape, not the capped config                                           |
+| Unsafe-config suggest-only mode | 🟢 `FULLY_FUNCTIONAL` | Unknown top-level keys, entry fields, or group names → findings, never a write                                                                                              |
+| Unparseable config suggest-only | 🟢 `FULLY_FUNCTIONAL` | YAML the tool cannot decode → findings, never a write                                                                                                                       |
+| Semantic idempotence            | 🟢 `FULLY_FUNCTIONAL` | Semantically canonical configs are no-ops regardless of formatting                                                                                                          |
+| Check mode (`--check`)          | 🟢 `FULLY_FUNCTIONAL` | Never writes; exits 1 when changes are pending                                                                                                                              |
+| Dry-run mode (`--dry-run`)      | 🟢 `FULLY_FUNCTIONAL` | Holds the write back; exits 0                                                                                                                                               |
+| Atomic writes                   | 🟢 `FULLY_FUNCTIONAL` | Via `go-atomic-write` (`planOrWrite` in `pkg/configure/configure.go`)                                                                                                       |
+| Invalid-entry protection        | 🟢 `FULLY_FUNCTIONAL` | Entries missing `package-ecosystem`/`directory` → suggest-only finding                                                                                                      |
 
 ## Interfaces
 

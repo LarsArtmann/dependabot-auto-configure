@@ -4,8 +4,6 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
-
 ## [0.2.0] - 2026-09-11
 
 ### Added
@@ -25,9 +23,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   more than 20 Go modules, entries for genuinely detected module
   directories were mislabeled "matches nothing detected" while the cap
   finding simultaneously advised configuring them manually
-
-### Fixed
-
 - Repair now honors `Config.Validate`: an existing entry missing
   `package-ecosystem` or `directory` is reported
   (`dependabot-entry-invalid`) and left untouched instead of being

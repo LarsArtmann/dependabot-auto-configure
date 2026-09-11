@@ -51,9 +51,12 @@ Raw ideas:
 
 Things we are deliberately NOT pursuing and why:
 
-- **Modeling or rewriting unknown config constructs** (registries, labels,
-  custom groups): the suggest-only safety contract is the product. Silence
-  about user intent is the failure mode this tool exists to prevent.
+- **Modeling or rewriting unknown config constructs** (registries, custom
+  groups, further schedule keys): the suggest-only safety contract is the
+  product. Silence about user intent is the failure mode this tool exists
+  to prevent. Modeled customizations (`labels`, schedule
+  `day`/`time`/`timezone`) are the deliberate exception — each one is
+  decoded, preserved verbatim, and covered by round-trip tests.
 - **Creating commits or pull requests**: this tool writes (at most) one
   config file; lifecycle automation belongs to Dependabot itself.
 - **Network calls beyond the opt-in security-fixes flag**: file-level
