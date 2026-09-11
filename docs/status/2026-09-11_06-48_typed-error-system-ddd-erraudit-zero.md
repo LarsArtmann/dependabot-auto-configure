@@ -8,15 +8,15 @@
 
 ## 0. Session summary
 
-| Metric | Before | After |
-| --- | --- | --- |
-| erraudit violations (total) | 41 | **0** |
-| CRITICAL (context_loss) | 7 | 0 |
-| ERROR (ignored + stdlib_constructor) | 28 | 0 |
-| WARNING (generic_return) | 6 | 0 |
-| Typed domain error types | 0 | 13 |
-| stdlib error constructors in source | 15 | 0 |
-| blank-identifier error discards | 11 | 0 |
+| Metric                               | Before | After |
+| ------------------------------------ | ------ | ----- |
+| erraudit violations (total)          | 41     | **0** |
+| CRITICAL (context_loss)              | 7      | 0     |
+| ERROR (ignored + stdlib_constructor) | 28     | 0     |
+| WARNING (generic_return)             | 6      | 0     |
+| Typed domain error types             | 0      | 13    |
+| stdlib error constructors in source  | 15     | 0     |
+| blank-identifier error discards      | 11     | 0     |
 
 Verification gates all green: `go build`, `go vet`, `go test -race ./...`, `golangci-lint` (0 issues), `nix build`, `nix flake check`, `dprint check`.
 
@@ -48,7 +48,7 @@ Verification gates all green: `go build`, `go vet`, `go test -race ./...`, `gola
    Blocker: none. Effort: S (~1–2h for full table-driven sweep).
 2. **Public API migration for `ErrInvalidUpdate`.**
    Works: deleted in this repo; all in-repo callers migrated; build+tests green.
-   Remains: I verified only *this* repo's consumers. `pkg/dependabot` is a public module; any external repo matching `errors.Is(err, dependabot.ErrInvalidUpdate)` silently loses its match (the typed error is not `Is`-compatible with the old sentinel).
+   Remains: I verified only _this_ repo's consumers. `pkg/dependabot` is a public module; any external repo matching `errors.Is(err, dependabot.ErrInvalidUpdate)` silently loses its match (the typed error is not `Is`-compatible with the old sentinel).
    Blocker: cannot enumerate external consumers from here (see question g-3). Effort: S once answered.
 3. **Family-precedence verification at the provider wrap.**
    Works: provider wraps any `Run` failure as `Infrastructure` via `ef.WrapInfrastructuref`, cause chain intact.
@@ -100,58 +100,58 @@ Verification gates all green: `go build`, `go vet`, `go test -race ./...`, `gola
 
 Brainstorm ranked by impact — HARVEST input for `TODO_LIST.md`/`ROADMAP.md` (most items beyond the first ~15 are ROADMAP fuel, not commitments).
 
-| # | Task | Impact | Effort | Category |
-| --- | --- | --- | --- | --- |
-| 1 | Answer g-1: confirm the mid-session `Diff(shape)` change is complete & intended; document or test it accordingly | Critical | S | Bug |
-| 2 | Answer g-3, then resolve the `ErrInvalidUpdate` API break (migration shim or documented break) | Critical | S | Bug |
-| 3 | Table-driven tests for every type in `pkg/configure/errors.go` incl. `UnexpectedStatusError` 401/4xx → Rejection family | High | S | Quality |
-| 4 | Table-driven tests for `pkg/dependabot/errors.go` (both decode stages, encode, single-field-missing wording, `ErrorContext` maps) | High | S | Quality |
-| 5 | Write the Classify-precedence test: `ef.Classify(ef.WrapInfrastructuref(inner))` — pin which family wins and document it in AGENTS.md | High | S | Quality |
-| 6 | Run `go test -cover ./...`; close any gap below the 80% pkg/* target introduced by the new files | High | S | Quality |
-| 7 | Review and align `cmd/dependabot-auto-configure/main.go` error handling with the typed system | High | S | Cleanup |
-| 8 | End-to-end smoke: `nix run .#` against a fixture repo (check/dry-run/write paths with the new errors) | High | S | Quality |
-| 9 | Dogfood: run the tool on this repo itself; confirm its own `.github/dependabot.yml` is canonical | High | S | Quality |
-| 10 | `--json-errors` flag: classified error output (family/code/message/context) at the CLI boundary, mirroring the sibling repo | High | M | Feature |
-| 11 | Decide g-2 (oops adoption or negative-enforcement-only); record as an ADR | High | S | Cleanup |
-| 12 | Add `pkgs.dprint` to the flake devShell so `dprint check` works where AGENTS.md says it should | Medium | S | Bug |
-| 13 | Fix `MarshalJSONResult` bare-error propagation with a typed `MarshalError` (avoiding the generic_return trap) | Medium | S | Quality |
-| 14 | Register error-family MessageTemplates for our codes (config.unparseable, config.read, github.*) for friendly CLI errors | Medium | M | Feature |
-| 15 | Wire `errorfamily.ExitCode` into `Execute`'s error mapping while preserving the documented 0/1/2 contract | Medium | S | Feature |
-| 16 | Diagnose integration: attach `diagnose.RunAuto` findings (FilesystemRule already matches our `config_path` key) to CLI error output | Medium | M | Feature |
-| 17 | `pkg/provider` tests: toolsdk Spec contract, dry-run path, error wrapping shape | High | M | Quality |
-| 18 | Full outcome matrix test for `EnableSecurityFixes`: all five outcomes + 401 + 500 + transport failure + close-failure | Medium | M | Quality |
-| 19 | `docs/DOMAIN_LANGUAGE.md`: add the error vocabulary (families, codes, outcome values) | Medium | S | Documentation |
-| 20 | Document error codes as a stability contract (table in docs/ + "codes are public API" note before v1) | Medium | S | Documentation |
-| 21 | README: error-handling section for consumers of `pkg/configure` (typed matching examples with `errors.AsType`) | Medium | S | Documentation |
-| 22 | FEATURES.md: typed error system entry under DONE | Low | S | Documentation |
-| 23 | HARVEST section (f) of this report into TODO_LIST.md / ROADMAP.md (docs-health) | Medium | S | Documentation |
-| 24 | Annotate this report as items complete (docs-health ANNOTATE mode, non-destructive) | Low | S | Documentation |
-| 25 | Consider typed JSON marshaling for `Result.SecurityFixes` (custom marshaler over `SecurityFixesOutcome`) keeping wire format stable | Low | S | Feature |
-| 26 | CI: run erraudit with the session's flags as a non-blocking advisory report artifact | Medium | M | Quality |
-| 27 | CI: nightly `erraudit` upgrade check — re-run the two scratch experiments against new binaries to re-validate the rule table | Medium | S | Quality |
-| 28 | Investigate auto-commit daemon message quality; propose session-tagged messages (e-4) | Medium | M | Cleanup |
-| 29 | Find and document the origin of the concurrent `Diff(shape)` change; ensure it has tests (g-1 follow-up) | High | S | Bug |
-| 30 | `nix flake check --all-systems` (aarch64-darwin/linux currently omitted) | Medium | S | Quality |
-| 31 | Colored CLI output for findings/severities (lipgloss is already in the tree as an indirect dep) | Low | M | Feature |
-| 32 | stdout/stderr discipline audit: findings → stdout, errors → stderr, machine-readable `--json` untouched by status lines | Medium | S | Cleanup |
-| 33 | Rename `TransportOpCloseResponse` and reword `APITransportError.Error()` composition (e-8) | Low | S | Cleanup |
-| 34 | Fuzz the `Error()` methods (precedent: go-error-family's own fuzz_test.go) | Low | S | Quality |
-| 35 | Round-trip property test: `Decode(Encode(c))` invariant incl. error paths | Medium | M | Quality |
-| 36 | Grep-replace-compatibility audit: any downstream scripts matching old error strings ("write %s", "read %s") | Medium | S | Bug |
-| 37 | Attach error codes to suggest-only findings so `dependabot-config-unparseable` findings reference `config.unparseable` | Low | M | Feature |
-| 38 | Structured logging hook: `errorfamily.LogError` into a `--verbose` slog pipeline | Low | M | Feature |
-| 39 | go-error-family upgrade watcher (currently v0.10.0; check renovate/flake automation covers it) | Low | S | Cleanup |
-| 40 | Confirm go.mod direct/indirect hygiene stays stable under `go mod tidy` in CI | Low | S | Cleanup |
-| 41 | Release: cut next version with the CHANGELOG `[Unreleased]` block (go-release skill) once 1–5 land | Medium | S | Cleanup |
-| 42 | Benchmark error construction in hot paths (detector loops) to confirm negligible cost; document the number | Low | S | Quality |
-| 43 | Evaluate `errorfamilytest` assertion helpers for our error tests (mirrors httptest; may shrink tables 3–4) | Low | S | Quality |
-| 44 | Consider keeping a deprecated `ErrInvalidUpdate`-compatible shim type if g-3 reveals consumers | High | S | Bug |
-| 45 | Add the LSP-stale-diagnostics rule to project AGENTS.md (e-2) | Low | S | Documentation |
-| 46 | Review whether `provider.detect/repair` should pass through the cause family instead of wrapping Infrastructure (depends on 5's outcome) | Medium | S | Cleanup |
-| 47 | Explore errorfamily Registry injection for test isolation in configure tests (no global classifier mutation) | Low | M | Quality |
-| 48 | Check whether TODO_LIST.md public-install-path item interacts with the now-public error codes (docs gating) | Low | S | Documentation |
-| 49 | Snapshot-test CLI human output (go-snaps is the ecosystem standard) to lock the report wording against regressions | Low | M | Quality |
-| 50 | Write the "adding a new domain error" checklist into AGENTS.md (type + family + code + context + test + template) | Medium | S | Documentation |
+| #  | Task                                                                                                                                     | Impact   | Effort | Category      |
+| -- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------ | ------------- |
+| 1  | Answer g-1: confirm the mid-session `Diff(shape)` change is complete & intended; document or test it accordingly                         | Critical | S      | Bug           |
+| 2  | Answer g-3, then resolve the `ErrInvalidUpdate` API break (migration shim or documented break)                                           | Critical | S      | Bug           |
+| 3  | Table-driven tests for every type in `pkg/configure/errors.go` incl. `UnexpectedStatusError` 401/4xx → Rejection family                  | High     | S      | Quality       |
+| 4  | Table-driven tests for `pkg/dependabot/errors.go` (both decode stages, encode, single-field-missing wording, `ErrorContext` maps)        | High     | S      | Quality       |
+| 5  | Write the Classify-precedence test: `ef.Classify(ef.WrapInfrastructuref(inner))` — pin which family wins and document it in AGENTS.md    | High     | S      | Quality       |
+| 6  | Run `go test -cover ./...`; close any gap below the 80% pkg/* target introduced by the new files                                         | High     | S      | Quality       |
+| 7  | Review and align `cmd/dependabot-auto-configure/main.go` error handling with the typed system                                            | High     | S      | Cleanup       |
+| 8  | End-to-end smoke: `nix run .#` against a fixture repo (check/dry-run/write paths with the new errors)                                    | High     | S      | Quality       |
+| 9  | Dogfood: run the tool on this repo itself; confirm its own `.github/dependabot.yml` is canonical                                         | High     | S      | Quality       |
+| 10 | `--json-errors` flag: classified error output (family/code/message/context) at the CLI boundary, mirroring the sibling repo              | High     | M      | Feature       |
+| 11 | Decide g-2 (oops adoption or negative-enforcement-only); record as an ADR                                                                | High     | S      | Cleanup       |
+| 12 | Add `pkgs.dprint` to the flake devShell so `dprint check` works where AGENTS.md says it should                                           | Medium   | S      | Bug           |
+| 13 | Fix `MarshalJSONResult` bare-error propagation with a typed `MarshalError` (avoiding the generic_return trap)                            | Medium   | S      | Quality       |
+| 14 | Register error-family MessageTemplates for our codes (config.unparseable, config.read, github.*) for friendly CLI errors                 | Medium   | M      | Feature       |
+| 15 | Wire `errorfamily.ExitCode` into `Execute`'s error mapping while preserving the documented 0/1/2 contract                                | Medium   | S      | Feature       |
+| 16 | Diagnose integration: attach `diagnose.RunAuto` findings (FilesystemRule already matches our `config_path` key) to CLI error output      | Medium   | M      | Feature       |
+| 17 | `pkg/provider` tests: toolsdk Spec contract, dry-run path, error wrapping shape                                                          | High     | M      | Quality       |
+| 18 | Full outcome matrix test for `EnableSecurityFixes`: all five outcomes + 401 + 500 + transport failure + close-failure                    | Medium   | M      | Quality       |
+| 19 | `docs/DOMAIN_LANGUAGE.md`: add the error vocabulary (families, codes, outcome values)                                                    | Medium   | S      | Documentation |
+| 20 | Document error codes as a stability contract (table in docs/ + "codes are public API" note before v1)                                    | Medium   | S      | Documentation |
+| 21 | README: error-handling section for consumers of `pkg/configure` (typed matching examples with `errors.AsType`)                           | Medium   | S      | Documentation |
+| 22 | FEATURES.md: typed error system entry under DONE                                                                                         | Low      | S      | Documentation |
+| 23 | HARVEST section (f) of this report into TODO_LIST.md / ROADMAP.md (docs-health)                                                          | Medium   | S      | Documentation |
+| 24 | Annotate this report as items complete (docs-health ANNOTATE mode, non-destructive)                                                      | Low      | S      | Documentation |
+| 25 | Consider typed JSON marshaling for `Result.SecurityFixes` (custom marshaler over `SecurityFixesOutcome`) keeping wire format stable      | Low      | S      | Feature       |
+| 26 | CI: run erraudit with the session's flags as a non-blocking advisory report artifact                                                     | Medium   | M      | Quality       |
+| 27 | CI: nightly `erraudit` upgrade check — re-run the two scratch experiments against new binaries to re-validate the rule table             | Medium   | S      | Quality       |
+| 28 | Investigate auto-commit daemon message quality; propose session-tagged messages (e-4)                                                    | Medium   | M      | Cleanup       |
+| 29 | Find and document the origin of the concurrent `Diff(shape)` change; ensure it has tests (g-1 follow-up)                                 | High     | S      | Bug           |
+| 30 | `nix flake check --all-systems` (aarch64-darwin/linux currently omitted)                                                                 | Medium   | S      | Quality       |
+| 31 | Colored CLI output for findings/severities (lipgloss is already in the tree as an indirect dep)                                          | Low      | M      | Feature       |
+| 32 | stdout/stderr discipline audit: findings → stdout, errors → stderr, machine-readable `--json` untouched by status lines                  | Medium   | S      | Cleanup       |
+| 33 | Rename `TransportOpCloseResponse` and reword `APITransportError.Error()` composition (e-8)                                               | Low      | S      | Cleanup       |
+| 34 | Fuzz the `Error()` methods (precedent: go-error-family's own fuzz_test.go)                                                               | Low      | S      | Quality       |
+| 35 | Round-trip property test: `Decode(Encode(c))` invariant incl. error paths                                                                | Medium   | M      | Quality       |
+| 36 | Grep-replace-compatibility audit: any downstream scripts matching old error strings ("write %s", "read %s")                              | Medium   | S      | Bug           |
+| 37 | Attach error codes to suggest-only findings so `dependabot-config-unparseable` findings reference `config.unparseable`                   | Low      | M      | Feature       |
+| 38 | Structured logging hook: `errorfamily.LogError` into a `--verbose` slog pipeline                                                         | Low      | M      | Feature       |
+| 39 | go-error-family upgrade watcher (currently v0.10.0; check renovate/flake automation covers it)                                           | Low      | S      | Cleanup       |
+| 40 | Confirm go.mod direct/indirect hygiene stays stable under `go mod tidy` in CI                                                            | Low      | S      | Cleanup       |
+| 41 | Release: cut next version with the CHANGELOG `[Unreleased]` block (go-release skill) once 1–5 land                                       | Medium   | S      | Cleanup       |
+| 42 | Benchmark error construction in hot paths (detector loops) to confirm negligible cost; document the number                               | Low      | S      | Quality       |
+| 43 | Evaluate `errorfamilytest` assertion helpers for our error tests (mirrors httptest; may shrink tables 3–4)                               | Low      | S      | Quality       |
+| 44 | Consider keeping a deprecated `ErrInvalidUpdate`-compatible shim type if g-3 reveals consumers                                           | High     | S      | Bug           |
+| 45 | Add the LSP-stale-diagnostics rule to project AGENTS.md (e-2)                                                                            | Low      | S      | Documentation |
+| 46 | Review whether `provider.detect/repair` should pass through the cause family instead of wrapping Infrastructure (depends on 5's outcome) | Medium   | S      | Cleanup       |
+| 47 | Explore errorfamily Registry injection for test isolation in configure tests (no global classifier mutation)                             | Low      | M      | Quality       |
+| 48 | Check whether TODO_LIST.md public-install-path item interacts with the now-public error codes (docs gating)                              | Low      | S      | Documentation |
+| 49 | Snapshot-test CLI human output (go-snaps is the ecosystem standard) to lock the report wording against regressions                       | Low      | M      | Quality       |
+| 50 | Write the "adding a new domain error" checklist into AGENTS.md (type + family + code + context + test + template)                        | Medium   | S      | Documentation |
 
 ## g) Questions I cannot figure out myself
 
