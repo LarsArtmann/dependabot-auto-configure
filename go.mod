@@ -18,7 +18,6 @@ require (
 	github.com/go-faster/jx v1.2.0 // indirect
 	github.com/gofrs/flock v0.13.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/larsartmann/go-error-family v0.10.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.4.1 // indirect
 	github.com/mattn/go-runewidth v0.0.29 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
@@ -40,6 +39,7 @@ require (
 	charm.land/fang/v2 v2.0.1
 	github.com/go-faster/yaml v0.4.6
 	github.com/larsartmann/go-atomic-write v0.5.1
+	github.com/larsartmann/go-error-family v0.10.0
 	github.com/larsartmann/go-finding v1.10.0
 	github.com/larsartmann/go-finding/toolsdk v1.10.0
 	github.com/larsartmann/linter-autoconfigure-sdk v0.1.0

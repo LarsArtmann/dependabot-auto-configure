@@ -5,8 +5,6 @@ package dependabot
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
 
 	"github.com/go-faster/yaml"
 )
@@ -192,12 +190,12 @@ func Decode(data []byte) (DecodeResult, error) {
 	res := DecodeResult{}
 
 	if err := yaml.Unmarshal(data, &res.Config); err != nil {
-		return res, fmt.Errorf("parse dependabot config: %w", err)
+		return res, &UnparseableConfigError{Stage: DecodeStageParse, Cause: err}
 	}
 
 	var raw map[string]any
 	if err := yaml.Unmarshal(data, &raw); err != nil {
-		return res, fmt.Errorf("inspect dependabot config keys: %w", err)
+		return res, &UnparseableConfigError{Stage: DecodeStageInspect, Cause: err}
 	}
 
 	for key := range raw {
@@ -253,7 +251,7 @@ func (c Config) Encode() ([]byte, error) {
 	enc := yaml.NewEncoder(&buf)
 	enc.SetIndent(2)
 	if err := enc.Encode(c); err != nil {
-		return nil, fmt.Errorf("encode dependabot config: %w", err)
+		return nil, &EncodeError{Cause: err}
 	}
 
 	out := buf.Bytes()
@@ -286,15 +284,19 @@ func (c Config) Find(eco Ecosystem, dir string) int {
 	return -1
 }
 
-// ErrInvalidUpdate marks Updates that cannot participate in generation.
-var ErrInvalidUpdate = errors.New("invalid dependabot update entry")
-
 // Validate reports entries missing their required fields (ecosystem,
 // directory). Repair never writes a config containing invalid entries.
 func (c Config) Validate() error {
 	for i, u := range c.Updates {
-		if u.PackageEcosystem == "" || u.Directory == "" {
-			return fmt.Errorf("%w: entry %d needs package-ecosystem and directory", ErrInvalidUpdate, i)
+		var missing []RequiredField
+		if u.PackageEcosystem == "" {
+			missing = append(missing, FieldPackageEcosystem)
+		}
+		if u.Directory == "" {
+			missing = append(missing, FieldDirectory)
+		}
+		if len(missing) > 0 {
+			return &InvalidEntryError{Index: i, Missing: missing}
 		}
 	}
 
