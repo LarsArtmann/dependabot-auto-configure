@@ -154,7 +154,8 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 
 		out, encErr := desired.Encode()
 		if encErr != nil {
-			return result, ef.WrapCorruptionf(encErr, "config.encode", "encode desired configuration for %s", absConfig)
+			return result, ef.WrapCorruptionf(encErr, "config.encode", "encode desired configuration for %s", configPath).
+				WithContext("config_path", absConfig)
 		}
 
 		return result, planOrWrite(&result, opts, absConfig, out)
@@ -216,7 +217,8 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 
 	out, encErr := reconciled.Encode()
 	if encErr != nil {
-		return result, ef.WrapCorruptionf(encErr, "config.encode", "encode reconciled configuration for %s", absConfig)
+		return result, ef.WrapCorruptionf(encErr, "config.encode", "encode reconciled configuration for %s", configPath).
+			WithContext("config_path", absConfig)
 	}
 
 	if bytes.Equal(out, data) {
