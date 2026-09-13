@@ -31,7 +31,7 @@
     };
 
     linter-autoconfigure-sdk = {
-      url = "github:LarsArtmann/linter-autoconfigure-sdk?ref=refs/tags/v0.1.0";
+      url = "github:LarsArtmann/linter-autoconfigure-sdk?ref=refs/tags/v0.2.0";
       flake = false;
     };
   };
@@ -54,7 +54,7 @@
 
       go-standard = {
         pname = "dependabot-auto-configure";
-        vendorHash = "sha256-xKDWFMjlUmCosM3U6GpGJGd0uO1UCS5ADbVtAR0cFak=";
+        vendorHash = "sha256-cqWVhGkfphjS01FXeLxxXOxtrvAufM3SABqE75nL+9k=";
 
         description = "Auto-configure .github/dependabot.yml for the detected repository shape";
         enableCheck = false;

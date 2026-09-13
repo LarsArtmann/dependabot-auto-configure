@@ -119,27 +119,27 @@
     "linter-autoconfigure-sdk": {
       "flake": false,
       "locked": {
-        "lastModified": 1789019897,
-        "narHash": "sha256-z2HvDWJ1/vIHx2WZg8rvum1d0fq9+AD2EBmcBgiT9dA=",
+        "lastModified": 1789129974,
+        "narHash": "sha256-/A8aI656uMGgyluSIcIbQRisaoKxrKsfE3yhsUnRUEA=",
         "owner": "LarsArtmann",
         "repo": "linter-autoconfigure-sdk",
-        "rev": "477bac0f22326155914db665c425ffb5ece1d1fe",
+        "rev": "5dec8d9b1f347bdd0483417b305d16f6f07c8d0a",
         "type": "github"
       },
       "original": {
         "owner": "LarsArtmann",
-        "ref": "refs/tags/v0.1.0",
+        "ref": "refs/tags/v0.2.0",
         "repo": "linter-autoconfigure-sdk",
         "type": "github"
       }
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1789006805,
-        "narHash": "sha256-xB8mKMOx1IA9vTDNLmJZ6n4wCMq/cuWBBOzGCRnqxrU=",
+        "lastModified": 1789149629,
+        "narHash": "sha256-H6GwaZzZf+4npqv0tph94w9tZddSjFjmQrVsW0z78uk=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "8ce4ef6cb6f871616146b9fe26d2a5ae594e94fe",
+        "rev": "eaad089433ca2bb662274377d33df3d0e51ef28b",
         "type": "github"
       },
       "original": {
