@@ -27,6 +27,7 @@ func runCommand(t *testing.T, args ...string) int {
 }
 
 func TestCheckExitCodes(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 
 	if err := os.MkdirAll(filepath.Join(root, ".github", "workflows"), 0o755); err != nil {
@@ -55,6 +56,7 @@ func TestCheckExitCodes(t *testing.T) {
 }
 
 func TestCheckNeverWrites(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/x\n"), 0o644); err != nil {
@@ -71,6 +73,7 @@ func TestCheckNeverWrites(t *testing.T) {
 }
 
 func TestErrorOnMissingRoot(t *testing.T) {
+	t.Parallel()
 	cmd, code := cli.NewRootCmdForTest()
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})

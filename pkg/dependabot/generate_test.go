@@ -9,6 +9,7 @@ import (
 )
 
 func TestGenerate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name          string
 		shape         dependabot.RepoShape
@@ -46,14 +47,14 @@ func TestGenerate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cfg, cap := dependabot.Generate(tt.shape)
+			cfg, capInfo := dependabot.Generate(tt.shape)
 
 			if err := cfg.Validate(); err != nil {
 				t.Fatalf("Generate() produced invalid config: %v", err)
 			}
 
-			if cap.Capped != tt.wantCapped {
-				t.Errorf("CapInfo.Capped = %v, want %v", cap.Capped, tt.wantCapped)
+			if capInfo.Capped != tt.wantCapped {
+				t.Errorf("CapInfo.Capped = %v, want %v", capInfo.Capped, tt.wantCapped)
 			}
 
 			if len(cfg.Updates) != len(tt.wantEcosystem) {
@@ -70,15 +71,16 @@ func TestGenerate(t *testing.T) {
 }
 
 func TestGenerateCapsModuleCount(t *testing.T) {
+	t.Parallel()
 	shape := dependabot.RepoShape{GoModuleDirs: []string{""}}
 	for i := range dependabot.MaxModuleEntries + 5 {
 		shape.GoModuleDirs = append(shape.GoModuleDirs, "module"+string(rune('a'+i)))
 	}
 
-	cfg, cap := dependabot.Generate(shape)
+	cfg, capInfo := dependabot.Generate(shape)
 
-	if !cap.Capped || cap.TotalModules != len(shape.GoModuleDirs) {
-		t.Errorf("CapInfo = %+v, want capped=true total=%d", cap, len(shape.GoModuleDirs))
+	if !capInfo.Capped || capInfo.TotalModules != len(shape.GoModuleDirs) {
+		t.Errorf("CapInfo = %+v, want capped=true total=%d", capInfo, len(shape.GoModuleDirs))
 	}
 
 	if len(cfg.Updates) != 1 || cfg.Updates[0].Directory != "/" {
@@ -87,6 +89,7 @@ func TestGenerateCapsModuleCount(t *testing.T) {
 }
 
 func TestCanonicalEntriesAreComplete(t *testing.T) {
+	t.Parallel()
 	cfg, _ := dependabot.Generate(dependabot.RepoShape{GoModuleDirs: []string{""}, HasGitHubActions: true, HasNPM: true})
 
 	for _, u := range cfg.Updates {
@@ -126,6 +129,7 @@ func mustConfig(t *testing.T, yaml string) dependabot.Config {
 }
 
 func TestDiff(t *testing.T) {
+	t.Parallel()
 	shape := dependabot.RepoShape{GoModuleDirs: []string{""}, HasGitHubActions: true}
 	desired, _ := dependabot.Generate(shape)
 
@@ -269,6 +273,7 @@ func TestDiff(t *testing.T) {
 }
 
 func TestDiffMissingConfigButEmptyShape(t *testing.T) {
+	t.Parallel()
 	issues := dependabot.Diff(nil, dependabot.DecodeResult{}, dependabot.Config{}, dependabot.RepoShape{}, dependabot.CapInfo{}, ".github/dependabot.yml")
 	if len(issues) != 0 {
 		t.Errorf("Diff() on empty shape = %v issues, want 0", len(issues))
@@ -283,6 +288,7 @@ func TestDiffMissingConfigButEmptyShape(t *testing.T) {
 // manually" (observed dogfooding on BuildFlow: 32 modules, every module
 // entry mislabeled orphan).
 func TestDiffCappedModuleEntryIsNotOrphan(t *testing.T) {
+	t.Parallel()
 	dirs := make([]string, dependabot.MaxModuleEntries+1)
 	dirs[0] = ""
 	for i := 1; i < len(dirs); i++ {
@@ -341,6 +347,7 @@ func TestDiffCappedModuleEntryIsNotOrphan(t *testing.T) {
 }
 
 func TestReconcile(t *testing.T) {
+	t.Parallel()
 	existing := mustConfig(t, strings.Join([]string{
 		"version: 2",
 		"updates:",

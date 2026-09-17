@@ -32,6 +32,7 @@ updates:
 `
 
 func TestDecodeCustomizationsSafe(t *testing.T) {
+	t.Parallel()
 	res, err := dependabot.Decode([]byte(customYAML))
 	if err != nil {
 		t.Fatalf("Decode() error = %v", err)
@@ -56,6 +57,7 @@ func TestDecodeCustomizationsSafe(t *testing.T) {
 }
 
 func TestDecodeUnknownScheduleKeyUnsafe(t *testing.T) {
+	t.Parallel()
 	yaml := strings.Join([]string{
 		"version: 2",
 		"updates:",
@@ -78,6 +80,7 @@ func TestDecodeUnknownScheduleKeyUnsafe(t *testing.T) {
 }
 
 func TestEncodeRoundTripPreservesCustomizations(t *testing.T) {
+	t.Parallel()
 	res, err := dependabot.Decode([]byte(customYAML))
 	if err != nil {
 		t.Fatalf("Decode() error = %v", err)
@@ -112,6 +115,7 @@ func TestEncodeRoundTripPreservesCustomizations(t *testing.T) {
 }
 
 func TestReconcilePreservesCustomizations(t *testing.T) {
+	t.Parallel()
 	existing := mustConfig(t, customYAML)
 	desired, _ := dependabot.Generate(dependabot.RepoShape{GoModuleDirs: []string{""}, HasGitHubActions: true})
 
@@ -145,6 +149,7 @@ func TestReconcilePreservesCustomizations(t *testing.T) {
 }
 
 func TestDiffSilentOnCustomizations(t *testing.T) {
+	t.Parallel()
 	existing := mustConfig(t, customYAML)
 	desired, _ := dependabot.Generate(dependabot.RepoShape{GoModuleDirs: []string{""}})
 

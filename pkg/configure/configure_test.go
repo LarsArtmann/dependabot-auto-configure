@@ -95,6 +95,7 @@ func run(t *testing.T, root string, opts configure.Options) configure.Result {
 }
 
 func TestRunGeneratesMissingConfig(t *testing.T) {
+	t.Parallel()
 	root := repoWithConfig(t, configure.DefaultConfigPath, "")
 
 	result := run(t, root, configure.Options{})
@@ -123,6 +124,7 @@ func TestRunGeneratesMissingConfig(t *testing.T) {
 }
 
 func TestRunIsIdempotent(t *testing.T) {
+	t.Parallel()
 	root := repoWithConfig(t, configure.DefaultConfigPath, "")
 
 	run(t, root, configure.Options{})
@@ -147,6 +149,7 @@ func TestRunIsIdempotent(t *testing.T) {
 }
 
 func TestRunCheckDoesNotWrite(t *testing.T) {
+	t.Parallel()
 	root := repoWithConfig(t, configure.DefaultConfigPath, "")
 
 	result := run(t, root, configure.Options{Check: true})
@@ -165,6 +168,7 @@ func TestRunCheckDoesNotWrite(t *testing.T) {
 }
 
 func TestRunUnsafeConfigIsSuggestOnly(t *testing.T) {
+	t.Parallel()
 	unsafe := "version: 2\nregistries:\n  npm: {}\nupdates: []\n"
 	root := repoWithConfig(t, configure.DefaultConfigPath, unsafe)
 
@@ -189,6 +193,7 @@ func TestRunUnsafeConfigIsSuggestOnly(t *testing.T) {
 }
 
 func TestRunReconcilesBareConfigPreservingIntent(t *testing.T) {
+	t.Parallel()
 	bare := "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    schedule:\n      interval: monthly\n"
 	root := repoWithConfig(t, configure.DefaultConfigPath, bare)
 
@@ -218,6 +223,7 @@ func TestRunReconcilesBareConfigPreservingIntent(t *testing.T) {
 }
 
 func TestRunCanonicalConfigIsNoOp(t *testing.T) {
+	t.Parallel()
 	root := repoWithConfig(t, configure.DefaultConfigPath, canonicalSelfConfig)
 
 	result := run(t, root, configure.Options{})
@@ -233,6 +239,7 @@ func TestRunCanonicalConfigIsNoOp(t *testing.T) {
 }
 
 func TestRunOnEmptyRepoIsNoOp(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 
 	result := run(t, root, configure.Options{})
@@ -243,6 +250,7 @@ func TestRunOnEmptyRepoIsNoOp(t *testing.T) {
 }
 
 func TestRunUnparseableConfigIsSuggestOnly(t *testing.T) {
+	t.Parallel()
 	seqGroups := "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    groups:\n      - everything:\n          patterns:\n            - \"*\"\n"
 	root := repoWithConfig(t, configure.DefaultConfigPath, seqGroups)
 
@@ -258,6 +266,7 @@ func TestRunUnparseableConfigIsSuggestOnly(t *testing.T) {
 }
 
 func TestRunInvalidEntryIsSuggestOnly(t *testing.T) {
+	t.Parallel()
 	invalid := "version: 2\nupdates:\n  - package-ecosystem: gomod\n"
 	root := repoWithConfig(t, configure.DefaultConfigPath, invalid)
 
@@ -289,6 +298,7 @@ func TestRunInvalidEntryIsSuggestOnly(t *testing.T) {
 }
 
 func TestRunFillsEmptyScheduleInterval(t *testing.T) {
+	t.Parallel()
 	emptyInterval := "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    schedule: {}\n"
 	root := repoWithConfig(t, configure.DefaultConfigPath, emptyInterval)
 
