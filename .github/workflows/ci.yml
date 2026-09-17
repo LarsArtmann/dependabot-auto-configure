@@ -30,8 +30,12 @@ concurrency:
 
 jobs:
   test:
-    name: Test and Build
-    runs-on: ubuntu-latest
+    name: Test and Build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     env:
       GOEXPERIMENT: jsonv2
 
@@ -51,6 +55,7 @@ jobs:
         run: go test -race -vet=off ./...
 
       - name: Coverage summary
+        if: runner.os == 'Linux'
         run: |
           go test -coverprofile=coverage.out -covermode=atomic ./... > /dev/null
           {

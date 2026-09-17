@@ -2,6 +2,7 @@ package configure_test
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"slices"
@@ -427,5 +428,54 @@ updates:
 
 	if res.Config.Find(dependabot.EcosystemNPM, "/") < 0 {
 		t.Fatal("repaired config lost the orphan npm entry")
+	}
+}
+
+// TestMarshalJSONResultPinsWireShape documents the --json contract at the
+// library boundary: snake_case keys are a released contract (the sweep
+// script consumes them), so this table is intentionally excluded from the
+// tagliatelle camelCase rule in .golangci.yml.
+func TestMarshalJSONResultPinsWireShape(t *testing.T) {
+	t.Parallel()
+
+	root := repoWithConfig(t, bare)
+
+	result := run(t, root, configure.Options{Check: true})
+
+	data, err := configure.MarshalJSONResult(result)
+	if err != nil {
+		t.Fatalf("MarshalJSONResult() error = %v", err)
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(data, &payload); err != nil {
+		t.Fatalf("output is not JSON: %v\n%s", err, data)
+	}
+
+	for key, want := range map[string]bool{"wrote": false, "planned_write": true, "unsafe_repair": false} {
+		got, ok := payload[key].(bool)
+		if !ok || got != want {
+			t.Errorf("JSON %s = %#v, want %v", key, payload[key], want)
+		}
+	}
+
+	findings, ok := payload["findings"].([]any)
+	if !ok || len(findings) == 0 {
+		t.Fatalf("JSON findings = %#v, want a non-empty array", payload["findings"])
+	}
+
+	first, ok := findings[0].(map[string]any)
+	if !ok {
+		t.Fatalf("finding JSON = %#v, want an object", findings[0])
+	}
+
+	for _, key := range []string{"rule", "message", "severity", "file"} {
+		if _, present := first[key]; !present {
+			t.Errorf("finding JSON missing %q key", key)
+		}
+	}
+
+	if _, present := payload["security_fixes"]; present {
+		t.Error("JSON output carries security_fixes, want it omitted when empty")
 	}
 }
