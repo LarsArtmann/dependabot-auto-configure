@@ -1,0 +1,145 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+    paths-ignore:
+      - "**/*.md"
+      - docs/**
+      - LICENSE
+      - .gitignore
+      - "**/*.svg"
+      - "**/*.png"
+  pull_request:
+    branches: [master, main]
+    paths-ignore:
+      - "**/*.md"
+      - docs/**
+      - LICENSE
+      - .gitignore
+      - "**/*.svg"
+      - "**/*.png"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test and Build
+    runs-on: ubuntu-latest
+    env:
+      GOEXPERIMENT: jsonv2
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Test (race detector)
+        run: go test -race -vet=off ./...
+
+      - name: Coverage summary
+        run: |
+          go test -coverprofile=coverage.out -covermode=atomic ./... > /dev/null
+          {
+            echo "### Coverage per package"
+            echo '```'
+            go test -cover ./...
+            echo '```'
+            echo "### Total"
+            echo '```'
+            go tool cover -func=coverage.out | grep total
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+    timeout-minutes: 15
+
+  lint:
+    name: Lint (golangci-lint)
+    runs-on: ubuntu-latest
+    env:
+      GOEXPERIMENT: jsonv2
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.13.2
+
+    timeout-minutes: 15
+
+  nix:
+    name: Nix (flake check, build, dprint)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+
+      - name: Check flake.lock is up to date
+        run: |
+          nix flake lock
+          if git diff --exit-code flake.lock; then
+            echo "flake.lock is up to date"
+          else
+            echo "::error::flake.lock is stale — run 'nix flake lock' locally and commit"
+            exit 1
+          fi
+
+      - name: Nix flake check
+        run: nix flake check
+
+      - name: Nix build (vendorHash guard)
+        run: |
+          nix build
+          ./result/bin/dependabot-auto-configure --version
+
+      - name: dprint check (markdown, json, yaml)
+        run: nix shell nixpkgs#dprint -c dprint check
+
+    timeout-minutes: 30
+
+  govulncheck:
+    name: Security scan (govulncheck)
+    runs-on: ubuntu-latest
+    env:
+      GOEXPERIMENT: jsonv2
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Run govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+    timeout-minutes: 15

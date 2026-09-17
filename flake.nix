@@ -92,6 +92,7 @@
         };
 
         devShellExtraPackages = pkgs: [
+          pkgs.dprint
           pkgs.gopls
           pkgs.gotools
           pkgs.golangci-lint
