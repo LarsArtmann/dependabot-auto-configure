@@ -109,7 +109,12 @@ func MarshalJSONResult(r Result) ([]byte, error) {
 		})
 	}
 
-	return json.Marshal(out)
+	data, err := json.Marshal(out)
+	if err != nil {
+		return nil, ef.WrapCorruptionf(err, "config.marshal", "marshal %d finding(s) for --json output", len(out.Findings))
+	}
+
+	return data, nil
 }
 
 // ChangesNeeded reports whether any finding or planned write is pending.
@@ -140,25 +145,11 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 	data, readErr := os.ReadFile(absConfig)
 	switch {
 	case errors.Is(readErr, fs.ErrNotExist):
-		issues := dependabot.Diff(nil, dependabot.DecodeResult{}, desired, shape, capInfo, file)
-		result.Findings, err = autoconfigure.FindingsFromIssues(ToolName, issues)
-		if err != nil {
-			return result, &FindingsConversionError{Tool: ToolName, Cause: err}
+		if err := planMissingConfig(&result, opts, desired, capInfo, shape, absConfig, configPath, file); err != nil {
+			return result, err
 		}
 
-		if len(desired.Updates) == 0 {
-			result.Unchanged = true
-
-			return result, nil
-		}
-
-		out, encErr := desired.Encode()
-		if encErr != nil {
-			return result, ef.WrapCorruptionf(encErr, "config.encode", "encode desired configuration for %s", configPath).
-				WithContext("config_path", absConfig)
-		}
-
-		return result, planOrWrite(&result, opts, absConfig, out)
+		return result, nil
 	case readErr != nil:
 		return result, &ConfigReadError{Path: absConfig, Cause: readErr}
 	}
@@ -199,12 +190,64 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 		return result, nil
 	}
 
+	if err := reconcileValidConfig(&result, opts, existing, desired, absConfig, configPath, data); err != nil {
+		return result, err
+	}
+
+	return result, nil
+}
+
+// planMissingConfig reports the missing-config finding and prepares the
+// canonical write when the repository shape warrants a configuration.
+func planMissingConfig(
+	result *Result,
+	opts Options,
+	desired dependabot.Config,
+	capInfo dependabot.CapInfo,
+	shape dependabot.RepoShape,
+	absConfig, configPath string,
+	file finding.FilePath,
+) error {
+	issues := dependabot.Diff(nil, dependabot.DecodeResult{}, desired, shape, capInfo, file)
+
+	findings, err := autoconfigure.FindingsFromIssues(ToolName, issues)
+	if err != nil {
+		return &FindingsConversionError{Tool: ToolName, Cause: err}
+	}
+
+	result.Findings = findings
+
+	if len(desired.Updates) == 0 {
+		result.Unchanged = true
+
+		return nil
+	}
+
+	out, encErr := desired.Encode()
+	if encErr != nil {
+		return ef.WrapCorruptionf(encErr, "config.encode", "encode desired configuration for %s", configPath).
+			WithContext("config_path", absConfig)
+	}
+
+	return planOrWrite(result, opts, absConfig, out)
+}
+
+// reconcileValidConfig repairs a decodable, safe config: invalid entries
+// stay suggest-only, an already-canonical file is a no-op, everything else
+// is reconciled and written atomically.
+func reconcileValidConfig(
+	result *Result,
+	opts Options,
+	existing, desired dependabot.Config,
+	absConfig, configPath string,
+	data []byte,
+) error {
 	// Repair never writes a config containing invalid entries (see
 	// Config.Validate): a broken user entry is reported, never round-tripped.
 	if invalid := existing.Validate(); invalid != nil {
 		result.UnsafeRepair = true
 
-		return result, nil
+		return nil //nolint:nilerr // invalid entries are suggest-only by design, never an error
 	}
 
 	reconciled := dependabot.Reconcile(existing, desired)
@@ -212,22 +255,22 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 	if dependabot.Equal(existing, reconciled) {
 		result.Unchanged = true
 
-		return result, nil
+		return nil
 	}
 
 	out, encErr := reconciled.Encode()
 	if encErr != nil {
-		return result, ef.WrapCorruptionf(encErr, "config.encode", "encode reconciled configuration for %s", configPath).
+		return ef.WrapCorruptionf(encErr, "config.encode", "encode reconciled configuration for %s", configPath).
 			WithContext("config_path", absConfig)
 	}
 
 	if bytes.Equal(out, data) {
 		result.Unchanged = true
 
-		return result, nil
+		return nil
 	}
 
-	return result, planOrWrite(&result, opts, absConfig, out)
+	return planOrWrite(result, opts, absConfig, out)
 }
 
 // planOrWrite centralizes the Check/DryRun gate: both hold the write back
@@ -240,7 +283,7 @@ func planOrWrite(result *Result, opts Options, absConfig string, out []byte) err
 	}
 
 	dir := filepath.Dir(absConfig)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return &ConfigWriteError{Path: dir, Step: WriteStepCreateDirectory, Cause: err}
 	}
 

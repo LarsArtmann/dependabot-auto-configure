@@ -188,9 +188,12 @@ func (e *APITransportError) ErrorFamily() ef.Family { return ef.Transient }
 // ErrorCode returns the machine-readable identity of this failure.
 func (e *APITransportError) ErrorCode() string { return "github.transport" }
 
+// errorContextURL is the structured-context key carrying the API endpoint.
+const errorContextURL = "url"
+
 // ErrorContext exposes the failure as structured, machine-readable data.
 func (e *APITransportError) ErrorContext() map[string]string {
-	return map[string]string{"op": string(e.Op), "url": e.URL}
+	return map[string]string{"op": string(e.Op), errorContextURL: e.URL}
 }
 
 // UnexpectedStatusError reports that GitHub answered the security-fixes
@@ -244,8 +247,8 @@ func (e *UnexpectedStatusError) ErrorCode() string { return "github.status" }
 // ErrorContext exposes the failure as structured, machine-readable data.
 func (e *UnexpectedStatusError) ErrorContext() map[string]string {
 	return map[string]string{
-		"url":    e.URL,
-		"status": strconv.Itoa(e.StatusCode),
+		errorContextURL: e.URL,
+		"status":        strconv.Itoa(e.StatusCode),
 	}
 }
 
@@ -275,5 +278,5 @@ func (e *GitHubRequestError) ErrorCode() string { return "github.request" }
 
 // ErrorContext exposes the failure as structured, machine-readable data.
 func (e *GitHubRequestError) ErrorContext() map[string]string {
-	return map[string]string{"url": e.URL}
+	return map[string]string{errorContextURL: e.URL}
 }
