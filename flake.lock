@@ -44,16 +44,16 @@
     "go-atomic-write": {
       "flake": false,
       "locked": {
-        "lastModified": 1786808405,
-        "narHash": "sha256-KyGxUQCjN70PW8JhYmPgXeGrzevy23+xmdxXO4ZX1lM=",
+        "lastModified": 1789630923,
+        "narHash": "sha256-ERKaYXqDABDwK63JIx8Wx0oernSbziJDaiqPo/f68HU=",
         "owner": "LarsArtmann",
         "repo": "go-atomic-write",
-        "rev": "9a4218db61767ac8bd45c3c7ee00023c5da6bf02",
+        "rev": "8172e7bb56307b4bc48bda7a3714849f6e0e5517",
         "type": "github"
       },
       "original": {
         "owner": "LarsArtmann",
-        "ref": "v0.5.1",
+        "ref": "v0.5.2",
         "repo": "go-atomic-write",
         "type": "github"
       }
@@ -61,16 +61,16 @@
     "go-error-family": {
       "flake": false,
       "locked": {
-        "lastModified": 1785079049,
-        "narHash": "sha256-aKL1tjQ8AQzIV6g5+361HTTOOdtgzfWwwfQCZHwaojo=",
+        "lastModified": 1789492852,
+        "narHash": "sha256-RC1EJpdlRf3eX4K4uq+Xb/BSpIgrWJ6AmXaaCwm3fIk=",
         "owner": "LarsArtmann",
         "repo": "go-error-family",
-        "rev": "4546000adb032fe450d4ea9bfbb2a9f359af3857",
+        "rev": "1d629ba2738cf04645fd08a774aa6f215b1c009a",
         "type": "github"
       },
       "original": {
         "owner": "LarsArtmann",
-        "ref": "v0.10.0",
+        "ref": "v0.10.1",
         "repo": "go-error-family",
         "type": "github"
       }
@@ -102,17 +102,17 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1788847958,
-        "narHash": "sha256-zg2qSCVxiRpHkXTWjahP4sqGOe+ptcxpXIT693rJdX8=",
+        "lastModified": 1789630646,
+        "narHash": "sha256-rCkNGhVw3bEgdoP+SgbRT/I21YNQRDq6X+Y4OQHOjXE=",
         "owner": "LarsArtmann",
         "repo": "go-nix-helpers",
-        "rev": "a97742e806193cd7e4c457439c7e117a6cfd1fe7",
+        "rev": "19fc8e5986d59f57ff8780fcbc5623fb412c345f",
         "type": "github"
       },
       "original": {
         "owner": "LarsArtmann",
         "repo": "go-nix-helpers",
-        "rev": "a97742e806193cd7e4c457439c7e117a6cfd1fe7",
+        "rev": "19fc8e5986d59f57ff8780fcbc5623fb412c345f",
         "type": "github"
       }
     },
