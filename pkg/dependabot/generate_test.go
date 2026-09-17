@@ -111,23 +111,23 @@ func TestCanonicalEntriesAreComplete(t *testing.T) {
 		dependabot.RepoShape{GoModuleDirs: []string{""}, HasGitHubActions: true, HasNPM: true},
 	)
 
-	for _, u := range cfg.Updates {
-		if u.Schedule == nil || u.Schedule.Interval != dependabot.IntervalWeekly {
-			t.Errorf("entry %s/%s missing weekly schedule", u.PackageEcosystem, u.Directory)
+	for _, update := range cfg.Updates {
+		if update.Schedule == nil || update.Schedule.Interval != dependabot.IntervalWeekly {
+			t.Errorf("entry %s/%s missing weekly schedule", update.PackageEcosystem, update.Directory)
 		}
 
-		if u.OpenPullRequestsLimit != dependabot.DefaultOpenPullRequestsLimit {
+		if update.OpenPullRequestsLimit != dependabot.DefaultOpenPullRequestsLimit {
 			t.Errorf(
 				"entry %s/%s limit = %d, want %d",
-				u.PackageEcosystem,
-				u.Directory,
-				u.OpenPullRequestsLimit,
+				update.PackageEcosystem,
+				update.Directory,
+				update.OpenPullRequestsLimit,
 				dependabot.DefaultOpenPullRequestsLimit,
 			)
 		}
 
-		if u.Groups.Empty() {
-			t.Errorf("entry %s/%s has no groups", u.PackageEcosystem, u.Directory)
+		if update.Groups.Empty() {
+			t.Errorf("entry %s/%s has no groups", update.PackageEcosystem, update.Directory)
 		}
 	}
 
@@ -326,11 +326,10 @@ func TestDiffMissingConfigButEmptyShape(t *testing.T) {
 func TestDiffCappedModuleEntryIsNotOrphan(t *testing.T) {
 	t.Parallel()
 
-	dirs := make([]string, dependabot.MaxModuleEntries+1)
+	dirs := []string{""}
 
-	dirs[0] = ""
-	for i := 1; i < len(dirs); i++ {
-		dirs[i] = fmt.Sprintf("mod%d", i)
+	for i := 1; i <= dependabot.MaxModuleEntries; i++ {
+		dirs = append(dirs, fmt.Sprintf("mod%d", i))
 	}
 
 	shape := dependabot.RepoShape{GoModuleDirs: dirs}

@@ -19,8 +19,20 @@ func TestDecodeCanonicalConfig(t *testing.T) {
 		wantUpdates    int
 	}{
 		{
-			name:        "canonical grouped config decodes clean",
-			yaml:        "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    schedule:\n      interval: weekly\n    open-pull-requests-limit: 5\n    groups:\n      minor-and-patch:\n        update-types:\n          - minor\n          - patch\n",
+			name: "canonical grouped config decodes clean",
+			yaml: `version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+`,
 			wantUpdates: 1,
 			wantGroups:  true,
 		},
@@ -37,14 +49,31 @@ func TestDecodeCanonicalConfig(t *testing.T) {
 			wantUpdates: 1,
 		},
 		{
-			name:        "labels and schedule day are modeled customizations, safe",
-			yaml:        "version: 2\nupdates:\n  - package-ecosystem: npm\n    directory: /\n    schedule:\n      interval: weekly\n      day: monday\n    labels:\n      - dependencies\n",
+			name: "labels and schedule day are modeled customizations, safe",
+			yaml: `version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+`,
 			wantUnsafe:  false,
 			wantUpdates: 1,
 		},
 		{
-			name:        "unknown group name is audited unsafe",
-			yaml:        "version: 2\nupdates:\n  - package-ecosystem: npm\n    directory: /\n    groups:\n      everything:\n        patterns:\n          - \"*\"\n",
+			name: "unknown group name is audited unsafe",
+			yaml: `version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    groups:
+      everything:
+        patterns:
+          - "*"
+`,
 			wantUnsafe:  true,
 			wantUpdates: 1,
 		},

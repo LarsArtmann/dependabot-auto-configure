@@ -21,7 +21,7 @@ func randomExistingConfig(rng *rand.Rand) dependabot.Config {
 	cfg := dependabot.Config{Version: dependabot.CurrentVersion}
 
 	for range rng.Intn(4) {
-		u := dependabot.Update{
+		update := dependabot.Update{
 			PackageEcosystem: ecosystems[rng.Intn(len(ecosystems))],
 			Directory:        directories[rng.Intn(len(directories))],
 		}
@@ -32,22 +32,22 @@ func randomExistingConfig(rng *rand.Rand) dependabot.Config {
 				sched.Day = "monday"
 			}
 
-			u.Schedule = sched
+			update.Schedule = sched
 		}
 
 		if rng.Intn(2) == 0 {
-			u.OpenPullRequestsLimit = rng.Intn(10) + 1
+			update.OpenPullRequestsLimit = rng.Intn(10) + 1
 		}
 
 		if rng.Intn(2) == 0 {
-			u.Groups = dependabot.MinorAndPatchGroups()
+			update.Groups = dependabot.MinorAndPatchGroups()
 		}
 
 		if rng.Intn(4) == 0 {
-			u.Labels = []string{"dependencies"}
+			update.Labels = []string{"dependencies"}
 		}
 
-		cfg.Updates = append(cfg.Updates, u)
+		cfg.Updates = append(cfg.Updates, update)
 	}
 
 	return cfg

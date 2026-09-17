@@ -196,6 +196,12 @@ linters:
         - validate
         - mapstructure
       sort: true
+    tagliatelle:
+      case:
+        rules:
+          json: pascal
+          toml: kebab
+          yaml: kebab
     testifylint:
       disable:
         - go-require
@@ -276,6 +282,9 @@ linters:
       - path: pkg/detect/.*\.go
         linters:
           - wrapcheck
+      - path: pkg/configure/configure\.go
+        linters:
+          - tagliatelle
       - text: Version is a global variable
         linters:
           - gochecknoglobals

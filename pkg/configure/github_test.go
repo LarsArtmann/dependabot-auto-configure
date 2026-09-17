@@ -65,7 +65,14 @@ func TestRepoSlugFromGit(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		config := "[core]\n\trepositoryformatversion = 0\n[remote \"origin\"]\n\turl = git@github.com:larsartmann/dependabot-auto-configure.git\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n[branch \"master\"]\n\tremote = origin\n"
+		config := `[core]
+	repositoryformatversion = 0
+[remote "origin"]
+	url = git@github.com:larsartmann/dependabot-auto-configure.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "master"]
+	remote = origin
+`
 		if err := os.WriteFile(filepath.Join(gitDir, "config"), []byte(config), 0o644); err != nil {
 			t.Fatal(err)
 		}

@@ -205,7 +205,13 @@ func TestRunUnsafeConfigIsSuggestOnly(t *testing.T) {
 func TestRunReconcilesBareConfigPreservingIntent(t *testing.T) {
 	t.Parallel()
 
-	bare := "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    schedule:\n      interval: monthly\n"
+	bare := `version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: monthly
+`
 	root := repoWithConfig(t, bare)
 
 	result := run(t, root, configure.Options{})
@@ -263,7 +269,15 @@ func TestRunOnEmptyRepoIsNoOp(t *testing.T) {
 func TestRunUnparseableConfigIsSuggestOnly(t *testing.T) {
 	t.Parallel()
 
-	seqGroups := "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    groups:\n      - everything:\n          patterns:\n            - \"*\"\n"
+	seqGroups := `version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    groups:
+      - everything:
+          patterns:
+            - "*"
+`
 	root := repoWithConfig(t, seqGroups)
 
 	result := run(t, root, configure.Options{})
