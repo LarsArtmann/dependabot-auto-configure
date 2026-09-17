@@ -73,7 +73,7 @@ func TestReconcileIsIdempotent(t *testing.T) {
 
 	const iterations = 500
 
-	rng := rand.New(rand.NewSource(20260917)) //nolint:gosec // deterministic test generator, not security-sensitive
+	rng := rand.New(rand.NewSource(20260917))
 
 	for i := range iterations {
 		existing := randomExistingConfig(rng)

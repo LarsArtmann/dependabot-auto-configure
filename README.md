@@ -83,7 +83,10 @@ dependabot-auto-configure --enable-security-fixes
 dependabot-auto-configure --root /path/to/repo
 ```
 
-Exit codes: `0` clean or repaired, `1` changes needed (under `--check`),
+Exit codes: `0` clean, repaired, or suggest-only — configs the tool will
+not touch (unsafe or unparseable) are reported as findings, never
+rewritten, by contract ([ADR 0001](docs/adr/0001-suggest-only-unsafe-configs.md));
+`1` changes needed under `--check`, or the `--fail-on` policy exceeded;
 `2` operational error.
 
 ## BuildFlow
