@@ -15,25 +15,22 @@
 
 ## High Impact
 
-| Task                                                                                                                                | Status       | Impact | Effort | Evidence                                                                                      |
-| ----------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------ | ------ | --------------------------------------------------------------------------------------------- |
-| Push `master` to origin and verify: CI green on real runners, Dependabot picks up the `github-actions` entry, README badges resolve | 🔵 `BLOCKED` | High   | 15m    | ~10+ commits ahead of origin; pushing needs explicit authorization. CI has never run for real |
+| Task                                                                                                                                           | Status       | Impact | Effort | Evidence                                                                                                                     |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------ | ------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Push `master` to origin and verify: CI green on real runners (incl. the new windows matrix entry), Dependabot PR rebase, README badges resolve | 🔵 `BLOCKED` | High   | 15m    | origin/master (`f85ca82`) is CI-RED (vendorHash + lint); local HEAD carries the fixes — pushing needs explicit authorization |
 
 ## Medium Impact
 
 | Task                                                                                                                                                 | Status       | Impact | Effort | Evidence                                                                                                                                    |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Raise `pkg/configure` (69.6%) and `internal/cli` (65.1%) coverage to the 80% target (AGENTS.md §Testing)                                             | 🔴 `TODO`    | Med    | 2-4h   | `go test ./... -cover`; `github.go` request paths and `root.go` report rendering are the thin spots                                         |
-| Add a Windows CI job — the slash-separator bug (v0.2.0-era) proved Windows matters and CI is Linux-only today                                        | 🔴 `TODO`    | Med    | 1h     | `.github/workflows/ci.yml` has no `windows-latest` matrix entry                                                                             |
 | Cut `linter-autoconfigure-sdk` v1.0.0: sweep its deps first (go-finding v1.10.0 → v1.11.0, go-atomic-write v0.5.1 → v0.5.2), run its gates, then tag | 🔵 `BLOCKED` | Med    | 1h     | `~/projects/linter-autoconfigure-sdk` go.mod is one release behind; 100% coverage, clean tree, tagging an external repo needs authorization |
 
 ## Low Impact
 
-| Task                                                                                  | Status    | Impact | Effort | Evidence                                                                              |
-| ------------------------------------------------------------------------------------- | --------- | ------ | ------ | ------------------------------------------------------------------------------------- |
-| Cache golangci-lint in CI (`golangci-lint-action` `cache: true` or `actions/cache`)   | 🔴 `TODO` | Low    | 15m    | Cold lint on real runners is minutes; `.github/workflows/ci.yml` lint job             |
-| `--json`: decide whether the `--fail-on` policy outcome belongs in the wire shape     | 🔴 `TODO` | Low    | 30m    | `resultJSON` in `pkg/configure/configure.go`; policy verdict currently text-mode only |
-| Upstream to go-nix-helpers: apps lack `meta.description` (`nix flake check` warnings) | 🔴 `TODO` | Low    | 30m    | Warning on every app in `nix flake check --all-systems`; module-owned, not per-repo   |
+| Task                                                                                  | Status    | Impact | Effort | Evidence                                                                                                                 |
+| ------------------------------------------------------------------------------------- | --------- | ------ | ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `--json`: decide whether the `--fail-on` policy outcome belongs in the wire shape     | 🔴 `TODO` | Low    | 30m    | `resultJSON` in `pkg/configure/configure.go`; policy verdict currently text-mode only; wire keys are contract-tested now |
+| Upstream to go-nix-helpers: apps lack `meta.description` (`nix flake check` warnings) | 🔴 `TODO` | Low    | 30m    | Warning on every app in `nix flake check --all-systems`; module-owned, not per-repo                                      |
 
 ---
 
