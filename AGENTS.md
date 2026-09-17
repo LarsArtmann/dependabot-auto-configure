@@ -51,13 +51,15 @@ Sibling to `golangci-lint-auto-configure` and `oxlint-auto-configure`.
 
 ## Build
 
-The SDK imports `encoding/json/v2`; Go 1.26 toolchains build it without any
-flags (verified), while the flake still exports `GOEXPERIMENT=jsonv2`. Raw go
-commands work either way:
+The SDK imports `encoding/json/v2`; the go.mod floor is `go 1.27` and the
+flake builds with nixpkgs `go_1_27`. NixOS exports `GOTOOLCHAIN=local`, so
+raw go commands with the system 1.26 toolchain fail the floor — prefix
+`GOTOOLCHAIN=auto` (downloads go1.27.1 once) or run inside the devShell
+(`nix develop -c ...`, which has go_1_27 and golangci-lint):
 
 ```sh
-GOEXPERIMENT=jsonv2 go build ./...
-GOEXPERIMENT=jsonv2 go test ./...
+GOTOOLCHAIN=auto GOEXPERIMENT=jsonv2 go build ./...
+GOTOOLCHAIN=auto GOEXPERIMENT=jsonv2 go test ./...
 ```
 
 Use the flake (`nix build`, `nix flake check`) for the canonical gate.
@@ -80,9 +82,14 @@ document, Infrastructure = environment), a machine-readable `ErrorCode()`
 The gate is `erraudit` with zero violations expected:
 
 ```sh
-GOEXPERIMENT=jsonv2 erraudit ./... --type-aware --enforce-go-error-family \
-  --no-suppress --enforce-samber-oops --enforce-generic-return
+GOTOOLCHAIN=auto GOEXPERIMENT=jsonv2 erraudit ./... --type-aware \
+  --enforce-go-error-family --no-suppress --enforce-samber-oops \
+  --enforce-generic-return
 ```
+
+erraudit's binary must itself be built with a Go >= the repo floor (its
+embedded go/types loads the packages); rebuild it from `~/projects/erraudit`
+with `GOTOOLCHAIN=go1.27.1` when a floor bump makes it report package errors.
 
 Non-obvious rules the flags enforce (empirically verified 2026-09-11):
 
