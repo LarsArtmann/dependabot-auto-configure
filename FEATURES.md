@@ -55,10 +55,11 @@
 
 | Feature                   | Status                    | Notes                                                                                                                                                                       |
 | ------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CLI                       | 🟢 `FULLY_FUNCTIONAL`     | `--root`, `--config-path`, `--check`, `--dry-run`, `--json`, `--enable-security-fixes`, version; fang-powered help. Exit codes 0/1/2 (`internal/cli/root.go:16`)            |
+| CLI                       | 🟢 `FULLY_FUNCTIONAL`     | `--root`, `--config-path`, `--check`, `--dry-run`, `--json`, `--fail-on`, `--enable-security-fixes`, version; fang-powered help. Exit codes 0/1/2 (`internal/cli/root.go:16`)                                                          |
+| `--fail-on` CI policy     | 🟢 `FULLY_FUNCTIONAL`     | Under `--check`, exit 1 only when findings meet the minimum severity: `any` (default), `none`, or a severity (`error`, `warning`, `info`, `critical`); tested in `internal/cli/root_test.go`                                                |
 | JSON output (`--json`)    | 🟢 `FULLY_FUNCTIONAL`     | Stable wire shape (`resultJSON` in `pkg/configure/configure.go`); field names are a contract for the sweep script                                                           |
 | Security-fixes enablement | 🟢 `FULLY_FUNCTIONAL`     | `--enable-security-fixes` PUTs `automated-security-fixes` via the GitHub API; bounded 15s client; outcome reported in text and JSON (`pkg/configure/github.go`)             |
-| BuildFlow provider        | 🟡 `PARTIALLY_FUNCTIONAL` | `toolsdk.Spec` registered in `pkg/provider/provider.go`; Detect runs check-mode, Repair honors dry-run. Not exercised by any in-repo test; consumed externally by BuildFlow |
+| BuildFlow provider        | 🟢 `FULLY_FUNCTIONAL`     | `toolsdk.Spec` registered in `pkg/provider/provider.go`; Detect runs check-mode, Repair honors dry-run. In-repo test suite covers detect/dry-run/idempotence/unsafe (`pkg/provider/provider_test.go`, 85%); consumed externally by BuildFlow |
 | Findings SDK integration  | 🟢 `FULLY_FUNCTIONAL`     | Issues converted via `linter-autoconfigure-sdk.FindingsFromIssues` so suggestions arrive as fixable findings                                                                |
 
 ---

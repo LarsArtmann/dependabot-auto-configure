@@ -144,7 +144,11 @@ func Reconcile(existing, desired Config) Config {
 		idx := desired.Find(u.PackageEcosystem, u.Directory)
 
 		if scheduleMissing(u) && idx >= 0 {
-			u.Schedule = &Schedule{Interval: IntervalWeekly}
+			if u.Schedule == nil {
+				u.Schedule = &Schedule{Interval: IntervalWeekly}
+			} else {
+				u.Schedule.Interval = IntervalWeekly
+			}
 		}
 
 		if u.OpenPullRequestsLimit == 0 && idx >= 0 {

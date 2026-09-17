@@ -163,3 +163,30 @@ func TestDiffSilentOnCustomizations(t *testing.T) {
 		t.Errorf("Diff() = %v, want no issues for canonical config carrying customizations", issues)
 	}
 }
+
+func TestReconcileFillsIntervalWithoutDroppingDay(t *testing.T) {
+	t.Parallel()
+	yaml := `version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      day: monday
+    open-pull-requests-limit: 5
+`
+	existing := mustConfig(t, yaml)
+	desired, _ := dependabot.Generate(dependabot.RepoShape{GoModuleDirs: []string{""}})
+
+	got := dependabot.Reconcile(existing, desired)
+
+	root := got.Updates[got.Find(dependabot.EcosystemGoModules, "/")]
+	if root.Schedule == nil {
+		t.Fatal("Reconcile() left the entry without a schedule")
+	}
+	if root.Schedule.Interval != dependabot.IntervalWeekly {
+		t.Errorf("Reconcile() interval = %q, want %q (GitHub rejects an empty interval)", root.Schedule.Interval, dependabot.IntervalWeekly)
+	}
+	if root.Schedule.Day != "monday" {
+		t.Errorf("Reconcile() dropped schedule day %q while filling the interval — must preserve user customizations", root.Schedule.Day)
+	}
+}
