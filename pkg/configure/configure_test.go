@@ -43,7 +43,7 @@ updates:
           - "*"
 `
 
-func repoWithConfig(t *testing.T, configPath, content string) string {
+func repoWithConfig(t *testing.T, content string) string {
 	t.Helper()
 
 	root := t.TempDir()
@@ -68,7 +68,7 @@ func repoWithConfig(t *testing.T, configPath, content string) string {
 	}
 
 	if content != "" {
-		abs := filepath.Join(root, filepath.FromSlash(configPath))
+		abs := filepath.Join(root, configure.DefaultConfigPath)
 		if err := os.MkdirAll(filepath.Dir(abs), 0o755); err != nil {
 			t.Fatal(err)
 		}
@@ -96,7 +96,7 @@ func run(t *testing.T, root string, opts configure.Options) configure.Result {
 
 func TestRunGeneratesMissingConfig(t *testing.T) {
 	t.Parallel()
-	root := repoWithConfig(t, configure.DefaultConfigPath, "")
+	root := repoWithConfig(t, "")
 
 	result := run(t, root, configure.Options{})
 
@@ -125,7 +125,7 @@ func TestRunGeneratesMissingConfig(t *testing.T) {
 
 func TestRunIsIdempotent(t *testing.T) {
 	t.Parallel()
-	root := repoWithConfig(t, configure.DefaultConfigPath, "")
+	root := repoWithConfig(t, "")
 
 	run(t, root, configure.Options{})
 	first, err := os.ReadFile(filepath.Join(root, ".github", "dependabot.yml"))
@@ -150,7 +150,7 @@ func TestRunIsIdempotent(t *testing.T) {
 
 func TestRunCheckDoesNotWrite(t *testing.T) {
 	t.Parallel()
-	root := repoWithConfig(t, configure.DefaultConfigPath, "")
+	root := repoWithConfig(t, "")
 
 	result := run(t, root, configure.Options{Check: true})
 
@@ -170,7 +170,7 @@ func TestRunCheckDoesNotWrite(t *testing.T) {
 func TestRunUnsafeConfigIsSuggestOnly(t *testing.T) {
 	t.Parallel()
 	unsafe := "version: 2\nregistries:\n  npm: {}\nupdates: []\n"
-	root := repoWithConfig(t, configure.DefaultConfigPath, unsafe)
+	root := repoWithConfig(t, unsafe)
 
 	result := run(t, root, configure.Options{})
 
@@ -195,7 +195,7 @@ func TestRunUnsafeConfigIsSuggestOnly(t *testing.T) {
 func TestRunReconcilesBareConfigPreservingIntent(t *testing.T) {
 	t.Parallel()
 	bare := "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    schedule:\n      interval: monthly\n"
-	root := repoWithConfig(t, configure.DefaultConfigPath, bare)
+	root := repoWithConfig(t, bare)
 
 	result := run(t, root, configure.Options{})
 
@@ -224,7 +224,7 @@ func TestRunReconcilesBareConfigPreservingIntent(t *testing.T) {
 
 func TestRunCanonicalConfigIsNoOp(t *testing.T) {
 	t.Parallel()
-	root := repoWithConfig(t, configure.DefaultConfigPath, canonicalSelfConfig)
+	root := repoWithConfig(t, canonicalSelfConfig)
 
 	result := run(t, root, configure.Options{})
 
@@ -252,7 +252,7 @@ func TestRunOnEmptyRepoIsNoOp(t *testing.T) {
 func TestRunUnparseableConfigIsSuggestOnly(t *testing.T) {
 	t.Parallel()
 	seqGroups := "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    groups:\n      - everything:\n          patterns:\n            - \"*\"\n"
-	root := repoWithConfig(t, configure.DefaultConfigPath, seqGroups)
+	root := repoWithConfig(t, seqGroups)
 
 	result := run(t, root, configure.Options{})
 
@@ -268,7 +268,7 @@ func TestRunUnparseableConfigIsSuggestOnly(t *testing.T) {
 func TestRunInvalidEntryIsSuggestOnly(t *testing.T) {
 	t.Parallel()
 	invalid := "version: 2\nupdates:\n  - package-ecosystem: gomod\n"
-	root := repoWithConfig(t, configure.DefaultConfigPath, invalid)
+	root := repoWithConfig(t, invalid)
 
 	result := run(t, root, configure.Options{})
 
@@ -300,7 +300,7 @@ func TestRunInvalidEntryIsSuggestOnly(t *testing.T) {
 func TestRunFillsEmptyScheduleInterval(t *testing.T) {
 	t.Parallel()
 	emptyInterval := "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    schedule: {}\n"
-	root := repoWithConfig(t, configure.DefaultConfigPath, emptyInterval)
+	root := repoWithConfig(t, emptyInterval)
 
 	result := run(t, root, configure.Options{})
 
