@@ -136,6 +136,7 @@ func TestRunIsIdempotent(t *testing.T) {
 	root := repoWithConfig(t, "")
 
 	run(t, root, configure.Options{})
+
 	first, err := os.ReadFile(filepath.Join(root, ".github", "dependabot.yml"))
 	if err != nil {
 		t.Fatal(err)
@@ -177,6 +178,7 @@ func TestRunCheckDoesNotWrite(t *testing.T) {
 
 func TestRunUnsafeConfigIsSuggestOnly(t *testing.T) {
 	t.Parallel()
+
 	unsafe := "version: 2\nregistries:\n  npm: {}\nupdates: []\n"
 	root := repoWithConfig(t, unsafe)
 
@@ -202,6 +204,7 @@ func TestRunUnsafeConfigIsSuggestOnly(t *testing.T) {
 
 func TestRunReconcilesBareConfigPreservingIntent(t *testing.T) {
 	t.Parallel()
+
 	bare := "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    schedule:\n      interval: monthly\n"
 	root := repoWithConfig(t, bare)
 
@@ -259,6 +262,7 @@ func TestRunOnEmptyRepoIsNoOp(t *testing.T) {
 
 func TestRunUnparseableConfigIsSuggestOnly(t *testing.T) {
 	t.Parallel()
+
 	seqGroups := "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    groups:\n      - everything:\n          patterns:\n            - \"*\"\n"
 	root := repoWithConfig(t, seqGroups)
 
@@ -279,6 +283,7 @@ func TestRunUnparseableConfigIsSuggestOnly(t *testing.T) {
 
 func TestRunInvalidEntryIsSuggestOnly(t *testing.T) {
 	t.Parallel()
+
 	invalid := "version: 2\nupdates:\n  - package-ecosystem: gomod\n"
 	root := repoWithConfig(t, invalid)
 
@@ -298,6 +303,7 @@ func TestRunInvalidEntryIsSuggestOnly(t *testing.T) {
 	}
 
 	found := false
+
 	for _, f := range result.Findings {
 		if string(f.Rule) == "dependabot-entry-invalid" {
 			found = true
@@ -311,6 +317,7 @@ func TestRunInvalidEntryIsSuggestOnly(t *testing.T) {
 
 func TestRunFillsEmptyScheduleInterval(t *testing.T) {
 	t.Parallel()
+
 	emptyInterval := "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    schedule: {}\n"
 	root := repoWithConfig(t, emptyInterval)
 

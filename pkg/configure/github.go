@@ -73,12 +73,17 @@ func githubToken() string {
 
 // githubAPIBase is the API root for security-fix enablement; a variable so
 // tests can point the client at a stub server.
+const (
+	githubAPITimeout = 15 * time.Second
+	errorBodyLimit   = 512
+)
+
 var githubAPIBase = "https://api.github.com"
 
 // githubAPIClient bounds the security-fixes call so a stalled GitHub API
 // cannot hang the CLI indefinitely; the request context still governs
 // cancellation.
-var githubAPIClient = &http.Client{Timeout: 15 * time.Second}
+var githubAPIClient = &http.Client{Timeout: githubAPITimeout}
 
 // EnableSecurityFixes turns on automated security fixes for the repository
 // at root via the GitHub API. The returned outcome is one of the
@@ -104,7 +109,7 @@ func EnableSecurityFixes(ctx context.Context, root string) (SecurityFixesOutcome
 
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	req.Header.Set("X-Github-Api-Version", "2022-11-28")
 
 	resp, err := githubAPIClient.Do(req)
 	if err != nil {
@@ -131,7 +136,7 @@ func securityFixesOutcome(resp *http.Response, url string) (SecurityFixesOutcome
 	case http.StatusForbidden:
 		return SecurityFixesForbidden, nil
 	default:
-		body, bodyErr := io.ReadAll(io.LimitReader(resp.Body, 512))
+		body, bodyErr := io.ReadAll(io.LimitReader(resp.Body, errorBodyLimit))
 
 		return "", &UnexpectedStatusError{URL: url, StatusCode: resp.StatusCode, Body: string(body), BodyErr: bodyErr}
 	}

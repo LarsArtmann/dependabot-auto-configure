@@ -15,6 +15,8 @@ import (
 // a finding instead of silently generating dozens of entries.
 const MaxModuleEntries = 20
 
+const initialDiffCapacity = 4
+
 // ConfigIssue is this package's issue vocabulary, aliased from the shared
 // autoconfigure SDK so findings and suggestions speak one shape.
 type ConfigIssue = autoconfigure.ConfigIssue
@@ -65,6 +67,7 @@ func Generate(shape RepoShape) (Config, CapInfo) {
 			if ci == "/" {
 				return true
 			}
+
 			if cj == "/" {
 				return false
 			}
@@ -140,26 +143,26 @@ func scheduleMissing(u Update) bool {
 func Reconcile(existing, desired Config) Config {
 	out := Config{Version: CurrentVersion}
 
-	for _, u := range existing.Updates {
-		idx := desired.Find(u.PackageEcosystem, u.Directory)
+	for _, update := range existing.Updates {
+		idx := desired.Find(update.PackageEcosystem, update.Directory)
 
-		if scheduleMissing(u) && idx >= 0 {
-			if u.Schedule == nil {
-				u.Schedule = &Schedule{Interval: IntervalWeekly}
+		if scheduleMissing(update) && idx >= 0 {
+			if update.Schedule == nil {
+				update.Schedule = &Schedule{Interval: IntervalWeekly}
 			} else {
-				u.Schedule.Interval = IntervalWeekly
+				update.Schedule.Interval = IntervalWeekly
 			}
 		}
 
-		if u.OpenPullRequestsLimit == 0 && idx >= 0 {
-			u.OpenPullRequestsLimit = desired.Updates[idx].OpenPullRequestsLimit
+		if update.OpenPullRequestsLimit == 0 && idx >= 0 {
+			update.OpenPullRequestsLimit = desired.Updates[idx].OpenPullRequestsLimit
 		}
 
-		if u.Groups.Empty() && idx >= 0 {
-			u.Groups = desiredGroups(u.PackageEcosystem)
+		if update.Groups.Empty() && idx >= 0 {
+			update.Groups = desiredGroups(update.PackageEcosystem)
 		}
 
-		out.Updates = append(out.Updates, u)
+		out.Updates = append(out.Updates, update)
 	}
 
 	for _, want := range desired.Updates {
@@ -183,6 +186,7 @@ func detectedDirs(shape RepoShape) map[string]bool {
 	for _, dir := range shape.GoModuleDirs {
 		dirs[canonicalDir(dir)] = true
 	}
+
 	return dirs
 }
 
@@ -217,7 +221,7 @@ func Diff(
 	capInfo CapInfo,
 	file finding.FilePath,
 ) []autoconfigure.ConfigIssue {
-	issues := make([]autoconfigure.ConfigIssue, 0, 4)
+	issues := make([]autoconfigure.ConfigIssue, 0, initialDiffCapacity)
 
 	if existing == nil {
 		if len(desired.Updates) == 0 {
@@ -339,7 +343,8 @@ func entryIssues(got Update, want Update, file finding.FilePath) []autoconfigure
 		issues = append(issues, ConfigIssue{
 			Rule: "dependabot-schedule-missing",
 			Message: fmt.Sprintf(
-				"entry %q/%q has no schedule interval, so Dependabot runs on its implicit default instead of the explicit weekly cadence",
+				"entry %q/%q has no schedule interval, so Dependabot runs "+
+					"on its implicit default instead of the explicit weekly cadence",
 				want.PackageEcosystem,
 				want.Directory,
 			),

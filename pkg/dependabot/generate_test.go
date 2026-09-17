@@ -10,6 +10,7 @@ import (
 
 func TestGenerate(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name          string
 		shape         dependabot.RepoShape
@@ -48,6 +49,7 @@ func TestGenerate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			cfg, capInfo := dependabot.Generate(tt.shape)
 
 			if err := cfg.Validate(); err != nil {
@@ -85,6 +87,7 @@ func TestGenerate(t *testing.T) {
 
 func TestGenerateCapsModuleCount(t *testing.T) {
 	t.Parallel()
+
 	shape := dependabot.RepoShape{GoModuleDirs: []string{""}}
 	for i := range dependabot.MaxModuleEntries + 5 {
 		shape.GoModuleDirs = append(shape.GoModuleDirs, "module"+string(rune('a'+i)))
@@ -103,6 +106,7 @@ func TestGenerateCapsModuleCount(t *testing.T) {
 
 func TestCanonicalEntriesAreComplete(t *testing.T) {
 	t.Parallel()
+
 	cfg, _ := dependabot.Generate(
 		dependabot.RepoShape{GoModuleDirs: []string{""}, HasGitHubActions: true, HasNPM: true},
 	)
@@ -151,6 +155,7 @@ func mustConfig(t *testing.T, yaml string) dependabot.Config {
 
 func TestDiff(t *testing.T) {
 	t.Parallel()
+
 	shape := dependabot.RepoShape{GoModuleDirs: []string{""}, HasGitHubActions: true}
 	desired, _ := dependabot.Generate(shape)
 
@@ -259,6 +264,7 @@ func TestDiff(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			var (
 				existing *dependabot.Config
 				dec      dependabot.DecodeResult
@@ -296,6 +302,7 @@ func TestDiff(t *testing.T) {
 
 func TestDiffMissingConfigButEmptyShape(t *testing.T) {
 	t.Parallel()
+
 	issues := dependabot.Diff(
 		nil,
 		dependabot.DecodeResult{},
@@ -318,13 +325,16 @@ func TestDiffMissingConfigButEmptyShape(t *testing.T) {
 // entry mislabeled orphan).
 func TestDiffCappedModuleEntryIsNotOrphan(t *testing.T) {
 	t.Parallel()
+
 	dirs := make([]string, dependabot.MaxModuleEntries+1)
+
 	dirs[0] = ""
 	for i := 1; i < len(dirs); i++ {
 		dirs[i] = fmt.Sprintf("mod%d", i)
 	}
 
 	shape := dependabot.RepoShape{GoModuleDirs: dirs}
+
 	desired, capInfo := dependabot.Generate(shape)
 	if !capInfo.Capped {
 		t.Fatal("fixture not capped, want Capped=true")
@@ -364,6 +374,7 @@ func TestDiffCappedModuleEntryIsNotOrphan(t *testing.T) {
 	issues := dependabot.Diff(&existing, decoded, desired, shape, capInfo, ".github/dependabot.yml")
 
 	var orphans []string
+
 	for _, issue := range issues {
 		if string(issue.Rule) == "dependabot-entry-orphan" {
 			orphans = append(orphans, issue.Message)

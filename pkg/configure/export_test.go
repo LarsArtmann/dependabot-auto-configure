@@ -11,7 +11,7 @@ var (
 
 // SetGitHubAPIForTest points the security-fixes client at a stub server and
 // returns a restore function.
-func SetGitHubAPIForTest(baseURL string, client *http.Client) (restore func()) {
+func SetGitHubAPIForTest(baseURL string, client *http.Client) func() {
 	origBase, origClient := githubAPIBase, githubAPIClient
 	githubAPIBase, githubAPIClient = baseURL, client
 

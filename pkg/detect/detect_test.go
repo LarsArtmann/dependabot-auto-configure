@@ -28,6 +28,7 @@ func writeTree(t *testing.T, files ...string) string {
 
 func TestShape(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name        string
 		files       []string
@@ -104,6 +105,7 @@ func TestShape(t *testing.T) {
 
 func TestShapeMissingRoot(t *testing.T) {
 	t.Parallel()
+
 	if _, err := detect.NewDetector(filepath.Join(t.TempDir(), "does-not-exist")).Shape(); err == nil {
 		t.Fatal("Shape() on missing root expected error, got nil")
 	}

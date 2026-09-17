@@ -33,6 +33,7 @@ updates:
 
 func TestDecodeCustomizationsSafe(t *testing.T) {
 	t.Parallel()
+
 	res, err := dependabot.Decode([]byte(customYAML))
 	if err != nil {
 		t.Fatalf("Decode() error = %v", err)
@@ -59,6 +60,7 @@ func TestDecodeCustomizationsSafe(t *testing.T) {
 
 func TestDecodeUnknownScheduleKeyUnsafe(t *testing.T) {
 	t.Parallel()
+
 	yaml := strings.Join([]string{
 		"version: 2",
 		"updates:",
@@ -82,6 +84,7 @@ func TestDecodeUnknownScheduleKeyUnsafe(t *testing.T) {
 
 func TestEncodeRoundTripPreservesCustomizations(t *testing.T) {
 	t.Parallel()
+
 	res, err := dependabot.Decode([]byte(customYAML))
 	if err != nil {
 		t.Fatalf("Decode() error = %v", err)
@@ -178,6 +181,7 @@ func TestDiffSilentOnCustomizations(t *testing.T) {
 
 func TestReconcileFillsIntervalWithoutDroppingDay(t *testing.T) {
 	t.Parallel()
+
 	yaml := `version: 2
 updates:
   - package-ecosystem: gomod
@@ -195,6 +199,7 @@ updates:
 	if root.Schedule == nil {
 		t.Fatal("Reconcile() left the entry without a schedule")
 	}
+
 	if root.Schedule.Interval != dependabot.IntervalWeekly {
 		t.Errorf(
 			"Reconcile() interval = %q, want %q (GitHub rejects an empty interval)",
@@ -202,6 +207,7 @@ updates:
 			dependabot.IntervalWeekly,
 		)
 	}
+
 	if root.Schedule.Day != "monday" {
 		t.Errorf(
 			"Reconcile() dropped schedule day %q while filling the interval — must preserve user customizations",

@@ -191,6 +191,8 @@ func (e *APITransportError) ErrorCode() string { return "github.transport" }
 // errorContextURL is the structured-context key carrying the API endpoint.
 const errorContextURL = "url"
 
+const serverFaultStatusFloor = 500
+
 // ErrorContext exposes the failure as structured, machine-readable data.
 func (e *APITransportError) ErrorContext() map[string]string {
 	return map[string]string{"op": string(e.Op), errorContextURL: e.URL}
@@ -234,7 +236,7 @@ func (e *UnexpectedStatusError) Unwrap() error {
 // ErrorFamily derives the family from the status: 5xx is GitHub's fault
 // and may succeed on retry, anything else is this invocation's fault.
 func (e *UnexpectedStatusError) ErrorFamily() ef.Family {
-	if e.StatusCode >= 500 {
+	if e.StatusCode >= serverFaultStatusFloor {
 		return ef.Transient
 	}
 

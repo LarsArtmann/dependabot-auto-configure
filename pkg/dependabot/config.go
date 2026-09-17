@@ -38,6 +38,8 @@ const IntervalWeekly Interval = "weekly"
 // open per ecosystem entry. Five matches the account-wide convention.
 const DefaultOpenPullRequestsLimit = 5
 
+const yamlIndentWidth = 2
+
 // Canonical group names. Grouping collapses the minor/patch churn into one
 // PR per entry; GitHub Actions use a pattern group because they have no
 // semver update types.
@@ -256,7 +258,8 @@ func (c Config) Encode() ([]byte, error) {
 	var buf bytes.Buffer
 
 	enc := yaml.NewEncoder(&buf)
-	enc.SetIndent(2)
+	enc.SetIndent(yamlIndentWidth)
+
 	if err := enc.Encode(c); err != nil {
 		return nil, &EncodeError{Cause: err}
 	}
@@ -299,9 +302,11 @@ func (c Config) Validate() error {
 		if u.PackageEcosystem == "" {
 			missing = append(missing, FieldPackageEcosystem)
 		}
+
 		if u.Directory == "" {
 			missing = append(missing, FieldDirectory)
 		}
+
 		if len(missing) > 0 {
 			return &InvalidEntryError{Index: i, Missing: missing}
 		}

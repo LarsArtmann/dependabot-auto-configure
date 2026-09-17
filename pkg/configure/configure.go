@@ -28,6 +28,8 @@ const ToolName = "dependabot-auto-configure"
 // configuration from, relative to the repository root.
 const DefaultConfigPath = ".github/dependabot.yml"
 
+const configDirPerm = 0o750
+
 // Options controls one configure run.
 type Options struct {
 	// Root is the repository root directory.
@@ -183,6 +185,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 	existing := dec.Config
 
 	issues := dependabot.Diff(&existing, dec, desired, shape, capInfo, file)
+
 	result.Findings, err = autoconfigure.FindingsFromIssues(ToolName, issues)
 	if err != nil {
 		return result, &FindingsConversionError{Tool: ToolName, Cause: err}
@@ -283,7 +286,7 @@ func planOrWrite(result *Result, opts Options, absConfig string, out []byte) err
 	}
 
 	dir := filepath.Dir(absConfig)
-	if err := os.MkdirAll(dir, 0o750); err != nil {
+	if err := os.MkdirAll(dir, configDirPerm); err != nil {
 		return &ConfigWriteError{Path: dir, Step: WriteStepCreateDirectory, Cause: err}
 	}
 

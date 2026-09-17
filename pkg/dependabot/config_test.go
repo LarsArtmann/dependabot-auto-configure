@@ -9,6 +9,7 @@ import (
 
 func TestDecodeCanonicalConfig(t *testing.T) {
 	t.Parallel()
+
 	tests := []struct {
 		name           string
 		yaml           string
@@ -57,6 +58,7 @@ func TestDecodeCanonicalConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			dec, err := dependabot.Decode([]byte(tt.yaml))
 			if err != nil {
 				t.Fatalf("Decode() error = %v", err)
@@ -84,6 +86,7 @@ func TestDecodeCanonicalConfig(t *testing.T) {
 
 func TestEncodeRoundTrip(t *testing.T) {
 	t.Parallel()
+
 	dec, err := dependabot.Decode([]byte(strings.Join([]string{
 		"version: 2",
 		"updates:",

@@ -59,6 +59,7 @@ func TestRepoSlugFromGit(t *testing.T) {
 		t.Parallel()
 
 		root := t.TempDir()
+
 		gitDir := filepath.Join(root, ".git")
 		if err := os.MkdirAll(gitDir, 0o755); err != nil {
 			t.Fatal(err)
@@ -137,8 +138,10 @@ func TestEnableSecurityFixesOutcomes(t *testing.T) {
 			t.Setenv("GH_TOKEN", "")
 
 			var gotPath, gotMethod, gotAuth string
+
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				gotPath, gotMethod, gotAuth = r.URL.Path, r.Method, r.Header.Get("Authorization")
+
 				w.WriteHeader(tt.status)
 			}))
 			defer server.Close()
