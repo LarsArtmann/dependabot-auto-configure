@@ -260,35 +260,7 @@ func Diff(existing *Config, dec DecodeResult, desired Config, shape RepoShape, c
 
 		got := existing.Updates[idx]
 
-		if scheduleMissing(got) {
-			issues = append(issues, ConfigIssue{
-				Rule:       "dependabot-schedule-missing",
-				Message:    fmt.Sprintf("entry %q/%q has no schedule interval", want.PackageEcosystem, want.Directory),
-				Severity:   finding.SeverityWarning,
-				File:       file,
-				Suggestion: fmt.Sprintf("set schedule interval to %q", IntervalWeekly),
-			})
-		}
-
-		if got.OpenPullRequestsLimit == 0 {
-			issues = append(issues, ConfigIssue{
-				Rule:       "dependabot-limit-missing",
-				Message:    fmt.Sprintf("entry %q/%q has no open-pull-requests-limit, so Dependabot defaults to 5 silently", want.PackageEcosystem, want.Directory),
-				Severity:   finding.SeverityWarning,
-				File:       file,
-				Suggestion: fmt.Sprintf("set open-pull-requests-limit to %d explicitly", DefaultOpenPullRequestsLimit),
-			})
-		}
-
-		if got.Groups.Empty() {
-			issues = append(issues, ConfigIssue{
-				Rule:       "dependabot-grouping-missing",
-				Message:    fmt.Sprintf("entry %q/%q has no update groups, so minor and patch bumps flood the PR queue", want.PackageEcosystem, want.Directory),
-				Severity:   finding.SeverityWarning,
-				File:       file,
-				Suggestion: fmt.Sprintf("add a %q group (minor+patch) or a %q pattern group for actions", GroupMinorAndPatch, GroupActions),
-			})
-		}
+		issues = append(issues, entryIssues(got, want, file)...)
 	}
 
 	for _, got := range existing.Updates {
@@ -311,6 +283,44 @@ func Diff(existing *Config, dec DecodeResult, desired Config, shape RepoShape, c
 			Severity:   finding.SeverityInfo,
 			File:       file,
 			Suggestion: fmt.Sprintf("configure the remaining module directories manually or raise the %d-entry cap", MaxModuleEntries),
+		})
+	}
+
+	return issues
+}
+
+// entryIssues reports the canonical fields an existing entry is missing:
+// schedule interval, explicit PR limit, and update groups.
+func entryIssues(got Update, want Update, file finding.FilePath) []autoconfigure.ConfigIssue {
+	var issues []autoconfigure.ConfigIssue
+
+	if scheduleMissing(got) {
+		issues = append(issues, ConfigIssue{
+			Rule:       "dependabot-schedule-missing",
+			Message:    fmt.Sprintf("entry %q/%q has no schedule interval", want.PackageEcosystem, want.Directory),
+			Severity:   finding.SeverityWarning,
+			File:       file,
+			Suggestion: fmt.Sprintf("set schedule interval to %q", IntervalWeekly),
+		})
+	}
+
+	if got.OpenPullRequestsLimit == 0 {
+		issues = append(issues, ConfigIssue{
+			Rule:       "dependabot-limit-missing",
+			Message:    fmt.Sprintf("entry %q/%q has no open-pull-requests-limit, so Dependabot defaults to 5 silently", want.PackageEcosystem, want.Directory),
+			Severity:   finding.SeverityWarning,
+			File:       file,
+			Suggestion: fmt.Sprintf("set open-pull-requests-limit to %d explicitly", DefaultOpenPullRequestsLimit),
+		})
+	}
+
+	if got.Groups.Empty() {
+		issues = append(issues, ConfigIssue{
+			Rule:       "dependabot-grouping-missing",
+			Message:    fmt.Sprintf("entry %q/%q has no update groups, so minor and patch bumps flood the PR queue", want.PackageEcosystem, want.Directory),
+			Severity:   finding.SeverityWarning,
+			File:       file,
+			Suggestion: fmt.Sprintf("add a %q group (minor+patch) or a %q pattern group for actions", GroupMinorAndPatch, GroupActions),
 		})
 	}
 
