@@ -204,7 +204,18 @@ func Decode(data []byte) (DecodeResult, error) {
 		}
 	}
 
-	entries, _ := raw["updates"].([]any)
+	auditEntries(&res, raw["updates"])
+
+	res.Unsafe = len(res.UnknownTopLevel) > 0 || res.UnknownEntryFields || len(res.UnknownGroupNames) > 0
+
+	return res, nil
+}
+
+// auditEntries flags updates entries carrying constructs outside the known
+// schema: unknown entry fields, unknown schedule keys, unknown group names.
+func auditEntries(res *DecodeResult, updates any) {
+	entries, _ := updates.([]any)
+
 	for _, entry := range entries {
 		entryMap, ok := entry.(map[string]any)
 		if !ok {
@@ -236,10 +247,6 @@ func Decode(data []byte) (DecodeResult, error) {
 			}
 		}
 	}
-
-	res.Unsafe = len(res.UnknownTopLevel) > 0 || res.UnknownEntryFields || len(res.UnknownGroupNames) > 0
-
-	return res, nil
 }
 
 // Encode renders the canonical YAML: two-space indent, stable field order

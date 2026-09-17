@@ -44,12 +44,7 @@ func (d Detector) Shape() (dependabot.RepoShape, error) {
 		}
 
 		if entry.IsDir() {
-			name := entry.Name()
-			if path == d.Root {
-				return nil
-			}
-
-			if skippedSegments[name] || (strings.HasPrefix(name, ".") && name != ".github") {
+			if d.skipDir(path, entry.Name()) {
 				return fs.SkipDir
 			}
 
@@ -61,17 +56,7 @@ func (d Detector) Shape() (dependabot.RepoShape, error) {
 			return relErr
 		}
 
-		switch {
-		case rel == "go.mod":
-			shape.GoModuleDirs = append(shape.GoModuleDirs, "")
-		case strings.HasSuffix(rel, "/go.mod"):
-			shape.GoModuleDirs = append(shape.GoModuleDirs, filepath.Dir(rel))
-		case strings.HasPrefix(rel, filepath.Join(".github", "workflows")+string(filepath.Separator)) &&
-			(strings.HasSuffix(rel, ".yml") || strings.HasSuffix(rel, ".yaml")):
-			shape.HasGitHubActions = true
-		case rel == "package.json":
-			shape.HasNPM = true
-		}
+		classify(rel, &shape)
 
 		return nil
 	})
@@ -80,4 +65,30 @@ func (d Detector) Shape() (dependabot.RepoShape, error) {
 	}
 
 	return shape, nil
+}
+
+// skipDir reports whether the directory subtree can be pruned: it is
+// outside the repository root and either a known no-manifest directory or
+// a hidden directory other than .github.
+func (d Detector) skipDir(path, name string) bool {
+	if path == d.Root {
+		return false
+	}
+
+	return skippedSegments[name] || (strings.HasPrefix(name, ".") && name != ".github")
+}
+
+// classify records one walked file in the repository shape.
+func classify(rel string, shape *dependabot.RepoShape) {
+	switch {
+	case rel == "go.mod":
+		shape.GoModuleDirs = append(shape.GoModuleDirs, "")
+	case strings.HasSuffix(rel, "/go.mod"):
+		shape.GoModuleDirs = append(shape.GoModuleDirs, filepath.Dir(rel))
+	case strings.HasPrefix(rel, filepath.Join(".github", "workflows")+string(filepath.Separator)) &&
+		(strings.HasSuffix(rel, ".yml") || strings.HasSuffix(rel, ".yaml")):
+		shape.HasGitHubActions = true
+	case rel == "package.json":
+		shape.HasNPM = true
+	}
 }
