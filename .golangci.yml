@@ -1,0 +1,109 @@
+version: "2"
+run:
+  timeout: 5m
+  go: 1.27
+  build-tags: []
+  allow-parallel-runners: false
+  allow-serial-runners: false
+  issues-exit-code: 1
+  tests: true
+output:
+  formats: {}
+linters:
+  enable:
+    - bodyclose
+    - contextcheck
+    - copyloopvar
+    - cyclop
+    - dupl
+    - durationcheck
+    - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustive
+    - forcetypeassert
+    - funlen
+    - ginkgolinter
+    - gochecknoglobals
+    - gochecknoinits
+    - gochecksumtype
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - gosec
+    - gosmopolitan
+    - govet
+    - ineffassign
+    - interfacebloat
+    - intrange
+    - loggercheck
+    - maintidx
+    - mirror
+    - misspell
+    - musttag
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - noctx
+    - nolintlint
+    - paralleltest
+    - perfsprint
+    - prealloc
+    - predeclared
+    - protogetter
+    - reassign
+    - recvcheck
+    - revive
+    - rowserrcheck
+    - sloglint
+    - spancheck
+    - sqlclosecheck
+    - staticcheck
+    - testifylint
+    - thelper
+    - unconvert
+    - unparam
+    - unused
+    - usetesting
+    - wastedassign
+    - wrapcheck
+    - zerologlint
+  exclusions:
+    generated: lax
+    rules:
+      - path: _test\.go
+        linters:
+          - exhaustruct
+          - testpackage
+          - gochecknoglobals
+          - funlen
+          - cyclop
+          - goconst
+          - forcetypeassert
+          - gosec
+          - errcheck
+          - wrapcheck
+          - ireturn
+          - recvcheck
+          - contextcheck
+          - exhaustive
+      - path: _test\.go
+        text: unused
+        linters:
+          - unused
+    paths:
+      - _templ\.go$
+      - \.gen\.go$
+      - vendor/
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - _templ\.go$
+issues:
+  max-issues-per-linter: 50
+  max-same-issues: 10
