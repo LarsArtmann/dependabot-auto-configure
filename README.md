@@ -27,6 +27,35 @@ bounded configuration.
 - Optional `--enable-security-fixes` flips on Dependabot security updates
   for the repo via the GitHub API (needs `GITHUB_TOKEN`/`GH_TOKEN`)
 
+## Example output
+
+Running `dependabot-auto-configure` in a repository with a root Go module
+and GitHub Actions workflows writes:
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns:
+          - '*'
+```
+
 ## Usage
 
 ```sh
@@ -35,6 +64,10 @@ dependabot-auto-configure
 
 # CI gate: exit 1 when changes are needed, never writes
 dependabot-auto-configure --check
+
+# CI policy: only error-severity findings fail the run
+# (--fail-on accepts any, none, or a severity: error, warning, info, critical)
+dependabot-auto-configure --check --fail-on error
 
 # show the planned file without writing
 dependabot-auto-configure --dry-run
@@ -76,7 +109,7 @@ Via Go (every dependency is on the public module proxy):
 go install github.com/larsartmann/dependabot-auto-configure@latest
 ```
 
-Or build directly (Go 1.26+; the source uses `encoding/json/v2` via the
+Or build directly (Go 1.27+; the source uses `encoding/json/v2` via the
 auto-configure SDK):
 
 ```sh

@@ -145,7 +145,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 	data, readErr := os.ReadFile(absConfig)
 	switch {
 	case errors.Is(readErr, fs.ErrNotExist):
-		return result, planMissingConfig(&result, opts, desired, capInfo, shape, absConfig, configPath, file
+		return result, planMissingConfig(&result, opts, desired, capInfo, shape, absConfig, configPath, file)
 	case readErr != nil:
 		return result, &ConfigReadError{Path: absConfig, Cause: readErr}
 	}
