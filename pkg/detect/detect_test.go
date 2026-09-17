@@ -68,6 +68,7 @@ func TestShape(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			root := writeTree(t, tt.files...)
 
 			shape, err := detect.NewDetector(root).Shape()

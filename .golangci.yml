@@ -138,6 +138,7 @@ linters:
       - path: internal/cli/.*\.go
         linters:
           - wrapcheck
+          - contextcheck
       - path: pkg/detect/.*\.go
         linters:
           - wrapcheck

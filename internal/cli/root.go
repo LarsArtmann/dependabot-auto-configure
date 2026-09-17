@@ -22,7 +22,7 @@ const (
 )
 
 // Version is overridden at build time via -ldflags.
-var Version = "dev" //nolint:gochecknoglobals // set via -ldflags at build time
+var Version = "dev"
 
 // Execute runs the CLI and returns the process exit code.
 func Execute(ctx context.Context) int {
@@ -206,18 +206,7 @@ func reportText(cmd *cobra.Command, result configure.Result) error {
 		}
 	}
 
-	var status string
-	switch {
-	case result.Wrote:
-		status = "wrote .github/dependabot.yml"
-	case result.PlannedWrite:
-		status = "changes planned (held back by --check/--dry-run)"
-	case result.UnsafeRepair:
-		status = "config uses unknown constructs; repair is suggest-only"
-	case result.Unchanged && len(result.Findings) == 0:
-		status = "configuration already canonical"
-	}
-
+	status := statusLine(result)
 	if status != "" {
 		if err := writeOut(stdout, "%s\n", status); err != nil {
 			return err
@@ -231,4 +220,21 @@ func reportText(cmd *cobra.Command, result configure.Result) error {
 	}
 
 	return nil
+}
+
+// statusLine summarizes the run outcome in one line, or "" when there is
+// nothing to say.
+func statusLine(result configure.Result) string {
+	switch {
+	case result.Wrote:
+		return "wrote .github/dependabot.yml"
+	case result.PlannedWrite:
+		return "changes planned (held back by --check/--dry-run)"
+	case result.UnsafeRepair:
+		return "config uses unknown constructs; repair is suggest-only"
+	case result.Unchanged && len(result.Findings) == 0:
+		return "configuration already canonical"
+	}
+
+	return ""
 }

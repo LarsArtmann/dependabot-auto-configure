@@ -47,6 +47,7 @@ func TestGenerate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			cfg, capInfo := dependabot.Generate(tt.shape)
 
 			if err := cfg.Validate(); err != nil {
@@ -237,6 +238,7 @@ func TestDiff(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			var (
 				existing *dependabot.Config
 				dec      dependabot.DecodeResult

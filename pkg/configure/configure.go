@@ -145,11 +145,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 	data, readErr := os.ReadFile(absConfig)
 	switch {
 	case errors.Is(readErr, fs.ErrNotExist):
-		if err := planMissingConfig(&result, opts, desired, capInfo, shape, absConfig, configPath, file); err != nil {
-			return result, err
-		}
-
-		return result, nil
+		return result, planMissingConfig(&result, opts, desired, capInfo, shape, absConfig, configPath, file
 	case readErr != nil:
 		return result, &ConfigReadError{Path: absConfig, Cause: readErr}
 	}
@@ -190,11 +186,7 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 		return result, nil
 	}
 
-	if err := reconcileValidConfig(&result, opts, existing, desired, absConfig, configPath, data); err != nil {
-		return result, err
-	}
-
-	return result, nil
+	return result, reconcileValidConfig(&result, opts, existing, desired, absConfig, configPath, data)
 }
 
 // planMissingConfig reports the missing-config finding and prepares the
