@@ -111,7 +111,12 @@ func MarshalJSONResult(r Result) ([]byte, error) {
 
 	data, err := json.Marshal(out)
 	if err != nil {
-		return nil, ef.WrapCorruptionf(err, "config.marshal", "marshal %d finding(s) for --json output", len(out.Findings))
+		return nil, ef.WrapCorruptionf(
+			err,
+			"config.marshal",
+			"marshal %d finding(s) for --json output",
+			len(out.Findings),
+		)
 	}
 
 	return data, nil
@@ -154,8 +159,11 @@ func Run(ctx context.Context, opts Options) (Result, error) {
 	if decErr != nil {
 		issue := []autoconfigure.ConfigIssue{
 			{
-				Rule:       "dependabot-config-unparseable",
-				Message:    fmt.Sprintf("existing config cannot be parsed by this tool (%v); treated as suggest-only", decErr),
+				Rule: "dependabot-config-unparseable",
+				Message: fmt.Sprintf(
+					"existing config cannot be parsed by this tool (%v); treated as suggest-only",
+					decErr,
+				),
 				Severity:   finding.SeverityWarning,
 				File:       file,
 				Suggestion: "align the config with the documented Dependabot schema or extend this tool's schema",

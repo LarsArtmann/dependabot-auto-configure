@@ -55,7 +55,11 @@ func repoWithConfig(t *testing.T, content string) string {
 		t.Fatal(err)
 	}
 
-	if err := os.WriteFile(filepath.Join(root, "modules", "types", "go.mod"), []byte("module example.com/x/types\n"), 0o644); err != nil {
+	if err := os.WriteFile(
+		filepath.Join(root, "modules", "types", "go.mod"),
+		[]byte("module example.com/x/types\n"),
+		0o644,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -63,7 +67,11 @@ func repoWithConfig(t *testing.T, content string) string {
 		t.Fatal(err)
 	}
 
-	if err := os.WriteFile(filepath.Join(root, ".github", "workflows", "ci.yml"), []byte("on: push\n"), 0o644); err != nil {
+	if err := os.WriteFile(
+		filepath.Join(root, ".github", "workflows", "ci.yml"),
+		[]byte("on: push\n"),
+		0o644,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -257,7 +265,11 @@ func TestRunUnparseableConfigIsSuggestOnly(t *testing.T) {
 	result := run(t, root, configure.Options{})
 
 	if !result.UnsafeRepair || result.Wrote {
-		t.Errorf("Run() on unparseable config = unsafe=%v wrote=%v, want suggest-only", result.UnsafeRepair, result.Wrote)
+		t.Errorf(
+			"Run() on unparseable config = unsafe=%v wrote=%v, want suggest-only",
+			result.UnsafeRepair,
+			result.Wrote,
+		)
 	}
 
 	if len(result.Findings) == 0 || result.Findings[0].Rule != "dependabot-config-unparseable" {

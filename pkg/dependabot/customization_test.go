@@ -47,7 +47,8 @@ func TestDecodeCustomizationsSafe(t *testing.T) {
 	}
 
 	u := res.Config.Updates[0]
-	if u.Schedule == nil || u.Schedule.Day != "monday" || u.Schedule.Time != "06:00" || u.Schedule.Timezone != "Europe/Berlin" {
+	if u.Schedule == nil || u.Schedule.Day != "monday" || u.Schedule.Time != "06:00" ||
+		u.Schedule.Timezone != "Europe/Berlin" {
 		t.Errorf("Decode() schedule customizations not populated: %+v", u.Schedule)
 	}
 
@@ -122,7 +123,8 @@ func TestReconcilePreservesCustomizations(t *testing.T) {
 	got := dependabot.Reconcile(existing, desired)
 
 	root := got.Updates[got.Find(dependabot.EcosystemGoModules, "/")]
-	if root.Schedule == nil || root.Schedule.Day != "monday" || root.Schedule.Time != "06:00" || root.Schedule.Timezone != "Europe/Berlin" {
+	if root.Schedule == nil || root.Schedule.Day != "monday" || root.Schedule.Time != "06:00" ||
+		root.Schedule.Timezone != "Europe/Berlin" {
 		t.Errorf("Reconcile() lost schedule customizations: %+v", root.Schedule)
 	}
 
@@ -140,7 +142,10 @@ func TestReconcilePreservesCustomizations(t *testing.T) {
 
 	appended := got.Updates[got.Find(dependabot.EcosystemGitHubActions, "/")]
 	if appended.Schedule != nil && appended.Schedule.Day != "" {
-		t.Errorf("Reconcile() generated a schedule day (%q), want none — customizations are never generated", appended.Schedule.Day)
+		t.Errorf(
+			"Reconcile() generated a schedule day (%q), want none — customizations are never generated",
+			appended.Schedule.Day,
+		)
 	}
 
 	if len(appended.Labels) != 0 {
@@ -158,7 +163,14 @@ func TestDiffSilentOnCustomizations(t *testing.T) {
 		t.Fatalf("Decode() error = %v", err)
 	}
 
-	issues := dependabot.Diff(&existing, dec, desired, dependabot.RepoShape{GoModuleDirs: []string{""}}, dependabot.CapInfo{}, ".github/dependabot.yml")
+	issues := dependabot.Diff(
+		&existing,
+		dec,
+		desired,
+		dependabot.RepoShape{GoModuleDirs: []string{""}},
+		dependabot.CapInfo{},
+		".github/dependabot.yml",
+	)
 	if len(issues) != 0 {
 		t.Errorf("Diff() = %v, want no issues for canonical config carrying customizations", issues)
 	}
@@ -184,9 +196,16 @@ updates:
 		t.Fatal("Reconcile() left the entry without a schedule")
 	}
 	if root.Schedule.Interval != dependabot.IntervalWeekly {
-		t.Errorf("Reconcile() interval = %q, want %q (GitHub rejects an empty interval)", root.Schedule.Interval, dependabot.IntervalWeekly)
+		t.Errorf(
+			"Reconcile() interval = %q, want %q (GitHub rejects an empty interval)",
+			root.Schedule.Interval,
+			dependabot.IntervalWeekly,
+		)
 	}
 	if root.Schedule.Day != "monday" {
-		t.Errorf("Reconcile() dropped schedule day %q while filling the interval — must preserve user customizations", root.Schedule.Day)
+		t.Errorf(
+			"Reconcile() dropped schedule day %q while filling the interval — must preserve user customizations",
+			root.Schedule.Day,
+		)
 	}
 }

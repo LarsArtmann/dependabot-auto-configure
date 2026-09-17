@@ -209,7 +209,14 @@ func entryDetected(u Update, dirs map[string]bool, shape RepoShape) bool {
 // is the config path findings should point at. shape is the DETECTED
 // repository shape — orphan detection uses it rather than desired, so the
 // module cap never mislabels a real module entry as an orphan.
-func Diff(existing *Config, dec DecodeResult, desired Config, shape RepoShape, capInfo CapInfo, file finding.FilePath) []autoconfigure.ConfigIssue {
+func Diff(
+	existing *Config,
+	dec DecodeResult,
+	desired Config,
+	shape RepoShape,
+	capInfo CapInfo,
+	file finding.FilePath,
+) []autoconfigure.ConfigIssue {
 	issues := make([]autoconfigure.ConfigIssue, 0, 4)
 
 	if existing == nil {
@@ -218,8 +225,12 @@ func Diff(existing *Config, dec DecodeResult, desired Config, shape RepoShape, c
 		}
 
 		issues = append(issues, ConfigIssue{
-			Rule:       "dependabot-config-missing",
-			Message:    fmt.Sprintf("no %s found, but the repository has %d configurable ecosystem(s)", file, len(desired.Updates)),
+			Rule: "dependabot-config-missing",
+			Message: fmt.Sprintf(
+				"no %s found, but the repository has %d configurable ecosystem(s)",
+				file,
+				len(desired.Updates),
+			),
 			Severity:   finding.SeverityError,
 			File:       file,
 			Suggestion: "run dependabot-auto-configure to generate a grouped weekly configuration",
@@ -240,8 +251,12 @@ func Diff(existing *Config, dec DecodeResult, desired Config, shape RepoShape, c
 
 	if dec.Config.Version != CurrentVersion {
 		issues = append(issues, ConfigIssue{
-			Rule:       "dependabot-version-outdated",
-			Message:    fmt.Sprintf("dependabot config version is %d, but %d is the only version GitHub supports", dec.Config.Version, CurrentVersion),
+			Rule: "dependabot-version-outdated",
+			Message: fmt.Sprintf(
+				"dependabot config version is %d, but %d is the only version GitHub supports",
+				dec.Config.Version,
+				CurrentVersion,
+			),
 			Severity:   finding.SeverityError,
 			File:       file,
 			Suggestion: fmt.Sprintf("set version to %d", CurrentVersion),
@@ -252,11 +267,20 @@ func Diff(existing *Config, dec DecodeResult, desired Config, shape RepoShape, c
 		idx := existing.Find(want.PackageEcosystem, want.Directory)
 		if idx < 0 {
 			issues = append(issues, ConfigIssue{
-				Rule:       "dependabot-entry-missing",
-				Message:    fmt.Sprintf("no updates entry for ecosystem %q in directory %q", want.PackageEcosystem, want.Directory),
-				Severity:   finding.SeverityWarning,
-				File:       file,
-				Suggestion: fmt.Sprintf("add a %q entry for %q with weekly schedule, limit %d, and grouped minor/patch updates", want.PackageEcosystem, want.Directory, DefaultOpenPullRequestsLimit),
+				Rule: "dependabot-entry-missing",
+				Message: fmt.Sprintf(
+					"no updates entry for ecosystem %q in directory %q",
+					want.PackageEcosystem,
+					want.Directory,
+				),
+				Severity: finding.SeverityWarning,
+				File:     file,
+				Suggestion: fmt.Sprintf(
+					"add a %q entry for %q with weekly schedule, limit %d, and grouped minor/patch updates",
+					want.PackageEcosystem,
+					want.Directory,
+					DefaultOpenPullRequestsLimit,
+				),
 			})
 
 			continue
@@ -273,8 +297,12 @@ func Diff(existing *Config, dec DecodeResult, desired Config, shape RepoShape, c
 		}
 
 		issues = append(issues, ConfigIssue{
-			Rule:     "dependabot-entry-orphan",
-			Message:  fmt.Sprintf("entry for ecosystem %q in directory %q matches nothing detected in the repository (kept as-is)", got.PackageEcosystem, got.Directory),
+			Rule: "dependabot-entry-orphan",
+			Message: fmt.Sprintf(
+				"entry for ecosystem %q in directory %q matches nothing detected in the repository (kept as-is)",
+				got.PackageEcosystem,
+				got.Directory,
+			),
 			Severity: finding.SeverityInfo,
 			File:     file,
 			Suggestion: "remove the entry if it is stale, or keep it — this tool leaves " +
@@ -284,11 +312,18 @@ func Diff(existing *Config, dec DecodeResult, desired Config, shape RepoShape, c
 
 	if capInfo.Capped {
 		issues = append(issues, ConfigIssue{
-			Rule:       "dependabot-modules-capped",
-			Message:    fmt.Sprintf("repository has %d Go modules; generation capped at %d entries (root only)", capInfo.TotalModules, MaxModuleEntries),
-			Severity:   finding.SeverityInfo,
-			File:       file,
-			Suggestion: fmt.Sprintf("configure the remaining module directories manually or raise the %d-entry cap", MaxModuleEntries),
+			Rule: "dependabot-modules-capped",
+			Message: fmt.Sprintf(
+				"repository has %d Go modules; generation capped at %d entries (root only)",
+				capInfo.TotalModules,
+				MaxModuleEntries,
+			),
+			Severity: finding.SeverityInfo,
+			File:     file,
+			Suggestion: fmt.Sprintf(
+				"configure the remaining module directories manually or raise the %d-entry cap",
+				MaxModuleEntries,
+			),
 		})
 	}
 
@@ -302,8 +337,12 @@ func entryIssues(got Update, want Update, file finding.FilePath) []autoconfigure
 
 	if scheduleMissing(got) {
 		issues = append(issues, ConfigIssue{
-			Rule:       "dependabot-schedule-missing",
-			Message:    fmt.Sprintf("entry %q/%q has no schedule interval, so Dependabot runs on its implicit default instead of the explicit weekly cadence", want.PackageEcosystem, want.Directory),
+			Rule: "dependabot-schedule-missing",
+			Message: fmt.Sprintf(
+				"entry %q/%q has no schedule interval, so Dependabot runs on its implicit default instead of the explicit weekly cadence",
+				want.PackageEcosystem,
+				want.Directory,
+			),
 			Severity:   finding.SeverityWarning,
 			File:       file,
 			Suggestion: fmt.Sprintf("set schedule interval to %q", IntervalWeekly),
@@ -312,8 +351,12 @@ func entryIssues(got Update, want Update, file finding.FilePath) []autoconfigure
 
 	if got.OpenPullRequestsLimit == 0 {
 		issues = append(issues, ConfigIssue{
-			Rule:       "dependabot-limit-missing",
-			Message:    fmt.Sprintf("entry %q/%q has no open-pull-requests-limit, so Dependabot defaults to 5 silently", want.PackageEcosystem, want.Directory),
+			Rule: "dependabot-limit-missing",
+			Message: fmt.Sprintf(
+				"entry %q/%q has no open-pull-requests-limit, so Dependabot defaults to 5 silently",
+				want.PackageEcosystem,
+				want.Directory,
+			),
 			Severity:   finding.SeverityWarning,
 			File:       file,
 			Suggestion: fmt.Sprintf("set open-pull-requests-limit to %d explicitly", DefaultOpenPullRequestsLimit),
@@ -322,11 +365,19 @@ func entryIssues(got Update, want Update, file finding.FilePath) []autoconfigure
 
 	if got.Groups.Empty() {
 		issues = append(issues, ConfigIssue{
-			Rule:       "dependabot-grouping-missing",
-			Message:    fmt.Sprintf("entry %q/%q has no update groups, so minor and patch bumps flood the PR queue", want.PackageEcosystem, want.Directory),
-			Severity:   finding.SeverityWarning,
-			File:       file,
-			Suggestion: fmt.Sprintf("add a %q group (minor+patch) or a %q pattern group for actions", GroupMinorAndPatch, GroupActions),
+			Rule: "dependabot-grouping-missing",
+			Message: fmt.Sprintf(
+				"entry %q/%q has no update groups, so minor and patch bumps flood the PR queue",
+				want.PackageEcosystem,
+				want.Directory,
+			),
+			Severity: finding.SeverityWarning,
+			File:     file,
+			Suggestion: fmt.Sprintf(
+				"add a %q group (minor+patch) or a %q pattern group for actions",
+				GroupMinorAndPatch,
+				GroupActions,
+			),
 		})
 	}
 

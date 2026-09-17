@@ -59,12 +59,24 @@ func TestGenerate(t *testing.T) {
 			}
 
 			if len(cfg.Updates) != len(tt.wantEcosystem) {
-				t.Fatalf("Generate() produced %d entries, want %d: %+v", len(cfg.Updates), len(tt.wantEcosystem), cfg.Updates)
+				t.Fatalf(
+					"Generate() produced %d entries, want %d: %+v",
+					len(cfg.Updates),
+					len(tt.wantEcosystem),
+					cfg.Updates,
+				)
 			}
 
 			for i, u := range cfg.Updates {
 				if string(u.PackageEcosystem) != tt.wantEcosystem[i] || u.Directory != tt.wantDirs[i] {
-					t.Errorf("entry %d = (%s, %s), want (%s, %s)", i, u.PackageEcosystem, u.Directory, tt.wantEcosystem[i], tt.wantDirs[i])
+					t.Errorf(
+						"entry %d = (%s, %s), want (%s, %s)",
+						i,
+						u.PackageEcosystem,
+						u.Directory,
+						tt.wantEcosystem[i],
+						tt.wantDirs[i],
+					)
 				}
 			}
 		})
@@ -91,7 +103,9 @@ func TestGenerateCapsModuleCount(t *testing.T) {
 
 func TestCanonicalEntriesAreComplete(t *testing.T) {
 	t.Parallel()
-	cfg, _ := dependabot.Generate(dependabot.RepoShape{GoModuleDirs: []string{""}, HasGitHubActions: true, HasNPM: true})
+	cfg, _ := dependabot.Generate(
+		dependabot.RepoShape{GoModuleDirs: []string{""}, HasGitHubActions: true, HasNPM: true},
+	)
 
 	for _, u := range cfg.Updates {
 		if u.Schedule == nil || u.Schedule.Interval != dependabot.IntervalWeekly {
@@ -99,7 +113,13 @@ func TestCanonicalEntriesAreComplete(t *testing.T) {
 		}
 
 		if u.OpenPullRequestsLimit != dependabot.DefaultOpenPullRequestsLimit {
-			t.Errorf("entry %s/%s limit = %d, want %d", u.PackageEcosystem, u.Directory, u.OpenPullRequestsLimit, dependabot.DefaultOpenPullRequestsLimit)
+			t.Errorf(
+				"entry %s/%s limit = %d, want %d",
+				u.PackageEcosystem,
+				u.Directory,
+				u.OpenPullRequestsLimit,
+				dependabot.DefaultOpenPullRequestsLimit,
+			)
 		}
 
 		if u.Groups.Empty() {
@@ -276,7 +296,14 @@ func TestDiff(t *testing.T) {
 
 func TestDiffMissingConfigButEmptyShape(t *testing.T) {
 	t.Parallel()
-	issues := dependabot.Diff(nil, dependabot.DecodeResult{}, dependabot.Config{}, dependabot.RepoShape{}, dependabot.CapInfo{}, ".github/dependabot.yml")
+	issues := dependabot.Diff(
+		nil,
+		dependabot.DecodeResult{},
+		dependabot.Config{},
+		dependabot.RepoShape{},
+		dependabot.CapInfo{},
+		".github/dependabot.yml",
+	)
 	if len(issues) != 0 {
 		t.Errorf("Diff() on empty shape = %v issues, want 0", len(issues))
 	}

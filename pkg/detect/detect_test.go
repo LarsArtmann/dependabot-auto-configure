@@ -49,8 +49,13 @@ func TestShape(t *testing.T) {
 			wantActions: true,
 		},
 		{
-			name:        "testdata and vendor modules are skipped",
-			files:       []string{"go.mod", "testdata/fixture/go.mod", "vendor/example.com/x/go.mod", "node_modules/pkg/go.mod"},
+			name: "testdata and vendor modules are skipped",
+			files: []string{
+				"go.mod",
+				"testdata/fixture/go.mod",
+				"vendor/example.com/x/go.mod",
+				"node_modules/pkg/go.mod",
+			},
 			wantModules: []string{""},
 		},
 		{

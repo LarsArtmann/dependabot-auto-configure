@@ -74,7 +74,8 @@ func TestDecodeCanonicalConfig(t *testing.T) {
 				t.Error("Decode() groups empty, want populated")
 			}
 
-			if tt.wantUpdates > 0 && !tt.wantGroups && !strings.Contains(tt.yaml, "groups:") && !dec.Config.Updates[0].Groups.Empty() {
+			if tt.wantUpdates > 0 && !tt.wantGroups && !strings.Contains(tt.yaml, "groups:") &&
+				!dec.Config.Updates[0].Groups.Empty() {
 				t.Error("Decode() groups populated, want empty")
 			}
 		})

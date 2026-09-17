@@ -9,9 +9,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	ef "github.com/larsartmann/go-error-family"
-
 	"github.com/larsartmann/dependabot-auto-configure/pkg/configure"
+	ef "github.com/larsartmann/go-error-family"
 )
 
 func TestSlugFromURL(t *testing.T) {
@@ -21,10 +20,22 @@ func TestSlugFromURL(t *testing.T) {
 		url  string
 		want string
 	}{
-		{url: "git@github.com:larsartmann/dependabot-auto-configure.git", want: "larsartmann/dependabot-auto-configure"},
-		{url: "ssh://git@github.com/larsartmann/dependabot-auto-configure", want: "larsartmann/dependabot-auto-configure"},
-		{url: "https://github.com/larsartmann/dependabot-auto-configure.git", want: "larsartmann/dependabot-auto-configure"},
-		{url: "https://github.com/larsartmann/dependabot-auto-configure/", want: "larsartmann/dependabot-auto-configure"},
+		{
+			url:  "git@github.com:larsartmann/dependabot-auto-configure.git",
+			want: "larsartmann/dependabot-auto-configure",
+		},
+		{
+			url:  "ssh://git@github.com/larsartmann/dependabot-auto-configure",
+			want: "larsartmann/dependabot-auto-configure",
+		},
+		{
+			url:  "https://github.com/larsartmann/dependabot-auto-configure.git",
+			want: "larsartmann/dependabot-auto-configure",
+		},
+		{
+			url:  "https://github.com/larsartmann/dependabot-auto-configure/",
+			want: "larsartmann/dependabot-auto-configure",
+		},
 		{url: "https://gitlab.com/larsartmann/dependabot-auto-configure.git", want: ""},
 		{url: "git@bitbucket.org:larsartmann/x.git", want: ""},
 		{url: "", want: ""},
@@ -94,10 +105,30 @@ func TestEnableSecurityFixesOutcomes(t *testing.T) {
 		wantErr    bool
 		wantMethod string
 	}{
-		{name: "no content means enabled", status: http.StatusNoContent, want: configure.SecurityFixesEnabled, wantMethod: http.MethodPut},
-		{name: "not found skips", status: http.StatusNotFound, want: configure.SecurityFixesNotFound, wantMethod: http.MethodPut},
-		{name: "forbidden skips", status: http.StatusForbidden, want: configure.SecurityFixesForbidden, wantMethod: http.MethodPut},
-		{name: "unexpected status errors", status: http.StatusInternalServerError, wantErr: true, wantMethod: http.MethodPut},
+		{
+			name:       "no content means enabled",
+			status:     http.StatusNoContent,
+			want:       configure.SecurityFixesEnabled,
+			wantMethod: http.MethodPut,
+		},
+		{
+			name:       "not found skips",
+			status:     http.StatusNotFound,
+			want:       configure.SecurityFixesNotFound,
+			wantMethod: http.MethodPut,
+		},
+		{
+			name:       "forbidden skips",
+			status:     http.StatusForbidden,
+			want:       configure.SecurityFixesForbidden,
+			wantMethod: http.MethodPut,
+		},
+		{
+			name:       "unexpected status errors",
+			status:     http.StatusInternalServerError,
+			wantErr:    true,
+			wantMethod: http.MethodPut,
+		},
 	}
 
 	for _, tt := range tests {

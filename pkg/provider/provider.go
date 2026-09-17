@@ -61,7 +61,12 @@ var Provider = toolsdk.Register(toolsdk.Spec{
 			DryRun: dryRun,
 		})
 		if err != nil {
-			return toolsdk.RepairResult{}, ef.WrapInfrastructuref(err, "provider.repair", "%s repair", configure.ToolName)
+			return toolsdk.RepairResult{}, ef.WrapInfrastructuref(
+				err,
+				"provider.repair",
+				"%s repair",
+				configure.ToolName,
+			)
 		}
 
 		switch {
@@ -79,7 +84,10 @@ var Provider = toolsdk.Register(toolsdk.Spec{
 			}, nil
 		default:
 			return toolsdk.RepairResult{
-				Description: fmt.Sprintf("nothing to write; %d informational finding(s) reported", len(result.Findings)),
+				Description: fmt.Sprintf(
+					"nothing to write; %d informational finding(s) reported",
+					len(result.Findings),
+				),
 			}, nil
 		}
 	}),

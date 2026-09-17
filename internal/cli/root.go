@@ -165,12 +165,16 @@ func newRootCmd() (*cobra.Command, *int) {
 	}
 
 	rootCmd.Flags().StringVar(&root, "root", ".", "repository root directory")
-	rootCmd.Flags().StringVar(&configPath, "config-path", configure.DefaultConfigPath, "configuration file path relative to --root")
-	rootCmd.Flags().BoolVar(&check, "check", false, "report pending changes without writing; exit 1 when the --fail-on policy is exceeded")
+	rootCmd.Flags().
+		StringVar(&configPath, "config-path", configure.DefaultConfigPath, "configuration file path relative to --root")
+	rootCmd.Flags().
+		BoolVar(&check, "check", false, "report pending changes without writing; exit 1 when the --fail-on policy is exceeded")
 	rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "print the planned write without performing it")
 	rootCmd.Flags().BoolVar(&jsonOut, "json", false, "print the result as JSON instead of text")
-	rootCmd.Flags().BoolVar(&secFixes, "enable-security-fixes", false, "also enable Dependabot security updates via the GitHub API (needs GITHUB_TOKEN/GH_TOKEN)")
-	rootCmd.Flags().StringVar(&failOn, "fail-on", "any", "under --check, the minimum finding severity that fails the run: any (default), none, or a severity (error, warning, info, critical)")
+	rootCmd.Flags().
+		BoolVar(&secFixes, "enable-security-fixes", false, "also enable Dependabot security updates via the GitHub API (needs GITHUB_TOKEN/GH_TOKEN)")
+	rootCmd.Flags().
+		StringVar(&failOn, "fail-on", "any", "under --check, the minimum finding severity that fails the run: any (default), none, or a severity (error, warning, info, critical)")
 
 	return rootCmd, &code
 }

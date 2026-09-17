@@ -28,7 +28,11 @@ registries:
 func writeGoMod(t *testing.T, dir string) {
 	t.Helper()
 
-	if err := os.WriteFile(filepath.Join(dir, "go.mod"), []byte("module example.com/fixtures\n\ngo 1.27\n"), 0o644); err != nil {
+	if err := os.WriteFile(
+		filepath.Join(dir, "go.mod"),
+		[]byte("module example.com/fixtures\n\ngo 1.27\n"),
+		0o644,
+	); err != nil {
 		t.Fatalf("write go.mod: %v", err)
 	}
 }

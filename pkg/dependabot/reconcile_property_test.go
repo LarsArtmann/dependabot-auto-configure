@@ -83,7 +83,14 @@ func TestReconcileIsIdempotent(t *testing.T) {
 		twice := dependabot.Reconcile(once, desired)
 
 		if !dependabot.Equal(once, twice) {
-			t.Fatalf("iteration %d: Reconcile did not converge\nexisting: %+v\ndesired: %+v\nonce:     %+v\ntwice:    %+v", i, existing, desired, once, twice)
+			t.Fatalf(
+				"iteration %d: Reconcile did not converge\nexisting: %+v\ndesired: %+v\nonce:     %+v\ntwice:    %+v",
+				i,
+				existing,
+				desired,
+				once,
+				twice,
+			)
 		}
 
 		if err := once.Validate(); err != nil {

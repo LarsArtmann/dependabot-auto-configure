@@ -11,9 +11,17 @@ import (
 func FuzzDecode(f *testing.F) {
 	f.Add([]byte("version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n"))
 	f.Add([]byte("version: 2\nupdates: []\n"))
-	f.Add([]byte("version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    registries-are-not-modeled: true\n"))
+	f.Add(
+		[]byte(
+			"version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    registries-are-not-modeled: true\n",
+		),
+	)
 	f.Add([]byte("version: 2\nregistries:\n  - type: npm-registry\n"))
-	f.Add([]byte("version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    schedule:\n      interval: weekly\n      rebase-strategy: auto\n"))
+	f.Add(
+		[]byte(
+			"version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    schedule:\n      interval: weekly\n      rebase-strategy: auto\n",
+		),
+	)
 	f.Add([]byte(""))
 	f.Add([]byte("version: [2\nupdates: }}"))
 	f.Add([]byte("\x00\x01\x02\xff"))
