@@ -10,17 +10,17 @@
     };
 
     go-nix-helpers = {
-      url = "github:LarsArtmann/go-nix-helpers/a97742e806193cd7e4c457439c7e117a6cfd1fe7";
+      url = "github:LarsArtmann/go-nix-helpers/19fc8e5986d59f57ff8780fcbc5623fb412c345f";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     go-atomic-write = {
-      url = "github:LarsArtmann/go-atomic-write/v0.5.1";
+      url = "github:LarsArtmann/go-atomic-write/v0.5.2";
       flake = false;
     };
 
     go-error-family = {
-      url = "github:LarsArtmann/go-error-family/v0.10.0";
+      url = "github:LarsArtmann/go-error-family/v0.10.1";
       flake = false;
     };
 
