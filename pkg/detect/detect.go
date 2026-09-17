@@ -5,6 +5,7 @@ package detect
 
 import (
 	"io/fs"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -56,7 +57,7 @@ func (d Detector) Shape() (dependabot.RepoShape, error) {
 			return relErr
 		}
 
-		classify(rel, &shape)
+		classify(filepath.ToSlash(rel), &shape)
 
 		return nil
 	})
@@ -78,14 +79,16 @@ func (d Detector) skipDir(path, name string) bool {
 	return skippedSegments[name] || (strings.HasPrefix(name, ".") && name != ".github")
 }
 
-// classify records one walked file in the repository shape.
+// classify records one walked file in the repository shape. rel is a
+// slash-separated path relative to the repository root, so the checks are
+// identical on every operating system.
 func classify(rel string, shape *dependabot.RepoShape) {
 	switch {
 	case rel == "go.mod":
 		shape.GoModuleDirs = append(shape.GoModuleDirs, "")
 	case strings.HasSuffix(rel, "/go.mod"):
-		shape.GoModuleDirs = append(shape.GoModuleDirs, filepath.Dir(rel))
-	case strings.HasPrefix(rel, filepath.Join(".github", "workflows")+string(filepath.Separator)) &&
+		shape.GoModuleDirs = append(shape.GoModuleDirs, path.Dir(rel))
+	case strings.HasPrefix(rel, ".github/workflows/") &&
 		(strings.HasSuffix(rel, ".yml") || strings.HasSuffix(rel, ".yaml")):
 		shape.HasGitHubActions = true
 	case rel == "package.json":
