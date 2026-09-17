@@ -223,7 +223,12 @@ func assertSchedulePreserved(
 
 	if want.Schedule == nil {
 		if desiredIdx < 0 && got.Schedule != nil {
-			t.Fatalf("iteration %d: orphan entry %s/%s grew a schedule", iteration, want.PackageEcosystem, want.Directory)
+			t.Fatalf(
+				"iteration %d: orphan entry %s/%s grew a schedule",
+				iteration,
+				want.PackageEcosystem,
+				want.Directory,
+			)
 		}
 
 		return
@@ -354,4 +359,3 @@ func assertGroupsPreserved(
 		)
 	}
 }
-

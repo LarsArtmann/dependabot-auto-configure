@@ -11,21 +11,22 @@ import (
 	ef "github.com/larsartmann/go-error-family"
 )
 
+var errBoom = errors.New("boom")
+
+// domainError is the typed-error contract every errors.go type implements.
+type domainError interface {
+	error
+	ErrorFamily() ef.Family
+	ErrorCode() string
+	ErrorContext() map[string]string
+}
+
 // TestTypedErrorsCarryDomainContract pins the DDD error contract: every
 // typed failure in this package carries a human message naming the
 // user-facing value, a stable family, a machine-readable code, and
 // structured context. New error types must join the table.
 func TestTypedErrorsCarryDomainContract(t *testing.T) {
 	t.Parallel()
-
-	sentinel := errors.New("boom")
-
-	type domainError interface {
-		error
-		ErrorFamily() ef.Family
-		ErrorCode() string
-		ErrorContext() map[string]string
-	}
 
 	tests := []struct {
 		name       string
@@ -38,37 +39,37 @@ func TestTypedErrorsCarryDomainContract(t *testing.T) {
 	}{
 		{
 			name:       "shape detection is infrastructure",
-			err:        &configure.ShapeDetectionError{Root: "/repo", Cause: sentinel},
+			err:        &configure.ShapeDetectionError{Root: "/repo", Cause: errBoom},
 			wantFamily: ef.Infrastructure,
 			wantCode:   "shape.detect",
 			wantInMsg:  "/repo",
 			contextHas: map[string]string{"root": "/repo"},
-			unwrapInto: sentinel,
+			unwrapInto: errBoom,
 		},
 		{
 			name:       "findings conversion is infrastructure",
-			err:        &configure.FindingsConversionError{Tool: configure.ToolName, Cause: sentinel},
+			err:        &configure.FindingsConversionError{Tool: configure.ToolName, Cause: errBoom},
 			wantFamily: ef.Infrastructure,
 			wantCode:   "findings.convert",
 			wantInMsg:  configure.ToolName,
 			contextHas: map[string]string{"tool": configure.ToolName},
-			unwrapInto: sentinel,
+			unwrapInto: errBoom,
 		},
 		{
 			name:       "config read is a rejection",
-			err:        &configure.ConfigReadError{Path: "/repo/.github/dependabot.yml", Cause: sentinel},
+			err:        &configure.ConfigReadError{Path: "/repo/.github/dependabot.yml", Cause: errBoom},
 			wantFamily: ef.Rejection,
 			wantCode:   "config.read",
 			wantInMsg:  "/repo/.github/dependabot.yml",
 			contextHas: map[string]string{"path": "/repo/.github/dependabot.yml"},
-			unwrapInto: sentinel,
+			unwrapInto: errBoom,
 		},
 		{
 			name: "config write is infrastructure",
 			err: &configure.ConfigWriteError{
 				Path:  "/repo/.github/dependabot.yml",
 				Step:  configure.WriteStepWrite,
-				Cause: sentinel,
+				Cause: errBoom,
 			},
 			wantFamily: ef.Infrastructure,
 			wantCode:   "config.write",
@@ -77,20 +78,20 @@ func TestTypedErrorsCarryDomainContract(t *testing.T) {
 				"path": "/repo/.github/dependabot.yml",
 				"step": string(configure.WriteStepWrite),
 			},
-			unwrapInto: sentinel,
+			unwrapInto: errBoom,
 		},
 		{
 			name: "api transport is transient",
 			err: &configure.APITransportError{
 				Op:    configure.TransportOpCall,
 				URL:   "https://api.github.com/x",
-				Cause: sentinel,
+				Cause: errBoom,
 			},
 			wantFamily: ef.Transient,
 			wantCode:   "github.transport",
 			wantInMsg:  "https://api.github.com/x",
 			contextHas: map[string]string{"op": string(configure.TransportOpCall), "url": "https://api.github.com/x"},
-			unwrapInto: sentinel,
+			unwrapInto: errBoom,
 		},
 		{
 			name: "unexpected 5xx status is transient",
@@ -118,12 +119,12 @@ func TestTypedErrorsCarryDomainContract(t *testing.T) {
 		},
 		{
 			name:       "github request build is infrastructure",
-			err:        &configure.GitHubRequestError{URL: "https://api.github.com/x", Cause: sentinel},
+			err:        &configure.GitHubRequestError{URL: "https://api.github.com/x", Cause: errBoom},
 			wantFamily: ef.Infrastructure,
 			wantCode:   "github.request",
 			wantInMsg:  "https://api.github.com/x",
 			contextHas: map[string]string{"url": "https://api.github.com/x"},
-			unwrapInto: sentinel,
+			unwrapInto: errBoom,
 		},
 	}
 
@@ -164,16 +165,14 @@ func TestTypedErrorsCarryDomainContract(t *testing.T) {
 func TestErrorContextIsSerializable(t *testing.T) {
 	t.Parallel()
 
-	sentinel := errors.New("boom")
-
-	errs := []domainErrorAlias{
-		&configure.ShapeDetectionError{Root: "/repo", Cause: sentinel},
-		&configure.FindingsConversionError{Tool: "t", Cause: sentinel},
-		&configure.ConfigReadError{Path: "/p", Cause: sentinel},
-		&configure.ConfigWriteError{Path: "/p", Step: configure.WriteStepCreateDirectory, Cause: sentinel},
-		&configure.APITransportError{Op: configure.TransportOpCloseResponse, URL: "u", Cause: sentinel},
+	errs := []domainError{
+		&configure.ShapeDetectionError{Root: "/repo", Cause: errBoom},
+		&configure.FindingsConversionError{Tool: "t", Cause: errBoom},
+		&configure.ConfigReadError{Path: "/p", Cause: errBoom},
+		&configure.ConfigWriteError{Path: "/p", Step: configure.WriteStepCreateDirectory, Cause: errBoom},
+		&configure.APITransportError{Op: configure.TransportOpCloseResponse, URL: "u", Cause: errBoom},
 		&configure.UnexpectedStatusError{URL: "u", StatusCode: 500, BodyErr: io.ErrUnexpectedEOF},
-		&configure.GitHubRequestError{URL: "u", Cause: sentinel},
+		&configure.GitHubRequestError{URL: "u", Cause: errBoom},
 	}
 
 	for _, err := range errs {
@@ -183,13 +182,4 @@ func TestErrorContextIsSerializable(t *testing.T) {
 			}
 		}
 	}
-}
-
-// domainErrorAlias lets the serializability test iterate heterogeneous types
-// without re-declaring the interface at every use site.
-type domainErrorAlias = interface {
-	error
-	ErrorFamily() ef.Family
-	ErrorCode() string
-	ErrorContext() map[string]string
 }
