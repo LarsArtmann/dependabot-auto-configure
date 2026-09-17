@@ -72,6 +72,47 @@ linters:
     - wastedassign
     - wrapcheck
     - zerologlint
+  settings:
+    cyclop:
+      max-complexity: 12
+    funlen:
+      lines: 200
+      statements: 100
+    ginkgolinter:
+      forbid-focus-container: true
+      forbid-spec-pollution: true
+    gocognit:
+      min-complexity: 25
+    goconst:
+      ignore-tests: true
+    gocritic:
+      disabled-checks:
+        - ifElseChain
+    gocyclo:
+      min-complexity: 20
+    gosec:
+      excludes:
+        - G304
+        - G115
+    nestif:
+      min-complexity: 6
+    revive:
+      rules:
+        - disabled: true
+          name: exported
+        - disabled: true
+          name: package-comments
+    wrapcheck:
+      ignore-sigs:
+        - .Errorf(
+        - errors.New(
+        - errors.Unwrap(
+        - errors.Join(
+        - .Wrap(
+        - .Wrapf(
+        - .WithMessage(
+        - .WithMessagef(
+        - .WithStack(
   exclusions:
     generated: lax
     rules:
@@ -91,6 +132,21 @@ linters:
           - recvcheck
           - contextcheck
           - exhaustive
+      - path: github_test\.go
+        linters:
+          - paralleltest
+      - path: internal/cli/.*\.go
+        linters:
+          - wrapcheck
+      - path: pkg/detect/.*\.go
+        linters:
+          - wrapcheck
+      - text: "Version is a global variable"
+        linters:
+          - gochecknoglobals
+      - text: "(skippedSegments|githubAPIBase|githubAPIClient|knownEntryFields|knownScheduleFields|knownTopLevelFields|knownGroupNames) is a global variable"
+        linters:
+          - gochecknoglobals
       - path: _test\.go
         text: unused
         linters:
