@@ -41,7 +41,7 @@ func TestTypedErrorsCarryDomainContract(t *testing.T) {
 			wantCode:   "cli.flag",
 			wantInMsg:  "--fail-on",
 			contextHas: map[string]string{"flag": "--fail-on", "value": "sometimes"},
-			unwrapInto: sentinel,
+			unwrapInto: errBoom,
 		},
 		{
 			name:       "output error is infrastructure",
@@ -50,7 +50,7 @@ func TestTypedErrorsCarryDomainContract(t *testing.T) {
 			wantCode:   "cli.output",
 			wantInMsg:  "stdout",
 			contextHas: map[string]string{"stream": "stdout"},
-			unwrapInto: sentinel,
+			unwrapInto: errBoom,
 		},
 	}
 

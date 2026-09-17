@@ -8,15 +8,15 @@
 
 ## Gate state at session end (all verified this session)
 
-| Gate | Result |
-| --- | --- |
-| `go test ./... -race` | PASS (5 packages) |
-| `golangci-lint run` (devShell, v2.13.2 — same binary as CI) | **0 issues** |
-| `erraudit` (typed error gate, 5 enforcement flags) | **0 violations** |
-| `nix build` | PASS |
-| `nix flake check --all-systems` | **ALL CHECKS PASSED** (was failing before this session) |
-| `dprint check` | clean (5 files were unformatted — fixed) |
-| Dogfood `--check` on this repo | `configuration already canonical`, exit 0 |
+| Gate                                                        | Result                                                  |
+| ----------------------------------------------------------- | ------------------------------------------------------- |
+| `go test ./... -race`                                       | PASS (5 packages)                                       |
+| `golangci-lint run` (devShell, v2.13.2 — same binary as CI) | **0 issues**                                            |
+| `erraudit` (typed error gate, 5 enforcement flags)          | **0 violations**                                        |
+| `nix build`                                                 | PASS                                                    |
+| `nix flake check --all-systems`                             | **ALL CHECKS PASSED** (was failing before this session) |
+| `dprint check`                                              | clean (5 files were unformatted — fixed)                |
+| Dogfood `--check` on this repo                              | `configuration already canonical`, exit 0               |
 
 ---
 
@@ -134,4 +134,4 @@
 
 **THEN WAIT FOR INSTRUCTIONS.**
 
-*Report format note: user explicitly requested `.md`; the status-report skill's canonical HTML format was overridden by instruction (flagged per skill contract).*
+_Report format note: user explicitly requested `.md`; the status-report skill's canonical HTML format was overridden by instruction (flagged per skill contract)._
