@@ -26,7 +26,7 @@
 
     go-finding = {
       # v1.10.0 is the first tag carrying the toolsdk/ sub-module.
-      url = "github:LarsArtmann/go-finding?ref=refs/tags/v1.10.0";
+      url = "github:LarsArtmann/go-finding?ref=refs/tags/v1.11.0";
       flake = false;
     };
 
