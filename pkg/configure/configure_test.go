@@ -414,7 +414,8 @@ updates:
 
 	sched := entry.Schedule
 
-	if sched.Interval != "monthly" || sched.Day != "monday" || sched.Time != "03:00" || sched.Timezone != "Europe/Berlin" {
+	if sched.Interval != "monthly" || sched.Day != "monday" || sched.Time != "03:00" ||
+		sched.Timezone != "Europe/Berlin" {
 		t.Fatalf("repaired gomod schedule = %+v, want monthly/monday/03:00/Europe/Berlin", sched)
 	}
 
@@ -438,7 +439,7 @@ updates:
 func TestMarshalJSONResultPinsWireShape(t *testing.T) {
 	t.Parallel()
 
-	root := repoWithConfig(t, bare)
+	root := repoWithConfig(t, "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n")
 
 	result := run(t, root, configure.Options{Check: true})
 

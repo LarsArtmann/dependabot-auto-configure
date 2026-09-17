@@ -7,9 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	ef "github.com/larsartmann/go-error-family"
-
 	"github.com/larsartmann/dependabot-auto-configure/pkg/configure"
+	ef "github.com/larsartmann/go-error-family"
 )
 
 // TestTypedErrorsCarryDomainContract pins the DDD error contract: every
@@ -65,17 +64,28 @@ func TestTypedErrorsCarryDomainContract(t *testing.T) {
 			unwrapInto: sentinel,
 		},
 		{
-			name:       "config write is infrastructure",
-			err:        &configure.ConfigWriteError{Path: "/repo/.github/dependabot.yml", Step: configure.WriteStepWrite, Cause: sentinel},
+			name: "config write is infrastructure",
+			err: &configure.ConfigWriteError{
+				Path:  "/repo/.github/dependabot.yml",
+				Step:  configure.WriteStepWrite,
+				Cause: sentinel,
+			},
 			wantFamily: ef.Infrastructure,
 			wantCode:   "config.write",
 			wantInMsg:  "/repo/.github/dependabot.yml",
-			contextHas: map[string]string{"path": "/repo/.github/dependabot.yml", "step": string(configure.WriteStepWrite)},
+			contextHas: map[string]string{
+				"path": "/repo/.github/dependabot.yml",
+				"step": string(configure.WriteStepWrite),
+			},
 			unwrapInto: sentinel,
 		},
 		{
-			name:       "api transport is transient",
-			err:        &configure.APITransportError{Op: configure.TransportOpCall, URL: "https://api.github.com/x", Cause: sentinel},
+			name: "api transport is transient",
+			err: &configure.APITransportError{
+				Op:    configure.TransportOpCall,
+				URL:   "https://api.github.com/x",
+				Cause: sentinel,
+			},
 			wantFamily: ef.Transient,
 			wantCode:   "github.transport",
 			wantInMsg:  "https://api.github.com/x",
@@ -83,16 +93,24 @@ func TestTypedErrorsCarryDomainContract(t *testing.T) {
 			unwrapInto: sentinel,
 		},
 		{
-			name:       "unexpected 5xx status is transient",
-			err:        &configure.UnexpectedStatusError{URL: "https://api.github.com/x", StatusCode: http.StatusBadGateway, Body: "oops"},
+			name: "unexpected 5xx status is transient",
+			err: &configure.UnexpectedStatusError{
+				URL:        "https://api.github.com/x",
+				StatusCode: http.StatusBadGateway,
+				Body:       "oops",
+			},
 			wantFamily: ef.Transient,
 			wantCode:   "github.status",
 			wantInMsg:  "https://api.github.com/x",
 			contextHas: map[string]string{"url": "https://api.github.com/x"},
 		},
 		{
-			name:       "unexpected 4xx status is a rejection",
-			err:        &configure.UnexpectedStatusError{URL: "https://api.github.com/x", StatusCode: http.StatusUnauthorized, Body: "nope"},
+			name: "unexpected 4xx status is a rejection",
+			err: &configure.UnexpectedStatusError{
+				URL:        "https://api.github.com/x",
+				StatusCode: http.StatusUnauthorized,
+				Body:       "nope",
+			},
 			wantFamily: ef.Rejection,
 			wantCode:   "github.status",
 			wantInMsg:  "https://api.github.com/x",

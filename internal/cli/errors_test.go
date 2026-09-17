@@ -5,10 +5,19 @@ import (
 	"strings"
 	"testing"
 
-	ef "github.com/larsartmann/go-error-family"
-
 	"github.com/larsartmann/dependabot-auto-configure/internal/cli"
+	ef "github.com/larsartmann/go-error-family"
 )
+
+var errBoom = errors.New("boom")
+
+// domainError is the typed-error contract every errors.go type implements.
+type domainError interface {
+	error
+	ErrorFamily() ef.Family
+	ErrorCode() string
+	ErrorContext() map[string]string
+}
 
 // TestTypedErrorsCarryDomainContract pins the DDD error contract for the
 // reporting boundary: flag rejections are the user's fault, output failures
@@ -16,16 +25,9 @@ import (
 func TestTypedErrorsCarryDomainContract(t *testing.T) {
 	t.Parallel()
 
-	sentinel := errors.New("boom")
-
 	tests := []struct {
 		name       string
-		err        interface {
-			error
-			ErrorFamily() ef.Family
-			ErrorCode() string
-			ErrorContext() map[string]string
-		}
+		err        domainError
 		wantFamily ef.Family
 		wantCode   string
 		wantInMsg  string
@@ -34,7 +36,7 @@ func TestTypedErrorsCarryDomainContract(t *testing.T) {
 	}{
 		{
 			name:       "flag value error is a rejection",
-			err:        &cli.FlagValueError{Flag: "--fail-on", Value: "sometimes", Cause: sentinel},
+			err:        &cli.FlagValueError{Flag: "--fail-on", Value: "sometimes", Cause: errBoom},
 			wantFamily: ef.Rejection,
 			wantCode:   "cli.flag",
 			wantInMsg:  "--fail-on",
@@ -43,7 +45,7 @@ func TestTypedErrorsCarryDomainContract(t *testing.T) {
 		},
 		{
 			name:       "output error is infrastructure",
-			err:        &cli.OutputError{Stream: "stdout", Cause: sentinel},
+			err:        &cli.OutputError{Stream: "stdout", Cause: errBoom},
 			wantFamily: ef.Infrastructure,
 			wantCode:   "cli.output",
 			wantInMsg:  "stdout",

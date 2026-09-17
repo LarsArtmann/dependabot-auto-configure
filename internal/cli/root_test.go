@@ -237,7 +237,9 @@ func TestJSONOutputPinsWireShape(t *testing.T) {
 
 type failingWriter struct{}
 
-func (failingWriter) Write([]byte) (int, error) { return 0, errors.New("disk full") }
+var errDiskFull = errors.New("disk full")
+
+func (failingWriter) Write([]byte) (int, error) { return 0, errDiskFull }
 
 func TestReportWriteFailureSurfaces(t *testing.T) {
 	t.Parallel()
@@ -267,6 +269,7 @@ func TestReportWriteFailureSurfaces(t *testing.T) {
 	}
 }
 
+//nolint:paralleltest // t.Chdir mutates process state, so it cannot run in parallel
 func TestExecuteRunsAgainstWorkingDirectory(t *testing.T) {
 	root := t.TempDir()
 

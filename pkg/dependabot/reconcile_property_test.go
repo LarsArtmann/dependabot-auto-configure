@@ -162,122 +162,196 @@ func TestReconcilePreservesEveryModeledField(t *testing.T) {
 		}
 
 		for j, want := range pristine.Updates {
-			got := out.Updates[j]
-
-			if got.PackageEcosystem != want.PackageEcosystem || got.Directory != want.Directory {
-				t.Fatalf(
-					"iteration %d: entry %d identity changed: %s/%s -> %s/%s",
-					i,
-					j,
-					want.PackageEcosystem,
-					want.Directory,
-					got.PackageEcosystem,
-					got.Directory,
-				)
-			}
-
-			if !slices.Equal(got.Labels, want.Labels) {
-				t.Fatalf(
-					"iteration %d: entry %s/%s labels changed: %v -> %v",
-					i,
-					want.PackageEcosystem,
-					want.Directory,
-					want.Labels,
-					got.Labels,
-				)
-			}
-
-			idx := desired.Find(want.PackageEcosystem, want.Directory)
-
-			switch {
-			case want.Schedule == nil && idx < 0 && got.Schedule != nil:
-				t.Fatalf("iteration %d: orphan entry %s/%s grew a schedule", i, want.PackageEcosystem, want.Directory)
-
-			case want.Schedule != nil:
-				if got.Schedule == nil {
-					t.Fatalf("iteration %d: entry %s/%s lost its schedule", i, want.PackageEcosystem, want.Directory)
-				}
-
-				if got.Schedule.Day != want.Schedule.Day ||
-					got.Schedule.Time != want.Schedule.Time ||
-					got.Schedule.Timezone != want.Schedule.Timezone {
-					t.Fatalf(
-						"iteration %d: entry %s/%s schedule customizations changed: %+v -> %+v",
-						i,
-						want.PackageEcosystem,
-						want.Directory,
-						want.Schedule,
-						got.Schedule,
-					)
-				}
-
-				if want.Schedule.Interval != "" && got.Schedule.Interval != want.Schedule.Interval {
-					t.Fatalf(
-						"iteration %d: entry %s/%s interval replaced: %q -> %q",
-						i,
-						want.PackageEcosystem,
-						want.Directory,
-						want.Schedule.Interval,
-						got.Schedule.Interval,
-					)
-				}
-
-				if want.Schedule.Interval == "" && got.Schedule.Interval != dependabot.IntervalWeekly {
-					t.Fatalf(
-						"iteration %d: entry %s/%s empty interval filled to %q, want weekly",
-						i,
-						want.PackageEcosystem,
-						want.Directory,
-						got.Schedule.Interval,
-					)
-				}
-			}
-
-			switch {
-			case want.OpenPullRequestsLimit != 0 && got.OpenPullRequestsLimit != want.OpenPullRequestsLimit:
-				t.Fatalf(
-					"iteration %d: entry %s/%s limit replaced: %d -> %d",
-					i,
-					want.PackageEcosystem,
-					want.Directory,
-					want.OpenPullRequestsLimit,
-					got.OpenPullRequestsLimit,
-				)
-
-			case want.OpenPullRequestsLimit == 0 && idx >= 0 && got.OpenPullRequestsLimit != desired.Updates[idx].OpenPullRequestsLimit:
-				t.Fatalf(
-					"iteration %d: entry %s/%s zero limit not filled from desired: got %d, want %d",
-					i,
-					want.PackageEcosystem,
-					want.Directory,
-					got.OpenPullRequestsLimit,
-					desired.Updates[idx].OpenPullRequestsLimit,
-				)
-
-			case want.OpenPullRequestsLimit == 0 && idx < 0 && got.OpenPullRequestsLimit != 0:
-				t.Fatalf(
-					"iteration %d: orphan entry %s/%s grew limit %d",
-					i,
-					want.PackageEcosystem,
-					want.Directory,
-					got.OpenPullRequestsLimit,
-				)
-			}
-
-			switch {
-			case want.Groups == nil && idx < 0 && got.Groups != nil:
-				t.Fatalf("iteration %d: orphan entry %s/%s grew groups", i, want.PackageEcosystem, want.Directory)
-
-			case want.Groups != nil && !reflect.DeepEqual(got.Groups, want.Groups):
-				t.Fatalf(
-					"iteration %d: entry %s/%s groups replaced: %+v -> %+v",
-					i,
-					want.PackageEcosystem,
-					want.Directory,
-					want.Groups,
-					got.Groups,
-				)
-			}
+			assertEntryPreserved(t, i, j, want, out.Updates[j], desired)
 		}
 	}
 }
+
+// assertEntryPreserved demands that got carries every modeled field of the
+// pristine want: identity, labels, schedule customizations, limit, groups.
+func assertEntryPreserved(
+	t *testing.T,
+	iteration int,
+	index int,
+	want dependabot.Update,
+	got dependabot.Update,
+	desired dependabot.Config,
+) {
+	t.Helper()
+
+	if got.PackageEcosystem != want.PackageEcosystem || got.Directory != want.Directory {
+		t.Fatalf(
+			"iteration %d: entry %d identity changed: %s/%s -> %s/%s",
+			iteration,
+			index,
+			want.PackageEcosystem,
+			want.Directory,
+			got.PackageEcosystem,
+			got.Directory,
+		)
+	}
+
+	if !slices.Equal(got.Labels, want.Labels) {
+		t.Fatalf(
+			"iteration %d: entry %s/%s labels changed: %v -> %v",
+			iteration,
+			want.PackageEcosystem,
+			want.Directory,
+			want.Labels,
+			got.Labels,
+		)
+	}
+
+	idx := desired.Find(want.PackageEcosystem, want.Directory)
+
+	assertSchedulePreserved(t, iteration, want, got, idx)
+	assertLimitPreserved(t, iteration, want, got, desired, idx)
+	assertGroupsPreserved(t, iteration, want, got, idx)
+}
+
+// assertSchedulePreserved allows only one schedule change: filling an empty
+// interval with the canonical weekly value. Day, time, timezone, and any
+// explicit interval are immutable.
+func assertSchedulePreserved(
+	t *testing.T,
+	iteration int,
+	want dependabot.Update,
+	got dependabot.Update,
+	desiredIdx int,
+) {
+	t.Helper()
+
+	if want.Schedule == nil {
+		if desiredIdx < 0 && got.Schedule != nil {
+			t.Fatalf("iteration %d: orphan entry %s/%s grew a schedule", iteration, want.PackageEcosystem, want.Directory)
+		}
+
+		return
+	}
+
+	if got.Schedule == nil {
+		t.Fatalf("iteration %d: entry %s/%s lost its schedule", iteration, want.PackageEcosystem, want.Directory)
+	}
+
+	if got.Schedule.Day != want.Schedule.Day ||
+		got.Schedule.Time != want.Schedule.Time ||
+		got.Schedule.Timezone != want.Schedule.Timezone {
+		t.Fatalf(
+			"iteration %d: entry %s/%s schedule customizations changed: %+v -> %+v",
+			iteration,
+			want.PackageEcosystem,
+			want.Directory,
+			want.Schedule,
+			got.Schedule,
+		)
+	}
+
+	if want.Schedule.Interval != "" && got.Schedule.Interval != want.Schedule.Interval {
+		t.Fatalf(
+			"iteration %d: entry %s/%s interval replaced: %q -> %q",
+			iteration,
+			want.PackageEcosystem,
+			want.Directory,
+			want.Schedule.Interval,
+			got.Schedule.Interval,
+		)
+	}
+
+	if want.Schedule.Interval == "" && got.Schedule.Interval != dependabot.IntervalWeekly {
+		t.Fatalf(
+			"iteration %d: entry %s/%s empty interval filled to %q, want weekly",
+			iteration,
+			want.PackageEcosystem,
+			want.Directory,
+			got.Schedule.Interval,
+		)
+	}
+}
+
+// assertLimitPreserved allows only one limit change: filling zero from the
+// desired entry when one exists. Non-zero limits and orphan limits are
+// immutable.
+func assertLimitPreserved(
+	t *testing.T,
+	iteration int,
+	want dependabot.Update,
+	got dependabot.Update,
+	desired dependabot.Config,
+	desiredIdx int,
+) {
+	t.Helper()
+
+	if want.OpenPullRequestsLimit != 0 {
+		if got.OpenPullRequestsLimit != want.OpenPullRequestsLimit {
+			t.Fatalf(
+				"iteration %d: entry %s/%s limit replaced: %d -> %d",
+				iteration,
+				want.PackageEcosystem,
+				want.Directory,
+				want.OpenPullRequestsLimit,
+				got.OpenPullRequestsLimit,
+			)
+		}
+
+		return
+	}
+
+	if desiredIdx < 0 {
+		if got.OpenPullRequestsLimit != 0 {
+			t.Fatalf(
+				"iteration %d: orphan entry %s/%s grew limit %d",
+				iteration,
+				want.PackageEcosystem,
+				want.Directory,
+				got.OpenPullRequestsLimit,
+			)
+		}
+
+		return
+	}
+
+	wantLimit := desired.Updates[desiredIdx].OpenPullRequestsLimit
+	if got.OpenPullRequestsLimit != wantLimit {
+		t.Fatalf(
+			"iteration %d: entry %s/%s zero limit not filled from desired: got %d, want %d",
+			iteration,
+			want.PackageEcosystem,
+			want.Directory,
+			got.OpenPullRequestsLimit,
+			wantLimit,
+		)
+	}
+}
+
+// assertGroupsPreserved forbids replacing configured groups and forbids
+// inventing groups on orphan entries; filling empty groups from the desired
+// config is the one allowed change.
+func assertGroupsPreserved(
+	t *testing.T,
+	iteration int,
+	want dependabot.Update,
+	got dependabot.Update,
+	desiredIdx int,
+) {
+	t.Helper()
+
+	if want.Groups == nil {
+		if desiredIdx < 0 && got.Groups != nil {
+			t.Fatalf("iteration %d: orphan entry %s/%s grew groups", iteration, want.PackageEcosystem, want.Directory)
+		}
+
+		return
+	}
+
+	if !reflect.DeepEqual(got.Groups, want.Groups) {
+		t.Fatalf(
+			"iteration %d: entry %s/%s groups replaced: %+v -> %+v",
+			iteration,
+			want.PackageEcosystem,
+			want.Directory,
+			want.Groups,
+			got.Groups,
+		)
+	}
+}
+
