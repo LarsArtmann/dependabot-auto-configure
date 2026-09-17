@@ -1,7 +1,6 @@
 package dependabot_test
 
 import (
-	"fmt"
 	"math/rand"
 	"testing"
 
@@ -107,9 +106,5 @@ func TestReconcileIsIdempotentOnGenerated(t *testing.T) {
 
 	if _, err := desired.Encode(); err != nil {
 		t.Fatalf("generated config does not encode: %v", err)
-	}
-
-	if fmt.Sprintf("%+v", dependabot.Reconcile(dependabot.Config{Version: 2}, desired)) == "" {
-		t.Fatal("unreachable")
 	}
 }
