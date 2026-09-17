@@ -66,6 +66,32 @@ Use the flake (`nix build`, `nix flake check`) for the canonical gate.
 dprint formats markdown/json/yaml (`dprint check`); CHANGELOG.md is excluded
 from markdown formatting.
 
+## Gates (the full green checklist)
+
+A "green" claim is only true when ALL of these ran clean AFTER the last file
+change — the auto-commit daemon lands changes (dep bumps, fleet config syncs)
+after your last run, so locally-green history can still ship CI red:
+
+```sh
+GOTOOLCHAIN=auto GOEXPERIMENT=jsonv2 go test ./... -race
+nix develop -c golangci-lint fmt   # then confirm: git diff --exit-code
+nix develop -c golangci-lint run   # CI pins the same v2.13.2 binary
+GOTOOLCHAIN=auto GOEXPERIMENT=jsonv2 erraudit ./... --type-aware \
+  --enforce-go-error-family --no-suppress --enforce-samber-oops --enforce-generic-return
+nix build                          # vendorHash guard; daemon go.mod bumps invalidate it
+nix flake check --all-systems      # includes treefmt (gofmt)
+nix shell nixpkgs#dprint -c dprint check
+go run ./cmd/dependabot-auto-configure --root . --check   # dogfood, exit 0
+```
+
+Lint config is the fleet-strict `.golangci.yml` (same family as the sibling
+`*-auto-configure` repos): formatters gofumpt/gci/goimports/golines@120,
+`wsl_v5`, `mnd`, `lll`, `varnamelen`, etc. Struct-tag convention is
+`tagliatelle` with `json: pascal` (new tags; the snake_case `--json` wire
+shape in `pkg/configure/configure.go` is excluded — a released contract) and
+`yaml: kebab` (the Dependabot schema itself). Long YAML test fixtures are
+backtick raw strings, not escaped one-liners.
+
 ## Typed error system (DDD)
 
 Errors are domain objects, not strings. Each bounded context owns its

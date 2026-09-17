@@ -4,10 +4,12 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/larsartmann/dependabot-auto-configure/pkg/configure"
+	"github.com/larsartmann/dependabot-auto-configure/pkg/dependabot"
 )
 
 const canonicalSelfConfig = `version: 2
@@ -348,5 +350,82 @@ func TestRunFillsEmptyScheduleInterval(t *testing.T) {
 
 	if !strings.Contains(string(got), "interval: weekly") {
 		t.Errorf("repaired config missing weekly interval:\n%s", got)
+	}
+}
+
+// TestRunRepairWritesBackAllCustomizations is the end-to-end adversarial
+// preservation test: the idempotence suite cannot see a lossy FIRST write
+// (the v0.2.0 schedule-fill bug shipped that way). A config carrying every
+// modeled customization plus an orphan entry is repaired, and the file that
+// lands on disk must still carry all of it.
+func TestRunRepairWritesBackAllCustomizations(t *testing.T) {
+	t.Parallel()
+
+	customized := `version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: monthly
+      day: monday
+      time: "03:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+`
+	root := repoWithConfig(t, customized)
+
+	result := run(t, root, configure.Options{})
+
+	if !result.Wrote {
+		t.Fatal("Run() did not repair the customized config")
+	}
+
+	raw, err := os.ReadFile(filepath.Join(root, ".github", "dependabot.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := dependabot.Decode(raw)
+	if err != nil {
+		t.Fatalf("repaired config does not decode: %v", err)
+	}
+
+	if res.Unsafe {
+		t.Fatalf("repaired config decodes unsafe: %+v", res)
+	}
+
+	idx := res.Config.Find(dependabot.EcosystemGoModules, "/")
+	if idx < 0 {
+		t.Fatal("repaired config lost the gomod entry")
+	}
+
+	entry := res.Config.Updates[idx]
+
+	if entry.Schedule == nil {
+		t.Fatal("repaired gomod entry lost its schedule")
+	}
+
+	sched := entry.Schedule
+
+	if sched.Interval != "monthly" || sched.Day != "monday" || sched.Time != "03:00" || sched.Timezone != "Europe/Berlin" {
+		t.Fatalf("repaired gomod schedule = %+v, want monthly/monday/03:00/Europe/Berlin", sched)
+	}
+
+	if entry.OpenPullRequestsLimit != 3 {
+		t.Fatalf("repaired gomod limit = %d, want 3", entry.OpenPullRequestsLimit)
+	}
+
+	if !slices.Equal(entry.Labels, []string{"dependencies"}) {
+		t.Fatalf("repaired gomod labels = %v, want [dependencies]", entry.Labels)
+	}
+
+	if res.Config.Find(dependabot.EcosystemNPM, "/") < 0 {
+		t.Fatal("repaired config lost the orphan npm entry")
 	}
 }
