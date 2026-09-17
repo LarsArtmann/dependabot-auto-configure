@@ -57,6 +57,14 @@
         goPkgAttr = "go_1_27";
         vendorHash = "sha256-BeBco8nQsi+BXW6bYNeQedBESjMXVL/yKG32wfY61uc=";
 
+        # Nixpkgs 26.11 dropped x86_64-darwin, so `nix flake check
+        # --all-systems` fails while evaluating it; ship only supported systems.
+        systems = [
+          "x86_64-linux"
+          "aarch64-linux"
+          "aarch64-darwin"
+        ];
+
         description = "Auto-configure .github/dependabot.yml for the detected repository shape";
         enableCheck = false;
         subPackages = [ "cmd/dependabot-auto-configure" ];
