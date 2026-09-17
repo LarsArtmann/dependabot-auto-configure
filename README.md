@@ -53,7 +53,7 @@ updates:
     groups:
       actions:
         patterns:
-          - '*'
+          - "*"
 ```
 
 ## Usage

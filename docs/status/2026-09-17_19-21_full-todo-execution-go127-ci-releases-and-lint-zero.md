@@ -10,57 +10,67 @@
 
 ### Dependency sweep — everything at latest
 
-| Item | State | Evidence |
-| --- | --- | --- |
-| Go direct modules | Already latest (no-op sweep) | `go get -u ./...` → no changes; `go list -m -u all` shows updates only for test-deps-of-deps (ginkgo, pprof, …) |
-| flake: go-atomic-write | v0.5.1 → **v0.5.2** | flake.nix pin + `nix flake update` |
-| flake: go-error-family | v0.10.0 → **v0.10.1** | flake.nix pin + `nix flake update` |
-| flake: go-nix-helpers | a97742e → **19fc8e5** (2 real fixes, incl. "swap version-suffixed patches when goTarballVersion outruns nixpkgs go") | `git log a97742e..origin/master` in helper repo |
-| Go toolchain | 1.26.7 → **1.27.1** (latest stable, verified via go.dev/VERSION) | `goPkgAttr = "go_1_27"` in flake; go.mod floor normalized `go 1.26.7` → `go 1.27` (major.minor-only policy) |
-| erraudit binary | Rebuilt with go1.27.1 (was go1.26.7 → "packages contain errors" on the new floor) | `go version -m ~/go/bin/erraudit` |
-| vendorHash | Repaired for the 1.27 vendor layout | `sha256-BeBco8nQsi+BXW6bYNeQedBESjMXVL/yKG32wfY61uc=`, `nix build` green |
+| Item                   | State                                                                                                                | Evidence                                                                                                        |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Go direct modules      | Already latest (no-op sweep)                                                                                         | `go get -u ./...` → no changes; `go list -m -u all` shows updates only for test-deps-of-deps (ginkgo, pprof, …) |
+| flake: go-atomic-write | v0.5.1 → **v0.5.2**                                                                                                  | flake.nix pin + `nix flake update`                                                                              |
+| flake: go-error-family | v0.10.0 → **v0.10.1**                                                                                                | flake.nix pin + `nix flake update`                                                                              |
+| flake: go-nix-helpers  | a97742e → **19fc8e5** (2 real fixes, incl. "swap version-suffixed patches when goTarballVersion outruns nixpkgs go") | `git log a97742e..origin/master` in helper repo                                                                 |
+| Go toolchain           | 1.26.7 → **1.27.1** (latest stable, verified via go.dev/VERSION)                                                     | `goPkgAttr = "go_1_27"` in flake; go.mod floor normalized `go 1.26.7` → `go 1.27` (major.minor-only policy)     |
+| erraudit binary        | Rebuilt with go1.27.1 (was go1.26.7 → "packages contain errors" on the new floor)                                    | `go version -m ~/go/bin/erraudit`                                                                               |
+| vendorHash             | Repaired for the 1.27 vendor layout                                                                                  | `sha256-BeBco8nQsi+BXW6bYNeQedBESjMXVL/yKG32wfY61uc=`, `nix build` green                                        |
 
 **Verified gates, all green:** `go build`, `go test ./...`, `go test -race`, `go mod verify`, `nix build`, `nix flake check`, golangci-lint **0 issues**, erraudit **0 violations**.
 
 ### CI workflow (`.github/workflows/ci.yml`)
+
 - Jobs: `test` (build, race, coverage summary into `$GITHUB_STEP_SUMMARY`), `lint` (golangci-lint-action), `nix` (flake.lock freshness guard, `nix flake check`, `nix build` as vendorHash guard, binary `--version`, `dprint check`), `govulncheck`.
 - Every action pinned to a verified SHA (via `git ls-remote`, not guessed): checkout **v6.0.3**, setup-go **v7.0.0**, golangci-lint-action **v9.3.0**, nix-installer **v23**. golangci-lint binary pinned **v2.13.2** (verified latest tag; built with go1.27.1).
 - `actionlint` passes. **Never executed on a real runner yet** (no push happened) — see b).
 
 ### GitHub Releases
+
 - **v0.1.0** and **v0.2.0** created from CHANGELOG content, live (`gh release list` confirms; v0.2.0 = Latest).
 - Bodies drafted in Lars's announcement register, passed `check-draft.py --kind announcement`, Crush footer attributed.
 
 ### Repo-owned `.golangci.yml`
+
 - Generated with the installed fleet tool (`configure --preset reference`, 61 linters — current tool's canonical max; the 119-linter sibling configs predate this tool version), then ported the fleet's tuned `settings` (cyclop 12, gocognit 25, gocyclo 20, funlen 200/100, gosec G304/G115 excludes, wrapcheck ignore-sigs, revive exported/package-comments off) and deliberate `exclusions` (test-file set, github_test paralleltest/global seam, internal/cli wrapcheck+contextcheck boundary, pkg/detect wrapcheck boundary, named structural globals).
 - **65 findings → 0**, mostly via REAL code fixes, not suppression (see below).
 
 ### `--fail-on` flag (TODO item, plus the root.go refactor it forced)
+
 - `--fail-on any` (default = exact old behavior), `none`, or any go-finding severity/alias (`error`, `warning`, `info`, `critical`, …) with `Severity.GreaterThanOrEqual` ordering.
 - New typed `FlagValueError` (Rejection family, `cli.flag`, what/why/fix message + structured context).
 - root.go refactored: `newRootCmd` cognitive complexity 48 → extracted `reportJSON` / `reportText` / `statusLine` / `failOnPolicy.parseFailOn` / `.exceeded`.
 - 4 new tests: severity thresholds, error finding fails, invalid value rejected (typed error asserted via `errors.AsType`), default/explicit `any`.
 
 ### pkg/provider test coverage: 0% → **85%**
+
 - 8 tests: spec contract, `toolsdk.All()` blank-import discovery, Detect reports missing config WITHOUT writing, Detect error on unavailable root, Repair writes, dry-run holds back, idempotent second run, unsafe config stays suggest-only.
 
 ### ADR + README
+
 - `docs/adr/0001-suggest-only-unsafe-configs.md`: context, decision, 3 alternatives (extend-model / merge-edit / rewrite-with-warning) with rejection reasons, consequences incl. convergence contract.
 - README: real dogfooded example `dependabot.yml` block (the TODO item), `--fail-on` usage, Go 1.27 build note.
 
 ### Dogfood repair
+
 - The tool detected the missing `github-actions` entry in **its own repo** (possible only after CI landed — exactly the TODO's "revisit after CI") and repaired it; `--check` now exits 0 "already canonical".
 
 ### Robustness tests (low-impact TODO batch)
+
 - `FuzzDecode`: 9 seeds + **30s campaign, 1.17M execs, 0 crashes**; invariant Unsafe ⟺ any Unknown signal.
 - `TestReconcileIsIdempotent`: **500 seeded randomized cases** (`Reconcile(Reconcile(r,d),d) == Reconcile(r,d)`) + generated-config fixed-point test. Dependency-free (math/rand, fixed seed).
 - `TestRunWriteFailureIsReported`: the previously uncovered `planOrWrite` error branch (read-only `.github`, root-skip guard, asserts `ConfigWriteError` step + no file left behind).
 - `TestClassifyUsesSlashSeparatedPaths`: unit test pinning classify's slash-path contract (7 cases).
 
 ### Real bug fixed: Windows path handling
+
 `classify` mixed a hardcoded `"/go.mod"` suffix with `filepath.Join(...)+filepath.Separator` — the workflows check could never fire on Windows (backslash `rel`). Fixed: `filepath.ToSlash(rel)` normalization upstream in `Shape`, slash-based checks in `classify`, `path.Dir` for module dirs. The TODO's "test with Windows separators" surfaced an actual bug, not just a missing test.
 
 ### Other real fixes from the lint triage
+
 - gosec **G301**: config dir permissions 0o755 → 0o750.
 - goconst: `"url"` ×3 → `errorContextURL` constant.
 - wrapcheck on `MarshalJSONResult`: `json.Marshal` error now wrapped as typed Corruption (`config.marshal`, carries finding count).
@@ -68,6 +78,7 @@
 - unparam: `repoWithConfig` always-constant param removed; predeclared: `cap` renames; github_test restructured (gocognit 41 → helpers `gitRepoWithOrigin` / `assertUnexpectedStatus` / `assertSecurityFixesRequest`).
 
 ### AGENTS.md
+
 - Updated: `GOTOOLCHAIN=auto` requirement for raw go commands (devShell alternative), erraudit binary must be built ≥ repo floor (with the rebuild command).
 
 ---
@@ -115,6 +126,7 @@
 ## f) NEXT (up to 50, impact-ordered)
 
 **Docs sync (cheap, do first)**
+
 1. Update TODO_LIST.md: remove the ~14 completed items (log to CHANGELOG), keep the rest.
 2. CHANGELOG `[Unreleased]`: Go 1.27.1 + floor, flake pin bumps, CI workflow, `--fail-on`, provider tests 0→85%, pinned lint config (0 issues), ADR 0001, Windows separator fix, robustness tests (fuzz/property/write-failure), dogfood regeneration, README example.
 3. FEATURES.md: add `--fail-on`, provider test coverage, pinned lint config.
@@ -188,4 +200,4 @@
 
 ---
 
-*Point-in-time report; do not treat "is broken / is X" claims as current truth without re-verifying (see AGENTS.md).*
+_Point-in-time report; do not treat "is broken / is X" claims as current truth without re-verifying (see AGENTS.md)._

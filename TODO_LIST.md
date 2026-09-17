@@ -15,40 +15,25 @@
 
 ## High Impact
 
-| Task                                                                                                                                     | Status    | Impact | Effort | Evidence                                                                  |
-| ---------------------------------------------------------------------------------------------------------------------------------------- | --------- | ------ | ------ | ------------------------------------------------------------------------- |
-| Add CI (`.github/workflows/`): `nix flake check`, `go test ./...`, golangci-lint, dprint check, coverage summary; add README badge after | 🔴 `TODO` | High   | 1-2h   | No workflows dir in repo; vendorHash rot already happened once without CI |
-| Create the GitHub Releases for tags `v0.1.0` and `v0.2.0` from CHANGELOG (tags exist, no releases)                                       | 🔴 `TODO` | Med    | 15m    | `gh release list` → empty; tags `v0.1.0` `f80557d`, `v0.2.0` `c6df8cc`    |
+| Task                                                                                                                                | Status       | Impact | Effort | Evidence                                                                                      |
+| ----------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------ | ------ | --------------------------------------------------------------------------------------------- |
+| Push `master` to origin and verify: CI green on real runners, Dependabot picks up the `github-actions` entry, README badges resolve | 🔵 `BLOCKED` | High   | 15m    | ~10+ commits ahead of origin; pushing needs explicit authorization. CI has never run for real |
 
 ## Medium Impact
 
-| Task                                                                                                                             | Status    | Impact | Effort | Evidence                                                                                        |
-| -------------------------------------------------------------------------------------------------------------------------------- | --------- | ------ | ------ | ----------------------------------------------------------------------------------------------- |
-| Hand-review the v0.2.0 diff (customization_test.go, config/generate changes) with full-review rigor — only smoke-verified so far | 🔴 `TODO` | Med    | 1h     | `git show c6df8cc`; status report `2026-09-11_06-21` §b                                         |
-| Add dprint to the flake devShell so the documented format gate runs everywhere                                                   | 🔴 `TODO` | Med    | 15m    | `dprint` absent from PATH; needed `nix shell nixpkgs#dprint`; `flake.nix` devShellExtraPackages |
-| Cover the BuildFlow provider with a test (Detect check-mode, Repair dry-run)                                                     | 🔴 `TODO` | Med    | 1h     | `pkg/provider` coverage is 0% (`go test -cover ./pkg/...`)                                      |
-| Pin a repo-owned `.golangci.yml` so lint results do not depend on machine config                                                 | 🔴 `TODO` | Med    | 30m    | No `.golangci.yml` exists; `pkg/provider` import order drifted past gofmt (fixed by hand)       |
-| Add `--fail-on <severity>` flag for CI policy control                                                                            | 🔴 `TODO` | Med    | 2-4h   | No such flag; `internal/cli/root.go` has only `--check` severity-blind exit                     |
-| Write `docs/adr/0001-suggest-only-unsafe-configs.md` (the core safety decision)                                                  | 🔴 `TODO` | Med    | 1h     | No `docs/adr/`; contract documented in AGENTS/FEATURES but not as an ADR                        |
-| README: show a generated `dependabot.yml` example block                                                                          | 🔴 `TODO` | Med    | 30m    | README `What it does` describes output but never shows it                                       |
+| Task                                                                                                                                                 | Status       | Impact | Effort | Evidence                                                                                                                                    |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Raise `pkg/configure` (69.6%) and `internal/cli` (65.1%) coverage to the 80% target (AGENTS.md §Testing)                                             | 🔴 `TODO`    | Med    | 2-4h   | `go test ./... -cover`; `github.go` request paths and `root.go` report rendering are the thin spots                                         |
+| Add a Windows CI job — the slash-separator bug (v0.2.0-era) proved Windows matters and CI is Linux-only today                                        | 🔴 `TODO`    | Med    | 1h     | `.github/workflows/ci.yml` has no `windows-latest` matrix entry                                                                             |
+| Cut `linter-autoconfigure-sdk` v1.0.0: sweep its deps first (go-finding v1.10.0 → v1.11.0, go-atomic-write v0.5.1 → v0.5.2), run its gates, then tag | 🔵 `BLOCKED` | Med    | 1h     | `~/projects/linter-autoconfigure-sdk` go.mod is one release behind; 100% coverage, clean tree, tagging an external repo needs authorization |
 
 ## Low Impact
 
-| Task                                                                                                                                            | Status    | Impact | Effort | Evidence                                                           |
-| ----------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ------ | ------ | ------------------------------------------------------------------ |
-| Make `nix flake check` pass for `--all-systems` (aarch64/darwin, x86_64-darwin)                                                                 | 🔴 `TODO` | Low    | 1h     | `nix flake check` warns: incompatible systems omitted              |
-| Windows robustness: test `detect.Shape` path handling with Windows separators                                                                   | 🔴 `TODO` | Low    | 1h     | `pkg/detect/detect.go` uses `filepath` separators, untested on `\` |
-| Fuzz `dependabot.Decode` with arbitrary YAML (it is the parse boundary)                                                                         | 🔴 `TODO` | Low    | 2-4h   | No fuzz targets in repo                                            |
-| Property test: `Reconcile` is idempotent (`Reconcile(r, d) == r`)                                                                               | 🔴 `TODO` | Low    | 1h     | No property tests in repo                                          |
-| Integration test: atomic-write failure path (read-only dir) in `planOrWrite`                                                                    | 🔴 `TODO` | Low    | 1h     | `planOrWrite` error branch uncovered                               |
-| Decide exit-code semantics for unsafe configs (currently 0; maybe a distinct code)                                                              | 🔴 `TODO` | Low    | 30m    | `internal/cli/root.go` exit codes 0/1/2; unsafe exits 0            |
-| Add `.github/ISSUE_TEMPLATE` + PR template                                                                                                      | 🔴 `TODO` | Low    | 30m    | Public repo, no templates                                          |
-| Set GitHub repo topics (`go`, `dependabot`, `devtools`, `nix`); description is set, topics are empty                                            | 🔴 `TODO` | Low    | 5m     | `gh api repos/.../topics` → empty                                  |
-| Audit sibling dep pins (go-finding, go-atomic-write, go-error-family) for stale versions                                                        | 🔴 `TODO` | Low    | 30m    | `flake.nix` deps pinned at v1.10.0/v0.5.1/v0.10.0                  |
-| Error-message audit against the what/why/fix standard for all finding suggestions                                                               | 🔴 `TODO` | Low    | 1h     | `pkg/dependabot/generate.go` finding texts never audited           |
-| Add SECURITY.md (private disclosure contact)                                                                                                    | 🔴 `TODO` | Low    | 30m    | Public repo, no SECURITY.md                                        |
-| Tag `linter-autoconfigure-sdk` `v1.0.0` (external repo) so consumers pin stable                                                                 | 🔴 `TODO` | Low    | 30m    | SDK at v0.1.0 (`go.mod`); this repo is its first consumer          |
-| When CI workflows land: regenerate this repo's own `.github/dependabot.yml` so it gains the `github-actions` entry (gomod-only today by design) | 🔴 `TODO` | Low    | 5m     | `detect.Shape` finds no workflows today; revisit after the CI task |
+| Task                                                                                  | Status    | Impact | Effort | Evidence                                                                              |
+| ------------------------------------------------------------------------------------- | --------- | ------ | ------ | ------------------------------------------------------------------------------------- |
+| Cache golangci-lint in CI (`golangci-lint-action` `cache: true` or `actions/cache`)   | 🔴 `TODO` | Low    | 15m    | Cold lint on real runners is minutes; `.github/workflows/ci.yml` lint job             |
+| `--json`: decide whether the `--fail-on` policy outcome belongs in the wire shape     | 🔴 `TODO` | Low    | 30m    | `resultJSON` in `pkg/configure/configure.go`; policy verdict currently text-mode only |
+| Upstream to go-nix-helpers: apps lack `meta.description` (`nix flake check` warnings) | 🔴 `TODO` | Low    | 30m    | Warning on every app in `nix flake check --all-systems`; module-owned, not per-repo   |
 
 ---
 
