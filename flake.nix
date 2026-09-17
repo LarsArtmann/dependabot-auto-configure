@@ -98,6 +98,10 @@
         ];
 
         enableNixfmt = true;
+        # goimports wraps the nixpkgs Go toolchain and tries to download a
+        # newer one for the go.mod floor (impossible in the sandbox); gofumpt
+        # is a standalone binary and already covers Go import formatting.
+        enableGoimports = false;
       };
     };
 }
