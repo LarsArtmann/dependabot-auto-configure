@@ -277,6 +277,8 @@ func Diff(existing *Config, dec DecodeResult, desired Config, shape RepoShape, c
 			Message:  fmt.Sprintf("entry for ecosystem %q in directory %q matches nothing detected in the repository (kept as-is)", got.PackageEcosystem, got.Directory),
 			Severity: finding.SeverityInfo,
 			File:     file,
+			Suggestion: "remove the entry if it is stale, or keep it — this tool leaves " +
+				"ecosystems and directories it does not detect (pip, cargo, nested npm, ...) alone",
 		})
 	}
 
@@ -301,7 +303,7 @@ func entryIssues(got Update, want Update, file finding.FilePath) []autoconfigure
 	if scheduleMissing(got) {
 		issues = append(issues, ConfigIssue{
 			Rule:       "dependabot-schedule-missing",
-			Message:    fmt.Sprintf("entry %q/%q has no schedule interval", want.PackageEcosystem, want.Directory),
+			Message:    fmt.Sprintf("entry %q/%q has no schedule interval, so Dependabot runs on its implicit default instead of the explicit weekly cadence", want.PackageEcosystem, want.Directory),
 			Severity:   finding.SeverityWarning,
 			File:       file,
 			Suggestion: fmt.Sprintf("set schedule interval to %q", IntervalWeekly),

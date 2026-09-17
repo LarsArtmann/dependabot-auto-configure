@@ -1,0 +1,30 @@
+name: Feature request
+description: A repository shape, config field, or workflow the tool does not handle yet.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What can you not do, or what does the tool get wrong for your repository?
+    validations:
+      required: true
+  - type: textarea
+    id: desired-config
+    attributes:
+      label: Desired config or behavior
+      description: The dependabot.yml you would want generated or preserved.
+      render: yaml
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other tools, manual configuration, workarounds.
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This is about the detected repository shape (ecosystems, directories, workflows)
+        - label: This is about a dependabot.yml field the tool does not model
+        - label: This is about CLI behavior, output, or exit codes

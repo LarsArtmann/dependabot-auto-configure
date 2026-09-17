@@ -22,9 +22,11 @@ func TestClassifyUsesSlashSeparatedPaths(t *testing.T) {
 			wantModule: "",
 		},
 		{
-			name:       "nested module",
-			rel:        "modules/types/go.mod",
-			want:       func(s dependabot.RepoShape) bool { return len(s.GoModuleDirs) == 1 && s.GoModuleDirs[0] == "modules/types" },
+			name: "nested module",
+			rel:  "modules/types/go.mod",
+			want: func(s dependabot.RepoShape) bool {
+				return len(s.GoModuleDirs) == 1 && s.GoModuleDirs[0] == "modules/types"
+			},
 			wantModule: "modules/types",
 		},
 		{

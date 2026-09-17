@@ -1,0 +1,67 @@
+name: Bug report
+description: The tool detected the wrong shape, wrote something it should not have, or crashed.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. This tool's core promise is that it
+        never destroys user intent — if it rewrote something it should have
+        left alone, or missed something it should have filled, that is a bug
+        we want to hear about.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you get instead?
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command and output
+      description: The exact command you ran and its full output, including any findings.
+      placeholder: |
+        $ dependabot-auto-configure --check
+        ...
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: repository-shape
+    attributes:
+      label: Repository shape
+      description: Where do your go.mod files, .github/workflows, and package.json live? Is this a single module or many?
+    validations:
+      required: true
+  - type: textarea
+    id: existing-config
+    attributes:
+      label: Existing .github/dependabot.yml
+      description: The config before the tool ran (if one existed). Redact anything private.
+      render: yaml
+  - type: dropdown
+    id: version
+    attributes:
+      label: Version
+      description: Output of `dependabot-auto-configure --version`, or the install source if it does not print one.
+      options:
+        - nix run github:LarsArtmann/dependabot-auto-configure
+        - go install github.com/larsartmann/dependabot-auto-configure@latest
+        - BuildFlow provider
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Linux
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Windows
+        - Other
+      default: 0
+    validations:
+      required: true
