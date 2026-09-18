@@ -27,9 +27,9 @@
 
 ## Low Impact
 
-| Task                                                                                  | Status    | Impact | Effort | Evidence                                                                                                                 |
-| ------------------------------------------------------------------------------------- | --------- | ------ | ------ | ------------------------------------------------------------------------------------------------------------------------ |
-| Upstream to go-nix-helpers: apps lack `meta.description` (`nix flake check` warnings) | 🔴 `TODO` | Low    | 30m    | Warning on every app in `nix flake check --all-systems`; module-owned, not per-repo                                      |
+| Task                                                                                  | Status    | Impact | Effort | Evidence                                                                            |
+| ------------------------------------------------------------------------------------- | --------- | ------ | ------ | ----------------------------------------------------------------------------------- |
+| Upstream to go-nix-helpers: apps lack `meta.description` (`nix flake check` warnings) | 🔴 `TODO` | Low    | 30m    | Warning on every app in `nix flake check --all-systems`; module-owned, not per-repo |
 
 ---
 
