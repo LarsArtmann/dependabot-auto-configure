@@ -9,6 +9,7 @@ import (
 
 	"charm.land/fang/v2"
 	"github.com/larsartmann/dependabot-auto-configure/pkg/configure"
+	"github.com/larsartmann/dependabot-auto-configure/pkg/version"
 	"github.com/larsartmann/go-finding"
 	"github.com/spf13/cobra"
 )
@@ -21,13 +22,10 @@ const (
 	exitError   = 2
 )
 
-// Version is overridden at build time via -ldflags.
-var Version = "dev"
-
 // Execute runs the CLI and returns the process exit code.
 func Execute(ctx context.Context) int {
 	rootCmd, code := newRootCmd()
-	if err := fang.Execute(ctx, rootCmd, fang.WithVersion(Version)); err != nil {
+	if err := fang.Execute(ctx, rootCmd, fang.WithVersion(version.Version)); err != nil {
 		if _, printErr := fmt.Fprintln(os.Stderr, err); printErr != nil {
 			return exitError
 		}
@@ -121,7 +119,7 @@ func newRootCmd() (*cobra.Command, *int) {
 			".github/dependabot.yml with weekly grouped updates and an explicit PR limit. " +
 			"Existing non-canonical choices (schedules, limits, extra entries) are preserved; " +
 			"configs with unknown constructs are reported but never rewritten.",
-		Version: Version,
+		Version: version.Version,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			policy, err := parseFailOn(failOn)
 			if err != nil {
