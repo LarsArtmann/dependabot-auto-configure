@@ -29,7 +29,6 @@
 
 | Task                                                                                  | Status    | Impact | Effort | Evidence                                                                                                                 |
 | ------------------------------------------------------------------------------------- | --------- | ------ | ------ | ------------------------------------------------------------------------------------------------------------------------ |
-| `--json`: decide whether the `--fail-on` policy outcome belongs in the wire shape     | 🔴 `TODO` | Low    | 30m    | `resultJSON` in `pkg/configure/configure.go`; policy verdict currently text-mode only; wire keys are contract-tested now |
 | Upstream to go-nix-helpers: apps lack `meta.description` (`nix flake check` warnings) | 🔴 `TODO` | Low    | 30m    | Warning on every app in `nix flake check --all-systems`; module-owned, not per-repo                                      |
 
 ---

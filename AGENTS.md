@@ -156,7 +156,8 @@ Non-obvious rules the flags enforce (empirically verified 2026-09-11):
 ## Testing
 
 Table-driven tests for pure functions; integration tests with `t.TempDir`
-fixtures in `pkg/configure`. Coverage target: 80%+ on pkg/* (the
-`pkg/provider` BuildFlow wiring is the known gap). The
+fixtures in `pkg/configure`. Coverage target: 80%+ on every package —
+currently detect 96.6%, configure 89.2%, dependabot 86.7%, provider 85.0%,
+cli 83.5%. The
 `TestRun*` suite encodes the safety contract (check/dry-run/unsafe/no-op) —
 extend it when adding behavior.

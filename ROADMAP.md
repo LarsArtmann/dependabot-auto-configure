@@ -66,6 +66,11 @@ Things we are deliberately NOT pursuing and why:
 - **Per-repo policy config files** (an `.autorc`-style override layer):
   convention-over-configuration is why the tool needs no setup today.
   Revisit only if the defaults prove too rigid in practice.
+- **Policy verdicts inside the `--json` wire shape**: the process exit
+  code is already the machine-readable verdict for `--check` +
+  `--fail-on`; duplicating policy evaluation in JSON creates two sources
+  of truth that can drift. Findings are present in the payload, so
+  consumers with custom policies can threshold themselves.
 
 ---
 
