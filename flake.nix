@@ -47,7 +47,7 @@
       ...
     }:
     let
-      version = self.rev or self.dirtyRev or "dev";
+      version = self.shortRev or self.dirtyShortRev or "dev";
     in
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [ inputs.go-nix-helpers.flakeModules.go-standard ];
@@ -90,7 +90,7 @@
         ldflags = [
           "-s"
           "-w"
-          "-X github.com/larsartmann/dependabot-auto-configure/internal/cli.Version=${version}"
+          "-X github.com/larsartmann/dependabot-auto-configure/pkg/version.injected=${version}"
         ];
 
         extraBuildAttrs.preBuild = "export GOEXPERIMENT=jsonv2";

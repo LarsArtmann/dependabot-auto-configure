@@ -33,8 +33,6 @@ var injected string
 
 // Version is the tool version: the ldflags-injected string when present,
 // otherwise the git-derived VCS stamp, otherwise "dev".
-//
-//nolint:gochecknoglobals // resolved once at package init; consumers read it
 var Version = resolve(injected, readBuildInfo())
 
 // resolve picks the version. Precedence: ldflags injection (nix shortRev
