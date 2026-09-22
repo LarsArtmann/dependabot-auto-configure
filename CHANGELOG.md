@@ -87,6 +87,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Repair no longer drops a schedule `day`/`time`/`timezone` when it fills
   a missing interval — the fill is now in-place on the user's schedule
 
+## [0.2.1] - 2026-09-22
+
+### Changed
+
+- go-finding v1.11.0 → v1.13.0 (workspace-aware module floors, `go 1.27`
+  root floor) and toolsdk v1.13.0
+- `go` directive normalized from `go 1.27.1` to the minor form `go 1.27`
+  (fleet-adopted floor form; see ADR-0001 in go-version-auto-configure)
+
 ## [0.2.0] - 2026-09-11
 
 ### Added
