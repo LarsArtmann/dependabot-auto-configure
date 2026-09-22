@@ -1,6 +1,6 @@
 module github.com/larsartmann/dependabot-auto-configure
 
-go 1.27.1
+go 1.27
 
 require (
 	charm.land/lipgloss/v2 v2.0.6 // indirect
