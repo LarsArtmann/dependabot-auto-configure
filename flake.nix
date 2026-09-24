@@ -55,7 +55,6 @@
       go-standard = {
         pname = "dependabot-auto-configure";
         inherit version;
-        goPkgAttr = "go_1_27";
         vendorHash = "sha256-V0nvJDKLRdwj2A31ZlNDZxYQ04bLCKde3IG6c5dpePQ=";
 
         # Nixpkgs 26.11 dropped x86_64-darwin, so `nix flake check
