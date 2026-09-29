@@ -78,16 +78,16 @@
     "go-finding": {
       "flake": false,
       "locked": {
-        "lastModified": 1789622053,
-        "narHash": "sha256-YBkeVvhHf0LymqQIOy+qD6pU33WlczxSv8AUQ/W13oI=",
+        "lastModified": 1790100510,
+        "narHash": "sha256-9SIzXztAkNlCKIKmnHS9XldwPJZmcijr9Re0x5LSn0Y=",
         "owner": "LarsArtmann",
         "repo": "go-finding",
-        "rev": "833efd231ed9ac9e7c4845199514a5abbb647ee2",
+        "rev": "450824e9783d2ac74f04a388f178573f7ca953e6",
         "type": "github"
       },
       "original": {
         "owner": "LarsArtmann",
-        "ref": "refs/tags/v1.11.0",
+        "ref": "refs/tags/v1.13.0",
         "repo": "go-finding",
         "type": "github"
       }
@@ -119,27 +119,27 @@
     "linter-autoconfigure-sdk": {
       "flake": false,
       "locked": {
-        "lastModified": 1789129974,
-        "narHash": "sha256-/A8aI656uMGgyluSIcIbQRisaoKxrKsfE3yhsUnRUEA=",
+        "lastModified": 1790170676,
+        "narHash": "sha256-ZL5C4k5tt3cfGCXwfmCuR5wvu6HErXOAt5ZcOWVh1N8=",
         "owner": "LarsArtmann",
         "repo": "linter-autoconfigure-sdk",
-        "rev": "5dec8d9b1f347bdd0483417b305d16f6f07c8d0a",
+        "rev": "5fc15b16f55aae3e8b762429dbf21385b2478186",
         "type": "github"
       },
       "original": {
         "owner": "LarsArtmann",
-        "ref": "refs/tags/v0.2.0",
+        "ref": "refs/tags/v0.7.0",
         "repo": "linter-autoconfigure-sdk",
         "type": "github"
       }
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1789684949,
-        "narHash": "sha256-ZKhUe/2IJUq1JhKxKMu8rbkgSGmPP2ZCqlIPn40aGCM=",
+        "lastModified": 1790578696,
+        "narHash": "sha256-ZoxIApko70jCdbH3l20HWXOBaT2HZd87orzd2yJ9dVE=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "e554fab72f81915600f3f449b786fd9af40439a5",
+        "rev": "7a0f122f5090cf4c2ade2a13a0e229d4e19ba71f",
         "type": "github"
       },
       "original": {
