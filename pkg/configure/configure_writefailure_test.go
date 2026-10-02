@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/larsartmann/dependabot-auto-configure/pkg/configure"
@@ -15,6 +16,10 @@ import (
 // write error instead of a silent no-op, and must leave no file behind.
 func TestRunWriteFailureIsReported(t *testing.T) {
 	t.Parallel()
+
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows does not enforce directory permission bits, so a 0o500 directory stays writable and the failure path cannot be exercised")
+	}
 
 	if os.Geteuid() == 0 {
 		t.Skip("running as root bypasses directory permissions; the failure path cannot be exercised")

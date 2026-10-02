@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Nothing yet.
+
+### Changed
+
+- Nothing yet.
+
+### Fixed
+
+- Nothing yet.
+
+## [0.3.0] - 2026-10-02
+
+### Added
+
 - Ecosystem detection for pip (`requirements.txt`, `Pipfile`,
   `pyproject.toml`), cargo (`Cargo.toml`), and gradle
   (`build.gradle[.kts]`, `settings.gradle[.kts]`); npm generation now
@@ -108,6 +122,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `\` separators — `detect.Shape` now classifies slash-normalized paths
 - Repair no longer drops a schedule `day`/`time`/`timezone` when it fills
   a missing interval — the fill is now in-place on the user's schedule
+- Windows CI: the read-only-directory write-failure test skipped itself
+  instead of failing — permission bits are not enforced on Windows, so
+  the failure path cannot be exercised there
 
 ## [0.2.1] - 2026-09-22
 
