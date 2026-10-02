@@ -165,6 +165,81 @@ func TestNestedPackageJSONWithLockfileIsNPM(t *testing.T) {
 	}
 }
 
+// TestNestedPackageJSONWithoutRootIsNPM pins the root-absent npm shape: a
+// nested package.json with its own lockfile counts even when the repo has no
+// root package.json at all.
+func TestNestedPackageJSONWithoutRootIsNPM(t *testing.T) {
+	t.Parallel()
+
+	shape, err := detect.NewDetector(writeTree(t,
+		"README.md",
+		"web/package.json",
+		"web/yarn.lock",
+	)).Shape()
+	if err != nil {
+		t.Fatalf("Shape() error = %v", err)
+	}
+
+	if len(shape.NPMDirs) != 1 || shape.NPMDirs[0] != "web" {
+		t.Errorf("Shape() npm dirs = %v, want [\"web\"]", shape.NPMDirs)
+	}
+}
+
+// TestLegacyObjectWorkspacesAreNPM pins the yarn-classic object form of the
+// workspaces declaration; any non-null workspaces value must count.
+func TestLegacyObjectWorkspacesAreNPM(t *testing.T) {
+	t.Parallel()
+
+	root := writeTree(t, "package.json", "apps/web/package.json")
+	if err := os.WriteFile(
+		filepath.Join(root, "package.json"),
+		[]byte(`{"workspaces": {"packages": ["apps/*"]}}`),
+		0o644,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	shape, err := detect.NewDetector(root).Shape()
+	if err != nil {
+		t.Fatalf("Shape() error = %v", err)
+	}
+
+	want := []string{"", "apps/web"}
+	if len(shape.NPMDirs) != len(want) {
+		t.Fatalf("Shape() npm dirs = %v, want %v", shape.NPMDirs, want)
+	}
+
+	for i, dir := range want {
+		if shape.NPMDirs[i] != dir {
+			t.Errorf("Shape() npm dir %d = %q, want %q", i, shape.NPMDirs[i], dir)
+		}
+	}
+}
+
+// TestBunLockfilesSignalNPM exercises both bun lockfile names, which were
+// previously only present in the name map but never asserted by a test.
+func TestBunLockfilesSignalNPM(t *testing.T) {
+	t.Parallel()
+
+	for _, lockfile := range []string{"bun.lock", "bun.lockb"} {
+		t.Run(lockfile, func(t *testing.T) {
+			t.Parallel()
+
+			shape, err := detect.NewDetector(writeTree(t,
+				"web/package.json",
+				"web/"+lockfile,
+			)).Shape()
+			if err != nil {
+				t.Fatalf("Shape() error = %v", err)
+			}
+
+			if len(shape.NPMDirs) != 1 || shape.NPMDirs[0] != "web" {
+				t.Errorf("Shape() npm dirs = %v, want [\"web\"]", shape.NPMDirs)
+			}
+		})
+	}
+}
+
 func TestPipCargoGradleManifests(t *testing.T) {
 	t.Parallel()
 

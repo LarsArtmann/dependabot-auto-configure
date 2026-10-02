@@ -7,27 +7,26 @@
 
 ### 1. Ecosystem breadth
 
-The tool watches three ecosystems (gomod, github-actions, npm). Dependabot
-supports many more (cargo, pip, docker, terraform, composer, ...). Each new
-ecosystem means: a detection signal, canonical group/schedule choices, and
-tests. Growth here should stay boring and incremental — one ecosystem at a
-time, always behind the same safety contract.
+The tool watches six ecosystems (gomod, github-actions, npm, pip, cargo,
+gradle). Dependabot supports many more (docker, terraform, composer, ...).
+Each new ecosystem means: a detection signal, canonical group/schedule
+choices, and tests. Growth here should stay boring and incremental — one
+ecosystem at a time, always behind the same safety contract.
 
 Raw ideas:
 
-- Detect Rust (Cargo.toml), Python (requirements.txt / pyproject.toml),
-  Docker (Dockerfile / compose files), Terraform
+- Detect Docker (Dockerfile / compose files), Terraform, composer
 - Per-ecosystem canonical policies (e.g. docker pinning guidance)
 
 ### 2. Monorepo completeness
 
-Detection today is manifest-presence-based: any nested `go.mod` counts, npm
-only at the root. A deeper shape model would understand workspaces and
-module membership, producing tighter configs for large monorepos.
+Detection is manifest-presence-based: any nested `go.mod` counts, npm counts
+at the root plus nested package.json that declare `workspaces` or ship a
+lockfile. A deeper shape model would understand even more membership
+structure, producing tighter configs for large monorepos.
 
 Raw ideas:
 
-- npm workspace member detection (`workspaces` in package.json)
 - Detect ecosystems from directory contents rather than single files
 - Smarter cap behavior: summarize or tier entries instead of root-only
 - `--root` defaulting to the git toplevel instead of the CWD

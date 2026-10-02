@@ -17,8 +17,11 @@ func randomExistingConfig(rng *rand.Rand) dependabot.Config {
 		dependabot.EcosystemGoModules,
 		dependabot.EcosystemGitHubActions,
 		dependabot.EcosystemNPM,
+		dependabot.EcosystemPip,
+		dependabot.EcosystemCargo,
+		dependabot.EcosystemGradle,
 	}
-	directories := []string{"/", "/modules/types", "/packages/app", "/tools/legacy"}
+	directories := []string{"/", "/modules/types", "/packages/app", "/tools/legacy", "/services/api"}
 
 	cfg := dependabot.Config{Version: dependabot.CurrentVersion}
 
@@ -64,11 +67,25 @@ func npmDirsFor(rng *rand.Rand) []string {
 	return []string{""}
 }
 
+// randomDesiredConfig builds a shape across every ecosystem, randomly
+// including the v0.3.0 pip/cargo/gradle dirs so the properties cover them.
 func randomDesiredConfig(rng *rand.Rand) dependabot.Config {
 	shape := dependabot.RepoShape{
 		GoModuleDirs:     []string{"", "/modules/types"},
 		HasGitHubActions: rng.Intn(2) == 0,
 		NPMDirs:          npmDirsFor(rng),
+	}
+
+	if rng.Intn(2) == 0 {
+		shape.PipDirs = []string{""}
+	}
+
+	if rng.Intn(2) == 0 {
+		shape.CargoDirs = []string{"tools/engine"}
+	}
+
+	if rng.Intn(2) == 0 {
+		shape.GradleDirs = []string{"android"}
 	}
 
 	desired, _ := dependabot.Generate(shape)
@@ -112,22 +129,67 @@ func TestReconcileIsIdempotent(t *testing.T) {
 
 // TestReconcileIsIdempotentOnGenerated pins the special case the account
 // relies on: the canonical desired config is a fixed point of Reconcile.
+// The table spans every ecosystem so a new one cannot skip the property.
 func TestReconcileIsIdempotentOnGenerated(t *testing.T) {
 	t.Parallel()
 
-	shape := dependabot.RepoShape{
-		GoModuleDirs:     []string{"", "/modules/types"},
-		HasGitHubActions: true,
-		NPMDirs:          []string{""},
+	tests := []struct {
+		name  string
+		shape dependabot.RepoShape
+	}{
+		{
+			name: "go, actions, npm",
+			shape: dependabot.RepoShape{
+				GoModuleDirs:     []string{"", "/modules/types"},
+				HasGitHubActions: true,
+				NPMDirs:          []string{""},
+			},
+		},
+		{
+			name: "pip only",
+			shape: dependabot.RepoShape{
+				PipDirs: []string{""},
+			},
+		},
+		{
+			name: "cargo nested",
+			shape: dependabot.RepoShape{
+				CargoDirs: []string{"tools/engine"},
+			},
+		},
+		{
+			name: "gradle nested",
+			shape: dependabot.RepoShape{
+				GradleDirs: []string{"android"},
+			},
+		},
+		{
+			name: "all ecosystems at once",
+			shape: dependabot.RepoShape{
+				GoModuleDirs:     []string{""},
+				HasGitHubActions: true,
+				NPMDirs:          []string{"", "web"},
+				PipDirs:          []string{"tools/ingest"},
+				CargoDirs:        []string{"rust-core"},
+				GradleDirs:       []string{"android", "android/feature"},
+			},
+		},
 	}
-	desired, _ := dependabot.Generate(shape)
 
-	if got := dependabot.Reconcile(desired, desired); !dependabot.Equal(got, desired) {
-		t.Fatalf("generated config is not a fixed point:\ndesired: %+v\ngot:     %+v", desired, got)
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	if _, err := desired.Encode(); err != nil {
-		t.Fatalf("generated config does not encode: %v", err)
+			desired, _ := dependabot.Generate(tt.shape)
+
+			if got := dependabot.Reconcile(desired, desired); !dependabot.Equal(got, desired) {
+				t.Fatalf("generated config is not a fixed point:\ndesired: %+v\ngot:     %+v", desired, got)
+			}
+
+			if _, err := desired.Encode(); err != nil {
+				t.Fatalf("generated config does not encode: %v", err)
+			}
+		})
 	}
 }
 

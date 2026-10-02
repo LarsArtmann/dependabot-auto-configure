@@ -31,6 +31,21 @@ updates:
 	f.Add([]byte("version: [2\nupdates: }}"))
 	f.Add([]byte("\x00\x01\x02\xff"))
 	f.Add([]byte("version: 2\nupdates: not-a-list\n"))
+	f.Add([]byte(listFormGroupsYAML))
+	f.Add([]byte(commitMessageYAML))
+	f.Add(
+		[]byte(`version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    commit-message:
+      prefix: chore(deps)
+      include: scope
+      separator: ": "
+    groups:
+      - minor-and-patch
+`),
+	)
 
 	f.Fuzz(func(t *testing.T, data []byte) {
 		res, err := dependabot.Decode(data)

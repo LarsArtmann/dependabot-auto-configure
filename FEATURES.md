@@ -64,6 +64,7 @@
 | Security-fixes enablement | 🟢 `FULLY_FUNCTIONAL` | `--enable-security-fixes` PUTs `automated-security-fixes` via the GitHub API; bounded 15s client; outcome reported in text and JSON (`pkg/configure/github.go`)                                                                              |
 | BuildFlow provider        | 🟢 `FULLY_FUNCTIONAL` | `toolsdk.Spec` registered in `pkg/provider/provider.go`; Detect runs check-mode, Repair honors dry-run. In-repo test suite covers detect/dry-run/idempotence/unsafe (`pkg/provider/provider_test.go`, 85%); consumed externally by BuildFlow |
 | Findings SDK integration  | 🟢 `FULLY_FUNCTIONAL` | Issues converted via `linter-autoconfigure-sdk.FindingsFromIssues` so suggestions arrive as fixable findings                                                                                                                                 |
+| Fleet sweep script        | 🟢 `FULLY_FUNCTIONAL` | `scripts/sweep.sh <projects-dir> [out.csv]`: builds the binary, runs `--check --json` per git repo (skips `archived*`), emits CSV (`repo,exit_code,wrote,planned_write,unchanged,findings,unsafe_repair`). Shell is untested (no fixture test yet); first fleet evidence: `docs/status/evidence/2026-10-02_dependabot-sweep-check.csv` |
 
 ---
 

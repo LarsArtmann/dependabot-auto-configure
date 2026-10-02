@@ -18,7 +18,8 @@ bounded configuration.
   `vendor`, `node_modules`, `.git`, and hidden dirs except `.github`),
   **GitHub Actions** workflows, **npm** (root + workspace members /
   lockfile siblings), **pip** (requirements.txt, Pipfile, pyproject.toml),
-  **cargo** (Cargo.toml), and **gradle** (build/settings .gradle[.kts])
+  **cargo** (Cargo.toml), and **gradle** (build/settings.gradle, including
+  the Kotlin DSL `.kts` variants)
 - Generates weekly grouped updates (minor+patch in one PR, actions by
   pattern) with an explicit `open-pull-requests-limit: 5`
 - Repairs existing configs by filling only what is missing — a monthly
