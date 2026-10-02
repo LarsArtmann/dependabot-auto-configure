@@ -55,6 +55,31 @@ updates:
       - minor-and-patch
 `),
 	)
+	f.Add(
+		[]byte(`version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+        exclude-patterns:
+          - go.mod
+`),
+	)
+	f.Add(
+		[]byte(`version: 2
+updates:
+  - null
+  - package-ecosystem: gomod
+    directory: /
+    groups:
+      custom:
+        patterns:
+          - "*"
+`),
+	)
 
 	f.Fuzz(func(t *testing.T, data []byte) {
 		res, err := dependabot.Decode(data)

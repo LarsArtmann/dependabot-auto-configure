@@ -414,6 +414,62 @@ updates:
 	}
 }
 
+// TestRunCanonicalGroupUnknownKeysSuggestOnly pins the verified silent-drop
+// bug (status report 2026-10-02 §d): unknown keys INSIDE a canonical group
+// value (exclude-patterns, applies-to, ...) are valid GitHub schema this
+// tool does not model. A repair run must treat the document as unsafe and
+// never rewrite — before the group-value audit, this exact fixture decoded
+// SAFE and the rewrite dropped exclude-patterns (unsafe_repair:false,
+// wrote:true). Findings for the repairable sibling entry still flow.
+func TestRunCanonicalGroupUnknownKeysSuggestOnly(t *testing.T) {
+	t.Parallel()
+
+	config := `version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+        exclude-patterns:
+          - go.mod
+  - package-ecosystem: gomod
+    directory: /modules/types
+`
+	root := repoWithConfig(t, config)
+
+	result := run(t, root, configure.Options{})
+
+	if !result.UnsafeRepair || result.Wrote || result.PlannedWrite {
+		t.Errorf(
+			"Run() = unsafe=%v wrote=%v planned=%v, want suggest-only",
+			result.UnsafeRepair,
+			result.Wrote,
+			result.PlannedWrite,
+		)
+	}
+
+	if len(result.Findings) == 0 {
+		t.Error("Run() produced no findings, want at least the repairable sibling entry's repairs")
+	}
+
+	abs := filepath.Join(root, configure.DefaultConfigPath)
+
+	got, err := os.ReadFile(abs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(got) != config {
+		t.Error("Run() rewrote a config carrying unknown group-value keys")
+	}
+}
+
 func TestRunInvalidEntryIsSuggestOnly(t *testing.T) {
 	t.Parallel()
 

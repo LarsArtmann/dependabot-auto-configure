@@ -287,19 +287,27 @@ func Decode(data []byte) (DecodeResult, error) {
 // schema: unknown entry fields, unknown keys inside known blocks (schedule,
 // commit-message, canonical group values), unknown group names. Raw entries
 // align with res.Config.Updates by document order; the per-entry audit
-// result is folded back into the typed entry.
+// result is folded back into the typed entry. The typed decoder skips null
+// list items, so alignment is tracked over non-null entries only — using
+// the raw index would shift the fold (or drop the flag) whenever a null
+// entry precedes an unmodeled-groups entry. Non-null non-mapping entries
+// fail the typed parse, so alignment holds for every decodable document.
 func auditEntries(res *DecodeResult, updates any) {
 	entries, _ := updates.([]any)
 
-	for i, entry := range entries {
+	typedIndex := 0
+
+	for _, entry := range entries {
 		entryMap, ok := entry.(map[string]any)
 		if !ok {
 			continue
 		}
 
-		if auditEntry(res, entryMap) && i < len(res.Config.Updates) {
-			res.Config.Updates[i].HasUnmodeledGroups = true
+		if auditEntry(res, entryMap) && typedIndex < len(res.Config.Updates) {
+			res.Config.Updates[typedIndex].HasUnmodeledGroups = true
 		}
+
+		typedIndex++
 	}
 }
 
