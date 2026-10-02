@@ -1,10 +1,13 @@
 // Package detect reads a repository's shape: the facts about ecosystems
 // and modules that Dependabot configuration needs. Detection is read-only
-// and never guesses — only file presence is reported.
+// and never guesses — only file presence (plus package.json workspace
+// declarations) is reported.
 package detect
 
 import (
+	"encoding/json"
 	"io/fs"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -22,6 +25,17 @@ var skippedSegments = map[string]bool{
 	"vendor":       true,
 }
 
+// npmLockfileNames are lockfiles whose presence marks a nested package.json
+// as a real package (not a stray manifest) even without a workspace
+// declaration.
+var npmLockfileNames = map[string]bool{
+	"package-lock.json": true,
+	"yarn.lock":         true,
+	"pnpm-lock.yaml":    true,
+	"bun.lockb":         true,
+	"bun.lock":          true,
+}
+
 // Detector detects the repository shape under Root.
 type Detector struct {
 	Root string
@@ -32,32 +46,54 @@ func NewDetector(root string) Detector {
 	return Detector{Root: root}
 }
 
-// Shape walks the repository and reports detected ecosystems. go.mod files
-// under skipped directories are ignored; npm detection covers only a root
-// package.json (workspace member detection is future work); GitHub Actions
-// detection covers .github/workflows/*.yml and *.yaml.
-func (d Detector) Shape() (dependabot.RepoShape, error) {
-	shape := dependabot.RepoShape{}
+// walkResult collects raw per-file facts during the walk. Directory lists
+// hold slash-separated paths relative to the root ("" = root); the npm
+// workspace resolution happens once, after the walk.
+type walkResult struct {
+	goModuleDirs     []string
+	hasGitHubActions bool
+	packageJSONDirs  []string
+	lockfileDirs     map[string]bool
+	workspacesFound  bool
+	pipDirs          []string
+	cargoDirs        []string
+	gradleDirs       []string
+}
 
-	err := filepath.WalkDir(d.Root, func(path string, entry fs.DirEntry, err error) error {
+// Shape walks the repository and reports detected ecosystems. Manifests
+// under skipped directories are ignored; npm detection covers the root
+// package.json plus nested ones that are workspace members (a package.json
+// anywhere declares "workspaces") or carry their own lockfile; GitHub
+// Actions detection covers .github/workflows/*.yml and *.yaml.
+func (d Detector) Shape() (dependabot.RepoShape, error) {
+	walked := &walkResult{lockfileDirs: map[string]bool{}}
+
+	err := filepath.WalkDir(d.Root, func(p string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
 		if entry.IsDir() {
-			if d.skipDir(path, entry.Name()) {
+			if d.skipDir(p, entry.Name()) {
 				return fs.SkipDir
 			}
 
 			return nil
 		}
 
-		rel, relErr := filepath.Rel(d.Root, path)
+		rel, relErr := filepath.Rel(d.Root, p)
 		if relErr != nil {
 			return relErr
 		}
 
-		classify(filepath.ToSlash(rel), &shape)
+		rel = filepath.ToSlash(rel)
+		classify(rel, walked)
+
+		if path.Base(rel) == "package.json" {
+			if readErr := d.classifyPackageJSON(rel, walked); readErr != nil {
+				return readErr
+			}
+		}
 
 		return nil
 	})
@@ -65,33 +101,105 @@ func (d Detector) Shape() (dependabot.RepoShape, error) {
 		return dependabot.RepoShape{}, err
 	}
 
-	return shape, nil
+	return walked.finalize(), nil
+}
+
+// finalize resolves the collected facts into the repository shape: nested
+// package.json directories count as npm entries when a workspace
+// declaration exists anywhere or the directory has its own lockfile.
+func (w *walkResult) finalize() dependabot.RepoShape {
+	shape := dependabot.RepoShape{
+		GoModuleDirs:     w.goModuleDirs,
+		HasGitHubActions: w.hasGitHubActions,
+		PipDirs:          w.pipDirs,
+		CargoDirs:        w.cargoDirs,
+		GradleDirs:       w.gradleDirs,
+	}
+
+	for _, dir := range w.packageJSONDirs {
+		if dir == "" || w.workspacesFound || w.lockfileDirs[dir] {
+			shape.NPMDirs = append(shape.NPMDirs, dir)
+		}
+	}
+
+	return shape
+}
+
+// classifyPackageJSON reads one package.json and records its directory,
+// flagging a non-empty "workspaces" declaration. A missing file is not an
+// error: detection never guesses, so an unreadable manifest simply marks
+// the directory without workspace knowledge.
+func (d Detector) classifyPackageJSON(rel string, walked *walkResult) error {
+	walked.packageJSONDirs = append(walked.packageJSONDirs, manifestDir(rel))
+
+	data, err := os.ReadFile(filepath.Join(d.Root, filepath.FromSlash(rel)))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+
+		return &UnreadableManifestError{Path: rel, Cause: err}
+	}
+
+	var pkg struct {
+		Workspaces json.RawMessage `json:"workspaces"`
+	}
+	if err := json.Unmarshal(data, &pkg); err != nil {
+		return &UnreadableManifestError{Path: rel, Cause: err}
+	}
+
+	if trimmed := strings.TrimSpace(string(pkg.Workspaces)); trimmed != "" && trimmed != "null" {
+		walked.workspacesFound = true
+	}
+
+	return nil
 }
 
 // skipDir reports whether the directory subtree can be pruned: it is
 // outside the repository root and either a known no-manifest directory or
 // a hidden directory other than .github.
-func (d Detector) skipDir(path, name string) bool {
-	if path == d.Root {
+func (d Detector) skipDir(p, name string) bool {
+	if p == d.Root {
 		return false
 	}
 
 	return skippedSegments[name] || (strings.HasPrefix(name, ".") && name != ".github")
 }
 
-// classify records one walked file in the repository shape. rel is a
+// classify records one walked file in the raw walk result. rel is a
 // slash-separated path relative to the repository root, so the checks are
 // identical on every operating system.
-func classify(rel string, shape *dependabot.RepoShape) {
+func classify(rel string, w *walkResult) {
 	switch {
 	case rel == "go.mod":
-		shape.GoModuleDirs = append(shape.GoModuleDirs, "")
+		w.goModuleDirs = append(w.goModuleDirs, "")
 	case strings.HasSuffix(rel, "/go.mod"):
-		shape.GoModuleDirs = append(shape.GoModuleDirs, path.Dir(rel))
+		w.goModuleDirs = append(w.goModuleDirs, path.Dir(rel))
 	case strings.HasPrefix(rel, ".github/workflows/") &&
 		(strings.HasSuffix(rel, ".yml") || strings.HasSuffix(rel, ".yaml")):
-		shape.HasGitHubActions = true
-	case rel == "package.json":
-		shape.HasNPM = true
+		w.hasGitHubActions = true
+	case path.Base(rel) == "package.json":
+		// Recorded with workspace knowledge by classifyPackageJSON.
+	case npmLockfileNames[path.Base(rel)]:
+		w.lockfileDirs[manifestDir(rel)] = true
+	case path.Base(rel) == "requirements.txt" || path.Base(rel) == "Pipfile" ||
+		path.Base(rel) == "pyproject.toml":
+		w.pipDirs = append(w.pipDirs, manifestDir(rel))
+	case path.Base(rel) == "Cargo.toml":
+		w.cargoDirs = append(w.cargoDirs, manifestDir(rel))
+	case path.Base(rel) == "build.gradle" || path.Base(rel) == "build.gradle.kts" ||
+		path.Base(rel) == "settings.gradle" || path.Base(rel) == "settings.gradle.kts":
+		w.gradleDirs = append(w.gradleDirs, manifestDir(rel))
 	}
+}
+
+// manifestDir returns the slash-separated directory of a root-relative
+// file path, with "." normalized to "" (the repository root).
+func manifestDir(rel string) string {
+	dir := path.Dir(rel)
+	if dir == "." {
+		return ""
+	}
+
+	return dir
 }

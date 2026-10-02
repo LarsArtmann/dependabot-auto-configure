@@ -55,11 +55,20 @@ func randomExistingConfig(rng *rand.Rand) dependabot.Config {
 	return cfg
 }
 
+// npmDirsFor randomly includes the root npm entry.
+func npmDirsFor(rng *rand.Rand) []string {
+	if rng.Intn(2) == 0 {
+		return nil
+	}
+
+	return []string{""}
+}
+
 func randomDesiredConfig(rng *rand.Rand) dependabot.Config {
 	shape := dependabot.RepoShape{
 		GoModuleDirs:     []string{"", "/modules/types"},
 		HasGitHubActions: rng.Intn(2) == 0,
-		HasNPM:           rng.Intn(2) == 0,
+		NPMDirs:          npmDirsFor(rng),
 	}
 
 	desired, _ := dependabot.Generate(shape)
@@ -106,7 +115,7 @@ func TestReconcileIsIdempotent(t *testing.T) {
 func TestReconcileIsIdempotentOnGenerated(t *testing.T) {
 	t.Parallel()
 
-	shape := dependabot.RepoShape{GoModuleDirs: []string{"", "/modules/types"}, HasGitHubActions: true, HasNPM: true}
+	shape := dependabot.RepoShape{GoModuleDirs: []string{"", "/modules/types"}, HasGitHubActions: true, NPMDirs: []string{""}}
 	desired, _ := dependabot.Generate(shape)
 
 	if got := dependabot.Reconcile(desired, desired); !dependabot.Equal(got, desired) {

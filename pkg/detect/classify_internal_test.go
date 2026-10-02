@@ -47,12 +47,12 @@ func TestClassifyUsesSlashSeparatedPaths(t *testing.T) {
 		{
 			name: "package json",
 			rel:  "package.json",
-			want: func(s dependabot.RepoShape) bool { return s.HasNPM },
+			want: func(s dependabot.RepoShape) bool { return len(s.NPMDirs) == 0 },
 		},
 		{
 			name: "unrelated file",
 			rel:  "docs/nested/go.mod.txt",
-			want: func(s dependabot.RepoShape) bool { return len(s.GoModuleDirs) == 0 && !s.HasGitHubActions && !s.HasNPM },
+			want: func(s dependabot.RepoShape) bool { return len(s.GoModuleDirs) == 0 && !s.HasGitHubActions && len(s.NPMDirs) == 0 },
 		},
 	}
 

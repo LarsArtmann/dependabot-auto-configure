@@ -40,7 +40,7 @@ func TestGenerate(t *testing.T) {
 		},
 		{
 			name:          "npm only",
-			shape:         dependabot.RepoShape{HasNPM: true},
+			shape:         dependabot.RepoShape{NPMDirs: []string{""}},
 			wantEcosystem: []string{"npm"},
 			wantDirs:      []string{"/"},
 		},
@@ -108,7 +108,7 @@ func TestCanonicalEntriesAreComplete(t *testing.T) {
 	t.Parallel()
 
 	cfg, _ := dependabot.Generate(
-		dependabot.RepoShape{GoModuleDirs: []string{""}, HasGitHubActions: true, HasNPM: true},
+		dependabot.RepoShape{GoModuleDirs: []string{""}, HasGitHubActions: true, NPMDirs: []string{""}},
 	)
 
 	for _, update := range cfg.Updates {
@@ -401,7 +401,7 @@ func TestReconcile(t *testing.T) {
 		"",
 	}, "\n"))
 
-	desired, _ := dependabot.Generate(dependabot.RepoShape{GoModuleDirs: []string{""}, HasNPM: true})
+	desired, _ := dependabot.Generate(dependabot.RepoShape{GoModuleDirs: []string{""}, NPMDirs: []string{""}})
 
 	got := dependabot.Reconcile(existing, desired)
 
