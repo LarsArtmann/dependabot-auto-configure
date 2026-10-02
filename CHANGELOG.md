@@ -22,6 +22,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   stays suggest-only and the non-canonical shape survives
 - `scripts/sweep.sh`: run the tool in check mode across every local
   repository and emit one CSV row per repo (archived dirs skipped)
+- BuildFlow provider Trigger/Inputs now include the pip/cargo/gradle
+  manifest names, so consumers route on `pyproject.toml`, `Cargo.toml`,
+  `build.gradle[.kts]`, and `settings.gradle[.kts]` too
+- Reconcile fixed-point and preserve-every-field property tests now span
+  pip/cargo/gradle; fuzz corpus seeds the list-form `groups:` and
+  `commit-message` shapes; detect tests pin root-absent npm, legacy
+  object-form `workspaces`, and both bun lockfile names
 
 - Typed domain error system: every failure is a typed error with family
   (rejection/transient/corruption/infrastructure), machine-readable code,
