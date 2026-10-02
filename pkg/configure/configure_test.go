@@ -272,16 +272,7 @@ func TestRunOnEmptyRepoIsNoOp(t *testing.T) {
 func TestRunUnparseableConfigIsSuggestOnly(t *testing.T) {
 	t.Parallel()
 
-	seqGroups := `version: 2
-updates:
-  - package-ecosystem: gomod
-    directory: /
-    groups:
-      - everything:
-          patterns:
-            - "*"
-`
-	root := repoWithConfig(t, seqGroups)
+	root := repoWithConfig(t, "version: [2\nupdates: }}")
 
 	result := run(t, root, configure.Options{})
 
@@ -295,6 +286,43 @@ updates:
 
 	if len(result.Findings) == 0 || result.Findings[0].Rule != "dependabot-config-unparseable" {
 		t.Errorf("Run() findings = %v, want dependabot-config-unparseable", result.Findings)
+	}
+}
+
+// TestRunListFormGroupsIsSuggestOnly pins the non-standard list form of
+// `groups:` (seen in real configs, e.g. Code-To-CV-Agent): it decodes, so
+// findings still flow, but the document is audited unsafe and repair never
+// writes — a rewrite would silently replace the list with the canonical
+// mapping shape.
+func TestRunListFormGroupsIsSuggestOnly(t *testing.T) {
+	t.Parallel()
+
+	listForm := `version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      - everything:
+          patterns:
+            - "*"
+`
+	root := repoWithConfig(t, listForm)
+
+	result := run(t, root, configure.Options{})
+
+	if !result.UnsafeRepair || result.Wrote {
+		t.Errorf(
+			"Run() on list-form groups = unsafe=%v wrote=%v, want suggest-only",
+			result.UnsafeRepair,
+			result.Wrote,
+		)
+	}
+
+	if len(result.Findings) == 0 {
+		t.Error("Run() on list-form groups produced no findings, want at least the unsafe signal")
 	}
 }
 

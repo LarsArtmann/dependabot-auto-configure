@@ -3,6 +3,7 @@ package detect_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/larsartmann/dependabot-auto-configure/pkg/detect"
@@ -18,7 +19,12 @@ func writeTree(t *testing.T, files ...string) string {
 			t.Fatalf("MkdirAll(%s): %v", filepath.Dir(abs), err)
 		}
 
-		if err := os.WriteFile(abs, []byte("placeholder\n"), 0o644); err != nil {
+		content := "placeholder\n"
+		if strings.HasSuffix(f, ".json") {
+			content = "{}\n"
+		}
+
+		if err := os.WriteFile(abs, []byte(content), 0o644); err != nil {
 			t.Fatalf("WriteFile(%s): %v", abs, err)
 		}
 	}

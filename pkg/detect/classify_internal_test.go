@@ -12,47 +12,73 @@ func TestClassifyUsesSlashSeparatedPaths(t *testing.T) {
 	tests := []struct {
 		name       string
 		rel        string
-		want       func(dependabot.RepoShape) bool
+		want       func(walkResult) bool
 		wantModule string
 	}{
 		{
 			name:       "root module",
 			rel:        "go.mod",
-			want:       func(s dependabot.RepoShape) bool { return len(s.GoModuleDirs) == 1 && s.GoModuleDirs[0] == "" },
+			want:       func(w walkResult) bool { return len(w.goModuleDirs) == 1 && w.goModuleDirs[0] == "" },
 			wantModule: "",
 		},
 		{
 			name: "nested module",
 			rel:  "modules/types/go.mod",
-			want: func(s dependabot.RepoShape) bool {
-				return len(s.GoModuleDirs) == 1 && s.GoModuleDirs[0] == "modules/types"
+			want: func(w walkResult) bool {
+				return len(w.goModuleDirs) == 1 && w.goModuleDirs[0] == "modules/types"
 			},
 			wantModule: "modules/types",
 		},
 		{
 			name: "workflow yaml",
 			rel:  ".github/workflows/ci.yml",
-			want: func(s dependabot.RepoShape) bool { return s.HasGitHubActions },
+			want: func(w walkResult) bool { return w.hasGitHubActions },
 		},
 		{
 			name: "workflow yaml plural path",
 			rel:  ".github/workflows/deploy.yaml",
-			want: func(s dependabot.RepoShape) bool { return s.HasGitHubActions },
+			want: func(w walkResult) bool { return w.hasGitHubActions },
 		},
 		{
 			name: "workflows file outside .github is not an action",
 			rel:  "workflows/ci.yml",
-			want: func(s dependabot.RepoShape) bool { return !s.HasGitHubActions },
+			want: func(w walkResult) bool { return !w.hasGitHubActions },
 		},
 		{
-			name: "package json",
+			// package.json is recorded by classifyPackageJSON (it needs the
+			// file content), not by the pure name-based classify.
+			name: "package json is left to classifyPackageJSON",
 			rel:  "package.json",
-			want: func(s dependabot.RepoShape) bool { return len(s.NPMDirs) == 0 },
+			want: func(w walkResult) bool { return len(w.packageJSONDirs) == 0 },
+		},
+		{
+			name: "npm lockfile marks its directory",
+			rel:  "web/pnpm-lock.yaml",
+			want: func(w walkResult) bool { return w.lockfileDirs["web"] },
+		},
+		{
+			name: "pip manifest",
+			rel:  "requirements.txt",
+			want: func(w walkResult) bool { return len(w.pipDirs) == 1 && w.pipDirs[0] == "" },
+		},
+		{
+			name: "cargo manifest",
+			rel:  "crates/x/Cargo.toml",
+			want: func(w walkResult) bool { return len(w.cargoDirs) == 1 && w.cargoDirs[0] == "crates/x" },
+		},
+		{
+			name: "gradle kts manifest",
+			rel:  "android/settings.gradle.kts",
+			want: func(w walkResult) bool { return len(w.gradleDirs) == 1 && w.gradleDirs[0] == "android" },
 		},
 		{
 			name: "unrelated file",
 			rel:  "docs/nested/go.mod.txt",
-			want: func(s dependabot.RepoShape) bool { return len(s.GoModuleDirs) == 0 && !s.HasGitHubActions && len(s.NPMDirs) == 0 },
+			want: func(w walkResult) bool {
+				return len(w.goModuleDirs) == 0 && !w.hasGitHubActions &&
+					len(w.pipDirs) == 0 &&
+					len(w.cargoDirs) == 0 && len(w.gradleDirs) == 0
+			},
 		},
 	}
 
@@ -60,11 +86,23 @@ func TestClassifyUsesSlashSeparatedPaths(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			shape := dependabot.RepoShape{}
-			classify(tt.rel, &shape)
+			w := &walkResult{lockfileDirs: map[string]bool{}}
+			classify(tt.rel, w)
 
-			if !tt.want(shape) {
-				t.Errorf("classify(%q) produced %+v, want it to satisfy the expectation", tt.rel, shape)
+			if !tt.want(*w) {
+				t.Errorf("classify(%q) produced %+v, want it to satisfy the expectation", tt.rel, *w)
+			}
+
+			shape := w.finalize()
+			if tt.wantModule != "" || len(w.goModuleDirs) > 0 {
+				dirs := dependabot.RepoShape{GoModuleDirs: shape.GoModuleDirs}
+				if tt.wantModule == "" {
+					if len(dirs.GoModuleDirs) != 1 || dirs.GoModuleDirs[0] != "" {
+						t.Errorf("finalize() go dirs = %v, want root-only", shape.GoModuleDirs)
+					}
+				} else if len(shape.GoModuleDirs) != 1 || shape.GoModuleDirs[0] != tt.wantModule {
+					t.Errorf("finalize() go dirs = %v, want [%q]", shape.GoModuleDirs, tt.wantModule)
+				}
 			}
 		})
 	}

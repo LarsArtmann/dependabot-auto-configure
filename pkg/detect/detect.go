@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/larsartmann/dependabot-auto-configure/pkg/dependabot"
@@ -122,6 +123,19 @@ func (w *walkResult) finalize() dependabot.RepoShape {
 		}
 	}
 
+	sort.Slice(shape.NPMDirs, func(i, j int) bool {
+		ci, cj := dependabot.CanonicalDir(shape.NPMDirs[i]), dependabot.CanonicalDir(shape.NPMDirs[j])
+		if ci == "/" {
+			return true
+		}
+
+		if cj == "/" {
+			return false
+		}
+
+		return ci < cj
+	})
+
 	return shape
 }
 
@@ -145,7 +159,10 @@ func (d Detector) classifyPackageJSON(rel string, walked *walkResult) error {
 		Workspaces json.RawMessage `json:"workspaces"`
 	}
 	if err := json.Unmarshal(data, &pkg); err != nil {
-		return &UnreadableManifestError{Path: rel, Cause: err}
+		// Malformed manifest: no workspace knowledge from this file. The
+		// directory stays recorded; membership then needs a lockfile, so a
+		// broken manifest can only ever make detection MORE conservative.
+		return nil
 	}
 
 	if trimmed := strings.TrimSpace(string(pkg.Workspaces)); trimmed != "" && trimmed != "null" {

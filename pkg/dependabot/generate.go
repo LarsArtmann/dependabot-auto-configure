@@ -40,9 +40,9 @@ type CapInfo struct {
 	TotalModules int
 }
 
-// canonicalDir normalizes a detected module directory into Dependabot's
+// CanonicalDir normalizes a detected module directory into Dependabot's
 // directory syntax: "/" for the root, "/"-prefixed and cleaned otherwise.
-func canonicalDir(dir string) string {
+func CanonicalDir(dir string) string {
 	if dir == "" || dir == "." {
 		return "/"
 	}
@@ -67,7 +67,7 @@ func Generate(shape RepoShape) (Config, CapInfo) {
 		dirs = []string{""}
 	} else {
 		sort.Slice(dirs, func(i, j int) bool {
-			ci, cj := canonicalDir(dirs[i]), canonicalDir(dirs[j])
+			ci, cj := CanonicalDir(dirs[i]), CanonicalDir(dirs[j])
 			if ci == "/" {
 				return true
 			}
@@ -83,7 +83,7 @@ func Generate(shape RepoShape) (Config, CapInfo) {
 	for _, dir := range dirs {
 		cfg.Updates = append(cfg.Updates, Update{
 			PackageEcosystem:      EcosystemGoModules,
-			Directory:             canonicalDir(dir),
+			Directory:             CanonicalDir(dir),
 			Schedule:              &Schedule{Interval: IntervalWeekly},
 			OpenPullRequestsLimit: DefaultOpenPullRequestsLimit,
 			Groups:                MinorAndPatchGroups(),
@@ -120,7 +120,7 @@ func ecosystemEntries(eco Ecosystem, dirs []string) []Update {
 	sorted := make([]string, 0, len(dirs))
 	sorted = append(sorted, dirs...)
 	sort.Slice(sorted, func(i, j int) bool {
-		ci, cj := canonicalDir(sorted[i]), canonicalDir(sorted[j])
+		ci, cj := CanonicalDir(sorted[i]), CanonicalDir(sorted[j])
 		if ci == "/" {
 			return true
 		}
@@ -136,7 +136,7 @@ func ecosystemEntries(eco Ecosystem, dirs []string) []Update {
 	for _, dir := range sorted {
 		entries = append(entries, Update{
 			PackageEcosystem:      eco,
-			Directory:             canonicalDir(dir),
+			Directory:             CanonicalDir(dir),
 			Schedule:              &Schedule{Interval: IntervalWeekly},
 			OpenPullRequestsLimit: DefaultOpenPullRequestsLimit,
 			Groups:                MinorAndPatchGroups(),
@@ -245,7 +245,7 @@ func ecosystemDirs(shape RepoShape, eco Ecosystem) map[string]bool {
 
 	dirs := make(map[string]bool, len(list))
 	for _, dir := range list {
-		dirs[canonicalDir(dir)] = true
+		dirs[CanonicalDir(dir)] = true
 	}
 
 	return dirs
