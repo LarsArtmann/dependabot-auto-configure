@@ -107,6 +107,36 @@ func (g *Groups) Empty() bool {
 	return g == nil || (g.MinorAndPatch == nil && g.Actions == nil)
 }
 
+// UnmarshalYAML decodes canonical mapping-form groups and tolerates
+// non-mapping shapes (e.g. the list form some hand-written configs use)
+// without failing the whole parse: Decode's audit then reports the entry
+// unsafe, so repair never rewrites and the non-canonical shape survives.
+func (g *Groups) UnmarshalYAML(node *yaml.Node) error {
+	if node.Kind != yaml.MappingNode {
+		return nil
+	}
+
+	type plain Groups
+
+	var p plain
+	if err := node.Decode(&p); err != nil {
+		return err
+	}
+
+	*g = Groups(p)
+
+	return nil
+}
+
+// CommitMessage models the entry-level commit-message customization (prefix,
+// include, separator). User customization: preserved by Reconcile, never
+// generated, invisible to Diff — same contract as Labels.
+type CommitMessage struct {
+	Prefix    string   `yaml:"prefix,omitempty"`
+	Include   []string `yaml:"include,omitempty"`
+	Separator *string  `yaml:"separator,omitempty"`
+}
+
 // Update is one entry under "updates:". A nil Schedule, a zero
 // OpenPullRequestsLimit, or a nil Groups each mean "missing" and are
 // reported as findings; there is no separate present-but-invalid state
@@ -121,6 +151,10 @@ type Update struct {
 	// Labels are PR labels carried on the entry. User customizations:
 	// preserved by Reconcile, never generated, invisible to Diff.
 	Labels []string `yaml:"labels,omitempty"`
+
+	// CommitMessage is the PR commit-message customization. Same
+	// customization contract as Labels.
+	CommitMessage *CommitMessage `yaml:"commit-message,omitempty"`
 }
 
 // Config is the whole .github/dependabot.yml document.
@@ -160,6 +194,16 @@ var knownEntryFields = map[string]bool{
 	"open-pull-requests-limit": true,
 	"groups":                   true,
 	"labels":                   true,
+	"commit-message":           true,
+}
+
+// knownCommitMessageFields is every commit-message-block key this tool
+// understands. Unknown keys inside the block are audited unsafe: a rewrite
+// would silently drop them, exactly like unknown schedule keys.
+var knownCommitMessageFields = map[string]bool{
+	"prefix":    true,
+	"include":   true,
+	"separator": true,
 }
 
 // knownScheduleFields is every schedule-block key this tool understands.
@@ -240,12 +284,27 @@ func auditEntries(res *DecodeResult, updates any) {
 
 		groups, ok := entryMap["groups"].(map[string]any)
 		if !ok {
+			// A non-mapping groups value (e.g. the list form) is decoded by
+			// Groups.UnmarshalYAML without failing the parse; audit it unsafe
+			// here so a rewrite can never drop the non-canonical shape.
+			if entryMap["groups"] != nil {
+				res.UnknownEntryFields = true
+			}
+
 			continue
 		}
 
 		for name := range groups {
 			if !knownGroupNames[name] {
 				res.UnknownGroupNames = append(res.UnknownGroupNames, name)
+			}
+		}
+
+		if cm, ok := entryMap["commit-message"].(map[string]any); ok {
+			for key := range cm {
+				if !knownCommitMessageFields[key] {
+					res.UnknownEntryFields = true
+				}
 			}
 		}
 	}
