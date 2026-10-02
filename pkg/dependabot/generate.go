@@ -389,7 +389,10 @@ func Diff(
 }
 
 // entryIssues reports the canonical fields an existing entry is missing:
-// schedule interval, explicit PR limit, and update groups.
+// schedule interval, explicit PR limit, and update groups. Entries whose
+// groups use names outside the canonical model are not "missing" groups —
+// the audit flag Update.HasUnmodeledGroups holds the grouping-missing
+// finding, and DecodeResult.UnknownGroupNames reports the names instead.
 func entryIssues(got Update, want Update, file finding.FilePath) []autoconfigure.ConfigIssue {
 	var issues []autoconfigure.ConfigIssue
 
@@ -422,7 +425,7 @@ func entryIssues(got Update, want Update, file finding.FilePath) []autoconfigure
 		})
 	}
 
-	if got.Groups.Empty() {
+	if got.Groups.Empty() && !got.HasUnmodeledGroups {
 		issues = append(issues, ConfigIssue{
 			Rule: "dependabot-grouping-missing",
 			Message: fmt.Sprintf(

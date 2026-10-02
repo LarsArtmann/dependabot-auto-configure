@@ -105,7 +105,10 @@ func ActionGroups() *Groups {
 	}
 }
 
-// Empty reports whether no group is configured.
+// Empty reports whether no modeled group is configured. Groups with names
+// outside the canonical two are not modeled, so such an entry still reports
+// empty; Update.HasUnmodeledGroups distinguishes "no groups at all" from
+// "groups this tool cannot see".
 func (g *Groups) Empty() bool {
 	return g == nil || (g.MinorAndPatch == nil && g.Actions == nil)
 }
@@ -149,7 +152,15 @@ type Update struct {
 	Directory             string    `yaml:"directory"`
 	Schedule              *Schedule `yaml:"schedule,omitempty"`
 	OpenPullRequestsLimit int       `yaml:"open-pull-requests-limit,omitempty"`
-	Groups                *Groups   `yaml:"groups,omitempty"`
+	// Groups is the entry's update groups (see the Groups contract above).
+	Groups *Groups `yaml:"groups,omitempty"`
+
+	// HasUnmodeledGroups is an audit-only flag, set by Decode (never
+	// serialized, never generated): the YAML carried a groups mapping with
+	// names outside the canonical model. The entry HAS groups, so the
+	// grouping-missing finding must not fire; the unknown names themselves
+	// are reported separately via DecodeResult.UnknownGroupNames.
+	HasUnmodeledGroups bool `yaml:"-"`
 
 	// Labels are PR labels carried on the entry. User customizations:
 	// preserved by Reconcile, never generated, invisible to Diff.
@@ -262,23 +273,28 @@ func Decode(data []byte) (DecodeResult, error) {
 
 // auditEntries flags updates entries carrying constructs outside the known
 // schema: unknown entry fields, unknown schedule keys, unknown group names.
+// Raw entries align with res.Config.Updates by document order; the per-entry
+// audit result is folded back into the typed entry.
 func auditEntries(res *DecodeResult, updates any) {
 	entries, _ := updates.([]any)
 
-	for _, entry := range entries {
+	for i, entry := range entries {
 		entryMap, ok := entry.(map[string]any)
 		if !ok {
 			continue
 		}
 
-		auditEntry(res, entryMap)
+		if auditEntry(res, entryMap) && i < len(res.Config.Updates) {
+			res.Config.Updates[i].HasUnmodeledGroups = true
+		}
 	}
 }
 
 // auditEntry audits one updates entry for constructs outside the known
 // schema: unknown entry fields, unknown schedule keys, non-canonical or
-// unknown groups, unknown commit-message keys.
-func auditEntry(res *DecodeResult, entryMap map[string]any) {
+// unknown groups, unknown commit-message keys. It reports whether the
+// entry's groups mapping carries names outside the canonical model.
+func auditEntry(res *DecodeResult, entryMap map[string]any) bool {
 	for key := range entryMap {
 		if !knownEntryFields[key] {
 			res.UnknownEntryFields = true
@@ -287,7 +303,8 @@ func auditEntry(res *DecodeResult, entryMap map[string]any) {
 
 	auditBlock(res, entryMap["schedule"], knownScheduleFields)
 	auditBlock(res, entryMap["commit-message"], knownCommitMessageFields)
-	auditGroups(res, entryMap["groups"])
+
+	return auditGroups(res, entryMap["groups"])
 }
 
 // auditBlock flags unknown keys inside one known schema block (schedule,
@@ -305,23 +322,29 @@ func auditBlock(res *DecodeResult, block any, known map[string]bool) {
 	}
 }
 
-// auditGroups flags non-canonical group shapes and unknown group names.
-// A non-mapping groups value (e.g. the list form) is decoded by
+// auditGroups flags non-canonical group shapes and unknown group names,
+// reporting whether the groups mapping carries names outside the canonical
+// model. A non-mapping groups value (e.g. the list form) is decoded by
 // Groups.UnmarshalYAML without failing the parse; auditing it unsafe here
-// means a rewrite can never drop the non-canonical shape.
-func auditGroups(res *DecodeResult, groups any) {
+// means a rewrite can never drop the non-canonical shape — but it is not a
+// groups mapping at all, so it does not count as unmodeled group names.
+func auditGroups(res *DecodeResult, groups any) bool {
 	names, ok := groups.(map[string]any)
 	if !ok {
 		res.UnknownEntryFields = res.UnknownEntryFields || groups != nil
 
-		return
+		return false
 	}
 
+	unmodeled := false
 	for name := range names {
 		if !knownGroupNames[name] {
 			res.UnknownGroupNames = append(res.UnknownGroupNames, name)
+			unmodeled = true
 		}
 	}
+
+	return unmodeled
 }
 
 // Encode renders the canonical YAML: two-space indent, stable field order
