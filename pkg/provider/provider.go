@@ -31,7 +31,7 @@ func workingDir(ctx context.Context) string {
 var Provider = toolsdk.Register(toolsdk.Spec{
 	Name: configure.ToolName,
 	Description: "Detects a missing or under-configured .github/dependabot.yml and repairs it: " +
-		"weekly grouped updates for every Go module, GitHub Actions, and npm",
+		"weekly grouped updates for every Go module, GitHub Actions, npm, pip, cargo, and gradle",
 	Trigger: toolsdk.AnyLanguage(
 		"**/go.mod",
 		"package.json",

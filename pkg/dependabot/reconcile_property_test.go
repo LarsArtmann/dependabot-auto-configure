@@ -115,7 +115,11 @@ func TestReconcileIsIdempotent(t *testing.T) {
 func TestReconcileIsIdempotentOnGenerated(t *testing.T) {
 	t.Parallel()
 
-	shape := dependabot.RepoShape{GoModuleDirs: []string{"", "/modules/types"}, HasGitHubActions: true, NPMDirs: []string{""}}
+	shape := dependabot.RepoShape{
+		GoModuleDirs:     []string{"", "/modules/types"},
+		HasGitHubActions: true,
+		NPMDirs:          []string{""},
+	}
 	desired, _ := dependabot.Generate(shape)
 
 	if got := dependabot.Reconcile(desired, desired); !dependabot.Equal(got, desired) {

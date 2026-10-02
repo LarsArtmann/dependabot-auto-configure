@@ -16,12 +16,14 @@ bounded configuration.
 
 - Detects **Go modules** (root + every `go.mod`, skipping `testdata`,
   `vendor`, `node_modules`, `.git`, and hidden dirs except `.github`),
-  **GitHub Actions** workflows, and root-level **npm**
+  **GitHub Actions** workflows, **npm** (root + workspace members /
+  lockfile siblings), **pip** (requirements.txt, Pipfile, pyproject.toml),
+  **cargo** (Cargo.toml), and **gradle** (build/settings .gradle[.kts])
 - Generates weekly grouped updates (minor+patch in one PR, actions by
   pattern) with an explicit `open-pull-requests-limit: 5`
 - Repairs existing configs by filling only what is missing — a monthly
-  schedule you chose stays monthly, and your `labels` / schedule
-  `day`/`time`/`timezone` are preserved verbatim
+  schedule you chose stays monthly, and your `labels` / `commit-message`,
+  schedule `day`/`time`/`timezone` are preserved verbatim
 - Refuses to rewrite configs containing constructs it does not model
   (registries, custom groups): those get findings, not silent drops
 - Optional `--enable-security-fixes` flips on Dependabot security updates
