@@ -18,7 +18,9 @@ func TestRunWriteFailureIsReported(t *testing.T) {
 	t.Parallel()
 
 	if runtime.GOOS == "windows" {
-		t.Skip("Windows does not enforce directory permission bits, so a 0o500 directory stays writable and the failure path cannot be exercised")
+		t.Skip(
+			"Windows does not enforce directory permission bits, so a 0o500 directory stays writable and the failure path cannot be exercised",
+		)
 	}
 
 	if os.Geteuid() == 0 {
