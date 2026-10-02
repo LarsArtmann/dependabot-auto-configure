@@ -20,7 +20,7 @@ trap 'rm -f "$BIN"' EXIT
 cd "$(dirname "$0")/.."
 GOTOOLCHAIN=auto GOEXPERIMENT=jsonv2 go build -o "$BIN" ./cmd/dependabot-auto-configure
 
-echo "repo,exit_code,wrote,planned_write,unchanged,findings,unsafe_repair" > "$OUT"
+echo "repo,exit_code,wrote,planned_write,unchanged,findings,unsafe_repair" >"$OUT"
 
 for repo in "$PROJECTS_DIR"/*/; do
 	name="$(basename "$repo")"
@@ -33,14 +33,14 @@ for repo in "$PROJECTS_DIR"/*/; do
 	set -e
 
 	if [ -z "$payload" ]; then
-		echo "$name,$code,,,run_failed" >> "$OUT"
+		echo "$name,$code,,,run_failed" >>"$OUT"
 		continue
 	fi
 
 	jq -r --arg repo "$name" --argjson code "$code" \
 		'[$repo, $code, .wrote, .planned_write, .unchanged,
 		  (.findings | length), .unsafe_repair] | @csv' \
-		<<<"$payload" >> "$OUT"
+		<<<"$payload" >>"$OUT"
 done
 
 echo "wrote $OUT"
