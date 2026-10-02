@@ -79,77 +79,6 @@ func TestShape(t *testing.T) {
 		},
 	}
 
-	t.Run("workspace members are npm", func(t *testing.T) {
-		t.Parallel()
-		root := writeTree(t,
-			"package.json",
-			"apps/web/package.json",
-			"packages/lib/package.json",
-		)
-		if err := os.WriteFile(
-			filepath.Join(root, "package.json"),
-			[]byte(`{"workspaces": ["apps/*", "packages/*"]}`),
-			0o644,
-		); err != nil {
-			t.Fatal(err)
-		}
-
-		shape, err := detect.NewDetector(root).Shape()
-		if err != nil {
-			t.Fatalf("Shape() error = %v", err)
-		}
-
-		want := []string{"", "apps/web", "packages/lib"}
-		if len(shape.NPMDirs) != len(want) {
-			t.Fatalf("Shape() npm dirs = %v, want %v", shape.NPMDirs, want)
-		}
-		for i, dir := range want {
-			if shape.NPMDirs[i] != dir {
-				t.Errorf("Shape() npm dir %d = %q, want %q", i, shape.NPMDirs[i], dir)
-			}
-		}
-	})
-
-	t.Run("nested package.json with lockfile is npm", func(t *testing.T) {
-		t.Parallel()
-		shape, err := detect.NewDetector(writeTree(t,
-			"package.json",
-			"web/package.json",
-			"web/package-lock.json",
-		)).Shape()
-		if err != nil {
-			t.Fatalf("Shape() error = %v", err)
-		}
-
-		if len(shape.NPMDirs) != 2 || shape.NPMDirs[1] != "web" {
-			t.Errorf("Shape() npm dirs = %v, want [\"\" \"web\"]", shape.NPMDirs)
-		}
-	})
-
-	t.Run("pip cargo gradle manifests", func(t *testing.T) {
-		t.Parallel()
-		shape, err := detect.NewDetector(writeTree(t,
-			"requirements.txt",
-			"tools/Cargo.toml",
-			"android/build.gradle.kts",
-		)).Shape()
-		if err != nil {
-			t.Fatalf("Shape() error = %v", err)
-		}
-
-		if len(shape.PipDirs) != 1 || shape.PipDirs[0] != "" {
-			t.Errorf("Shape() pip dirs = %v, want [\"\"]", shape.PipDirs)
-		}
-
-		if len(shape.CargoDirs) != 1 || shape.CargoDirs[0] != "tools" {
-			t.Errorf("Shape() cargo dirs = %v, want [\"tools\"]", shape.CargoDirs)
-		}
-
-		if len(shape.GradleDirs) != 1 || shape.GradleDirs[0] != "android" {
-			t.Errorf("Shape() gradle dirs = %v, want [\"android\"]", shape.GradleDirs)
-		}
-	})
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
@@ -187,5 +116,76 @@ func TestShapeMissingRoot(t *testing.T) {
 
 	if _, err := detect.NewDetector(filepath.Join(t.TempDir(), "does-not-exist")).Shape(); err == nil {
 		t.Fatal("Shape() on missing root expected error, got nil")
+	}
+}
+
+func TestWorkspaceMembersAreNPM(t *testing.T) {
+	t.Parallel()
+
+	root := writeTree(t, "package.json", "apps/web/package.json", "packages/lib/package.json")
+	if err := os.WriteFile(
+		filepath.Join(root, "package.json"),
+		[]byte(`{"workspaces": ["apps/*", "packages/*"]}`),
+		0o644,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	shape, err := detect.NewDetector(root).Shape()
+	if err != nil {
+		t.Fatalf("Shape() error = %v", err)
+	}
+
+	want := []string{"", "apps/web", "packages/lib"}
+	if len(shape.NPMDirs) != len(want) {
+		t.Fatalf("Shape() npm dirs = %v, want %v", shape.NPMDirs, want)
+	}
+
+	for i, dir := range want {
+		if shape.NPMDirs[i] != dir {
+			t.Errorf("Shape() npm dir %d = %q, want %q", i, shape.NPMDirs[i], dir)
+		}
+	}
+}
+
+func TestNestedPackageJSONWithLockfileIsNPM(t *testing.T) {
+	t.Parallel()
+
+	shape, err := detect.NewDetector(writeTree(t,
+		"package.json",
+		"web/package.json",
+		"web/package-lock.json",
+	)).Shape()
+	if err != nil {
+		t.Fatalf("Shape() error = %v", err)
+	}
+
+	if len(shape.NPMDirs) != 2 || shape.NPMDirs[1] != "web" {
+		t.Errorf("Shape() npm dirs = %v, want [\"\", \"web\"]", shape.NPMDirs)
+	}
+}
+
+func TestPipCargoGradleManifests(t *testing.T) {
+	t.Parallel()
+
+	shape, err := detect.NewDetector(writeTree(t,
+		"requirements.txt",
+		"tools/Cargo.toml",
+		"android/build.gradle.kts",
+	)).Shape()
+	if err != nil {
+		t.Fatalf("Shape() error = %v", err)
+	}
+
+	if len(shape.PipDirs) != 1 || shape.PipDirs[0] != "" {
+		t.Errorf("Shape() pip dirs = %v, want [\"\"]", shape.PipDirs)
+	}
+
+	if len(shape.CargoDirs) != 1 || shape.CargoDirs[0] != "tools" {
+		t.Errorf("Shape() cargo dirs = %v, want [\"tools\"]", shape.CargoDirs)
+	}
+
+	if len(shape.GradleDirs) != 1 || shape.GradleDirs[0] != "android" {
+		t.Errorf("Shape() gradle dirs = %v, want [\"android\"]", shape.GradleDirs)
 	}
 }

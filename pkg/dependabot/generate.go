@@ -213,15 +213,6 @@ func Reconcile(existing, desired Config) Config {
 	return out
 }
 
-// detectedDirs maps the canonical Dependabot directory of every detected
-// manifest for one ecosystem. Orphan detection compares existing entries
-// against detection, NOT against the (possibly capped) desired config: when
-// the module cap truncates generation to root-only, entries for genuinely
-// detected modules are user-managed, not orphans.
-func detectedDirs(shape RepoShape) map[string]bool {
-	return ecosystemDirs(shape, EcosystemGoModules)
-}
-
 // ecosystemDirs maps the canonical Dependabot directory of every detected
 // manifest directory for the given ecosystem. Ecosystems RepoShape does
 // not model have no directories, so their entries are user-managed and
@@ -253,7 +244,7 @@ func ecosystemDirs(shape RepoShape, eco Ecosystem) map[string]bool {
 
 // entryDetected reports whether an existing updates entry corresponds to
 // something detection found.
-func entryDetected(u Update, dirs map[string]bool, shape RepoShape) bool {
+func entryDetected(u Update, shape RepoShape) bool {
 	if u.PackageEcosystem == EcosystemGitHubActions {
 		return shape.HasGitHubActions
 	}
@@ -350,7 +341,11 @@ func Diff(
 	}
 
 	for _, got := range existing.Updates {
-		if entryDetected(got, detectedDirs(shape), shape) {
+		// Orphan detection compares against detection, NOT against the
+		// (possibly capped) desired config: when the module cap truncates
+		// generation to root-only, entries for genuinely detected modules
+		// are user-managed, not orphans.
+		if entryDetected(got, shape) {
 			continue
 		}
 

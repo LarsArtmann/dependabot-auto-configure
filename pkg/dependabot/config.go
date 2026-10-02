@@ -285,32 +285,41 @@ func auditEntry(res *DecodeResult, entryMap map[string]any) {
 		}
 	}
 
-	if schedule, ok := entryMap["schedule"].(map[string]any); ok {
-		for key := range schedule {
-			if !knownScheduleFields[key] {
-				res.UnknownEntryFields = true
-			}
-		}
+	auditBlock(res, entryMap["schedule"], knownScheduleFields)
+	auditBlock(res, entryMap["commit-message"], knownCommitMessageFields)
+	auditGroups(res, entryMap["groups"])
+}
+
+// auditBlock flags unknown keys inside one known schema block (schedule,
+// commit-message): a rewrite would silently drop them.
+func auditBlock(res *DecodeResult, block any, known map[string]bool) {
+	keys, ok := block.(map[string]any)
+	if !ok {
+		return
 	}
 
-	// A non-mapping groups value (e.g. the list form) is decoded by
-	// Groups.UnmarshalYAML without failing the parse; audit it unsafe
-	// here so a rewrite can never drop the non-canonical shape.
-	if groups, ok := entryMap["groups"].(map[string]any); ok {
-		for name := range groups {
-			if !knownGroupNames[name] {
-				res.UnknownGroupNames = append(res.UnknownGroupNames, name)
-			}
+	for key := range keys {
+		if !known[key] {
+			res.UnknownEntryFields = true
 		}
-	} else if entryMap["groups"] != nil {
-		res.UnknownEntryFields = true
+	}
+}
+
+// auditGroups flags non-canonical group shapes and unknown group names.
+// A non-mapping groups value (e.g. the list form) is decoded by
+// Groups.UnmarshalYAML without failing the parse; auditing it unsafe here
+// means a rewrite can never drop the non-canonical shape.
+func auditGroups(res *DecodeResult, groups any) {
+	names, ok := groups.(map[string]any)
+	if !ok {
+		res.UnknownEntryFields = res.UnknownEntryFields || groups != nil
+
+		return
 	}
 
-	if cm, ok := entryMap["commit-message"].(map[string]any); ok {
-		for key := range cm {
-			if !knownCommitMessageFields[key] {
-				res.UnknownEntryFields = true
-			}
+	for name := range names {
+		if !knownGroupNames[name] {
+			res.UnknownGroupNames = append(res.UnknownGroupNames, name)
 		}
 	}
 }

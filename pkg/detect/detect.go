@@ -37,6 +37,42 @@ var npmLockfileNames = map[string]bool{
 	"bun.lock":          true,
 }
 
+// ecoKind names the per-directory ecosystems detected by manifest presence.
+type ecoKind int
+
+// The detected per-directory ecosystems, in generation order.
+const (
+	ecoPip ecoKind = iota
+	ecoCargo
+	ecoGradle
+)
+
+// manifestKinds maps a manifest file name to the ecosystem whose directory
+// it marks. Go modules keep a dedicated go.mod branch; package.json is
+// recorded with workspace knowledge by classifyPackageJSON.
+var manifestKinds = map[string]ecoKind{
+	"requirements.txt":    ecoPip,
+	"Pipfile":             ecoPip,
+	"pyproject.toml":      ecoPip,
+	"Cargo.toml":          ecoCargo,
+	"build.gradle":        ecoGradle,
+	"build.gradle.kts":    ecoGradle,
+	"settings.gradle":     ecoGradle,
+	"settings.gradle.kts": ecoGradle,
+}
+
+// markManifest records the directory of one detected manifest.
+func (w *walkResult) markManifest(kind ecoKind, dir string) {
+	switch kind {
+	case ecoPip:
+		w.pipDirs = append(w.pipDirs, dir)
+	case ecoCargo:
+		w.cargoDirs = append(w.cargoDirs, dir)
+	case ecoGradle:
+		w.gradleDirs = append(w.gradleDirs, dir)
+	}
+}
+
 // Detector detects the repository shape under Root.
 type Detector struct {
 	Root string
@@ -158,16 +194,16 @@ func (d Detector) classifyPackageJSON(rel string, walked *walkResult) error {
 	var pkg struct {
 		Workspaces json.RawMessage `json:"workspaces"`
 	}
-	if err := json.Unmarshal(data, &pkg); err != nil {
-		// Malformed manifest: no workspace knowledge from this file. The
-		// directory stays recorded; membership then needs a lockfile, so a
-		// broken manifest can only ever make detection MORE conservative.
-		return nil
+
+	if err := json.Unmarshal(data, &pkg); err == nil {
+		if trimmed := strings.TrimSpace(string(pkg.Workspaces)); trimmed != "" && trimmed != "null" {
+			walked.workspacesFound = true
+		}
 	}
 
-	if trimmed := strings.TrimSpace(string(pkg.Workspaces)); trimmed != "" && trimmed != "null" {
-		walked.workspacesFound = true
-	}
+	// A malformed manifest contributes no workspace knowledge. The
+	// directory stays recorded; membership then needs a lockfile, so a
+	// broken manifest can only ever make detection MORE conservative.
 
 	return nil
 }
@@ -187,26 +223,35 @@ func (d Detector) skipDir(p, name string) bool {
 // slash-separated path relative to the repository root, so the checks are
 // identical on every operating system.
 func classify(rel string, w *walkResult) {
-	switch {
-	case rel == "go.mod":
+	if rel == "go.mod" {
 		w.goModuleDirs = append(w.goModuleDirs, "")
-	case strings.HasSuffix(rel, "/go.mod"):
+
+		return
+	}
+
+	if strings.HasSuffix(rel, "/go.mod") {
 		w.goModuleDirs = append(w.goModuleDirs, path.Dir(rel))
-	case strings.HasPrefix(rel, ".github/workflows/") &&
-		(strings.HasSuffix(rel, ".yml") || strings.HasSuffix(rel, ".yaml")):
+
+		return
+	}
+
+	if strings.HasPrefix(rel, ".github/workflows/") &&
+		(strings.HasSuffix(rel, ".yml") || strings.HasSuffix(rel, ".yaml")) {
 		w.hasGitHubActions = true
-	case path.Base(rel) == "package.json":
-		// Recorded with workspace knowledge by classifyPackageJSON.
-	case npmLockfileNames[path.Base(rel)]:
+
+		return
+	}
+
+	base := path.Base(rel)
+
+	if npmLockfileNames[base] {
 		w.lockfileDirs[manifestDir(rel)] = true
-	case path.Base(rel) == "requirements.txt" || path.Base(rel) == "Pipfile" ||
-		path.Base(rel) == "pyproject.toml":
-		w.pipDirs = append(w.pipDirs, manifestDir(rel))
-	case path.Base(rel) == "Cargo.toml":
-		w.cargoDirs = append(w.cargoDirs, manifestDir(rel))
-	case path.Base(rel) == "build.gradle" || path.Base(rel) == "build.gradle.kts" ||
-		path.Base(rel) == "settings.gradle" || path.Base(rel) == "settings.gradle.kts":
-		w.gradleDirs = append(w.gradleDirs, manifestDir(rel))
+
+		return
+	}
+
+	if kind, ok := manifestKinds[base]; ok {
+		w.markManifest(kind, manifestDir(rel))
 	}
 }
 

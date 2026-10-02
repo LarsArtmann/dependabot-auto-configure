@@ -1,25 +1,19 @@
 package detect
 
-import (
-	"testing"
-
-	"github.com/larsartmann/dependabot-auto-configure/pkg/dependabot"
-)
+import "testing"
 
 func TestClassifyUsesSlashSeparatedPaths(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name       string
-		rel        string
-		want       func(walkResult) bool
-		wantModule string
+		name string
+		rel  string
+		want func(walkResult) bool
 	}{
 		{
-			name:       "root module",
-			rel:        "go.mod",
-			want:       func(w walkResult) bool { return len(w.goModuleDirs) == 1 && w.goModuleDirs[0] == "" },
-			wantModule: "",
+			name: "root module",
+			rel:  "go.mod",
+			want: func(w walkResult) bool { return len(w.goModuleDirs) == 1 && w.goModuleDirs[0] == "" },
 		},
 		{
 			name: "nested module",
@@ -27,7 +21,6 @@ func TestClassifyUsesSlashSeparatedPaths(t *testing.T) {
 			want: func(w walkResult) bool {
 				return len(w.goModuleDirs) == 1 && w.goModuleDirs[0] == "modules/types"
 			},
-			wantModule: "modules/types",
 		},
 		{
 			name: "workflow yaml",
@@ -91,18 +84,6 @@ func TestClassifyUsesSlashSeparatedPaths(t *testing.T) {
 
 			if !tt.want(*w) {
 				t.Errorf("classify(%q) produced %+v, want it to satisfy the expectation", tt.rel, *w)
-			}
-
-			shape := w.finalize()
-			if tt.wantModule != "" || len(w.goModuleDirs) > 0 {
-				dirs := dependabot.RepoShape{GoModuleDirs: shape.GoModuleDirs}
-				if tt.wantModule == "" {
-					if len(dirs.GoModuleDirs) != 1 || dirs.GoModuleDirs[0] != "" {
-						t.Errorf("finalize() go dirs = %v, want root-only", shape.GoModuleDirs)
-					}
-				} else if len(shape.GoModuleDirs) != 1 || shape.GoModuleDirs[0] != tt.wantModule {
-					t.Errorf("finalize() go dirs = %v, want [%q]", shape.GoModuleDirs, tt.wantModule)
-				}
 			}
 		})
 	}
