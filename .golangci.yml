@@ -282,13 +282,18 @@ linters:
       - path: pkg/detect/.*\.go
         linters:
           - wrapcheck
+      - path: pkg/dependabot/config\.go
+        text: error returned from external package is unwrapped
+        linters:
+          - wrapcheck
+          - err113
       - path: pkg/configure/configure\.go
         linters:
           - tagliatelle
       - text: Version is a global variable
         linters:
           - gochecknoglobals
-      - text: (skippedSegments|githubAPIBase|githubAPIClient|knownEntryFields|knownScheduleFields|knownTopLevelFields|knownGroupNames) is a global variable
+      - text: (skippedSegments|githubAPIBase|githubAPIClient|knownEntryFields|knownScheduleFields|knownTopLevelFields|knownGroupNames|knownCommitMessageFields) is a global variable
         linters:
           - gochecknoglobals
       - path: _test\.go

@@ -268,43 +268,45 @@ func auditEntries(res *DecodeResult, updates any) {
 			continue
 		}
 
-		for key := range entryMap {
-			if !knownEntryFields[key] {
+		auditEntry(res, entryMap)
+	}
+}
+
+// auditEntry audits one updates entry for constructs outside the known
+// schema: unknown entry fields, unknown schedule keys, non-canonical or
+// unknown groups, unknown commit-message keys.
+func auditEntry(res *DecodeResult, entryMap map[string]any) {
+	for key := range entryMap {
+		if !knownEntryFields[key] {
+			res.UnknownEntryFields = true
+		}
+	}
+
+	if schedule, ok := entryMap["schedule"].(map[string]any); ok {
+		for key := range schedule {
+			if !knownScheduleFields[key] {
 				res.UnknownEntryFields = true
 			}
 		}
+	}
 
-		if schedule, ok := entryMap["schedule"].(map[string]any); ok {
-			for key := range schedule {
-				if !knownScheduleFields[key] {
-					res.UnknownEntryFields = true
-				}
-			}
-		}
-
-		groups, ok := entryMap["groups"].(map[string]any)
-		if !ok {
-			// A non-mapping groups value (e.g. the list form) is decoded by
-			// Groups.UnmarshalYAML without failing the parse; audit it unsafe
-			// here so a rewrite can never drop the non-canonical shape.
-			if entryMap["groups"] != nil {
-				res.UnknownEntryFields = true
-			}
-
-			continue
-		}
-
+	// A non-mapping groups value (e.g. the list form) is decoded by
+	// Groups.UnmarshalYAML without failing the parse; audit it unsafe
+	// here so a rewrite can never drop the non-canonical shape.
+	if groups, ok := entryMap["groups"].(map[string]any); ok {
 		for name := range groups {
 			if !knownGroupNames[name] {
 				res.UnknownGroupNames = append(res.UnknownGroupNames, name)
 			}
 		}
+	} else if entryMap["groups"] != nil {
+		res.UnknownEntryFields = true
+	}
 
-		if cm, ok := entryMap["commit-message"].(map[string]any); ok {
-			for key := range cm {
-				if !knownCommitMessageFields[key] {
-					res.UnknownEntryFields = true
-				}
+	if cm, ok := entryMap["commit-message"].(map[string]any); ok {
+		for key := range cm {
+			if !knownCommitMessageFields[key] {
+				res.UnknownEntryFields = true
 			}
 		}
 	}
