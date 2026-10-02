@@ -16,7 +16,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
-- Nothing yet.
+- `dependabot-grouping-missing` no longer fires for entries grouped
+  under custom names (GitHub's schema allows arbitrary group names, only
+  `minor-and-patch` and `actions` are modeled): Decode flags such entries
+  with the audit-only `Update.HasUnmodeledGroups`, so only entries with
+  no groups mapping at all report the finding; the unknown names remain
+  a separate unsafe-audit signal and repair stays suggest-only (issue #3)
 
 ## [0.3.0] - 2026-10-02
 

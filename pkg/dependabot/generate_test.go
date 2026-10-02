@@ -218,6 +218,71 @@ func TestDiff(t *testing.T) {
 			},
 		},
 		{
+			// GitHub's schema allows arbitrary group names: an entry
+			// with custom-named groups HAS groups, so only the entry
+			// truly lacking them reports grouping-missing (issue #3).
+			name: "custom-named groups suppress grouping-missing, bare entry still warns",
+			existing: new(`version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      gomod:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+`),
+			wantRules: []string{"dependabot-grouping-missing"},
+		},
+		{
+			name: "empty groups mapping still reports grouping-missing",
+			existing: new(strings.Join([]string{
+				"version: 2",
+				"updates:",
+				"  - package-ecosystem: gomod",
+				"    directory: /",
+				"    schedule:",
+				"      interval: weekly",
+				"    open-pull-requests-limit: 5",
+				"    groups: {}",
+				"",
+			}, "\n")),
+			wantRules: []string{"dependabot-grouping-missing", "dependabot-entry-missing"},
+		},
+		{
+			// The list form is not a groups mapping at all (and is
+			// invalid per GitHub's schema), so grouping-missing fires
+			// alongside the unsafe audit that blocks repair.
+			name: "list-form groups still report grouping-missing",
+			existing: new(`version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      - minor-and-patch
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns:
+          - "*"
+`),
+			wantRules: []string{"dependabot-grouping-missing"},
+		},
+		{
 			name: "outdated version",
 			existing: new(strings.Join([]string{
 				"version: 1",

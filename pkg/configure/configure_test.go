@@ -326,6 +326,92 @@ updates:
 	}
 }
 
+// TestRunCustomNamedGroupsNoFalseGroupingFinding pins issue #3: GitHub's
+// schema allows arbitrary group names, so an entry grouped under a custom
+// name must NOT report dependabot-grouping-missing. The run stays
+// suggest-only (the unknown name makes the document unsafe), and an entry
+// that truly lacks groups still warns.
+func TestRunCustomNamedGroupsNoFalseGroupingFinding(t *testing.T) {
+	t.Parallel()
+
+	config := `version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      gomod:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+`
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/x\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.MkdirAll(filepath.Join(root, ".github", "workflows"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(
+		filepath.Join(root, ".github", "workflows", "ci.yml"),
+		[]byte("on: push\n"),
+		0o644,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	abs := filepath.Join(root, configure.DefaultConfigPath)
+	if err := os.MkdirAll(filepath.Dir(abs), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(abs, []byte(config), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	result := run(t, root, configure.Options{Check: true})
+
+	if !result.UnsafeRepair || result.Wrote || result.PlannedWrite {
+		t.Errorf(
+			"Run() = unsafe=%v wrote=%v planned=%v, want suggest-only",
+			result.UnsafeRepair,
+			result.Wrote,
+			result.PlannedWrite,
+		)
+	}
+
+	var grouping []string
+	for _, f := range result.Findings {
+		if string(f.Rule) == "dependabot-grouping-missing" {
+			grouping = append(grouping, f.Message)
+		}
+	}
+
+	if len(grouping) != 1 || !strings.Contains(grouping[0], `"github-actions"`) {
+		t.Errorf(
+			"grouping findings = %v, want exactly one for the github-actions entry (custom-named gomod groups must stay silent)",
+			grouping,
+		)
+	}
+
+	got, err := os.ReadFile(abs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(got) != config {
+		t.Error("Run() modified an unsafe config file")
+	}
+}
+
 func TestRunInvalidEntryIsSuggestOnly(t *testing.T) {
 	t.Parallel()
 

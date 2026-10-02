@@ -33,6 +33,15 @@ updates:
 	f.Add([]byte("version: 2\nupdates: not-a-list\n"))
 	f.Add([]byte(listFormGroupsYAML))
 	f.Add([]byte(commitMessageYAML))
+	f.Add([]byte(`version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    groups:
+      gomod:
+        patterns:
+          - "*"
+`))
 	f.Add(
 		[]byte(`version: 2
 updates:

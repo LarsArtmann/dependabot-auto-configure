@@ -66,6 +66,13 @@ Sibling to `golangci-lint-auto-configure` and `oxlint-auto-configure`.
 - List-form `groups:` decodes (Groups.UnmarshalYAML tolerates
   non-mapping shapes) and is audited unsafe, so repair never rewrites it.
   Do not "fix" this by generating a mapping — that would destroy intent.
+- Custom-named groups (`groups: <any-name>:`) set the per-entry audit flag
+  `Update.HasUnmodeledGroups` (yaml:"-", never generated), which suppresses
+  `dependabot-grouping-missing` — the entry HAS groups (issue #3). Unknown
+  names still make the document unsafe (suggest-only). Empty mappings
+  (`groups: {}`), null-valued canonical keys, and the list form count as
+  "no groups mapping at all" and keep the finding, staying consistent with
+  Reconcile's fill-on-safe-path.
 - `flake.nix` pins `goPkgAttr = "go_1_27"`: the go-standard auto-pick
   resolved to go_1_26, which fails the encoding/json/v2 floor.
 - `scripts/sweep.sh <projects-dir> [out.csv]` sweeps all local repos in
