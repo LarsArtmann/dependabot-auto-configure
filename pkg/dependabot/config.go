@@ -25,6 +25,9 @@ const (
 	EcosystemGoModules     Ecosystem = "gomod"
 	EcosystemGitHubActions Ecosystem = "github-actions"
 	EcosystemNPM           Ecosystem = "npm"
+	EcosystemPip           Ecosystem = "pip"
+	EcosystemCargo         Ecosystem = "cargo"
+	EcosystemGradle        Ecosystem = "gradle"
 )
 
 // Interval is a Dependabot schedule interval.

@@ -22,12 +22,16 @@ const initialDiffCapacity = 4
 type ConfigIssue = autoconfigure.ConfigIssue
 
 // RepoShape is what detection knows about a repository: the inputs
-// generation needs. GoModuleDirs holds directories containing a go.mod,
-// with the empty string denoting the repository root.
+// generation needs. Directory lists hold the directories containing a
+// manifest for their ecosystem, with the empty string denoting the
+// repository root.
 type RepoShape struct {
 	GoModuleDirs     []string
 	HasGitHubActions bool
-	HasNPM           bool
+	NPMDirs          []string
+	PipDirs          []string
+	CargoDirs        []string
+	GradleDirs       []string
 }
 
 // CapInfo reports whether generation had to cap the number of gomod entries.
@@ -96,17 +100,50 @@ func Generate(shape RepoShape) (Config, CapInfo) {
 		})
 	}
 
-	if shape.HasNPM {
-		cfg.Updates = append(cfg.Updates, Update{
-			PackageEcosystem:      EcosystemNPM,
-			Directory:             "/",
+	for _, eco := range []struct {
+		ecosystem Ecosystem
+		dirs      []string
+	}{
+		{EcosystemNPM, shape.NPMDirs},
+		{EcosystemPip, shape.PipDirs},
+		{EcosystemCargo, shape.CargoDirs},
+		{EcosystemGradle, shape.GradleDirs},
+	} {
+		cfg.Updates = append(cfg.Updates, ecosystemEntries(eco.ecosystem, eco.dirs)...)
+	}
+
+	return cfg, capInfo
+}
+
+// ecosystemEntries builds one canonical entry per directory, root first.
+func ecosystemEntries(eco Ecosystem, dirs []string) []Update {
+	sorted := make([]string, 0, len(dirs))
+	sorted = append(sorted, dirs...)
+	sort.Slice(sorted, func(i, j int) bool {
+		ci, cj := canonicalDir(sorted[i]), canonicalDir(sorted[j])
+		if ci == "/" {
+			return true
+		}
+
+		if cj == "/" {
+			return false
+		}
+
+		return ci < cj
+	})
+
+	entries := make([]Update, 0, len(sorted))
+	for _, dir := range sorted {
+		entries = append(entries, Update{
+			PackageEcosystem:      eco,
+			Directory:             canonicalDir(dir),
 			Schedule:              &Schedule{Interval: IntervalWeekly},
 			OpenPullRequestsLimit: DefaultOpenPullRequestsLimit,
 			Groups:                MinorAndPatchGroups(),
 		})
 	}
 
-	return cfg, capInfo
+	return entries
 }
 
 // desiredGroups returns the canonical groups for an ecosystem.
@@ -177,13 +214,37 @@ func Reconcile(existing, desired Config) Config {
 }
 
 // detectedDirs maps the canonical Dependabot directory of every detected
-// Go module. Orphan detection compares existing entries against detection,
-// NOT against the (possibly capped) desired config: when the module cap
-// truncates generation to root-only, entries for genuinely detected modules
-// are user-managed, not orphans.
+// manifest for one ecosystem. Orphan detection compares existing entries
+// against detection, NOT against the (possibly capped) desired config: when
+// the module cap truncates generation to root-only, entries for genuinely
+// detected modules are user-managed, not orphans.
 func detectedDirs(shape RepoShape) map[string]bool {
-	dirs := make(map[string]bool, len(shape.GoModuleDirs))
-	for _, dir := range shape.GoModuleDirs {
+	return ecosystemDirs(shape, EcosystemGoModules)
+}
+
+// ecosystemDirs maps the canonical Dependabot directory of every detected
+// manifest directory for the given ecosystem. Ecosystems RepoShape does
+// not model have no directories, so their entries are user-managed and
+// audited by the orphan rule instead of silently trusted.
+func ecosystemDirs(shape RepoShape, eco Ecosystem) map[string]bool {
+	var list []string
+	switch eco {
+	case EcosystemGoModules:
+		list = shape.GoModuleDirs
+	case EcosystemNPM:
+		list = shape.NPMDirs
+	case EcosystemPip:
+		list = shape.PipDirs
+	case EcosystemCargo:
+		list = shape.CargoDirs
+	case EcosystemGradle:
+		list = shape.GradleDirs
+	default:
+		return map[string]bool{}
+	}
+
+	dirs := make(map[string]bool, len(list))
+	for _, dir := range list {
 		dirs[canonicalDir(dir)] = true
 	}
 
@@ -191,20 +252,13 @@ func detectedDirs(shape RepoShape) map[string]bool {
 }
 
 // entryDetected reports whether an existing updates entry corresponds to
-// something detection found. Ecosystems RepoShape does not model (pip,
-// cargo, ...) are never "detected" — their entries are user-managed and
-// audited by the orphan rule instead of silently trusted.
+// something detection found.
 func entryDetected(u Update, dirs map[string]bool, shape RepoShape) bool {
-	switch u.PackageEcosystem {
-	case EcosystemGoModules:
-		return dirs[u.Directory]
-	case EcosystemGitHubActions:
+	if u.PackageEcosystem == EcosystemGitHubActions {
 		return shape.HasGitHubActions
-	case EcosystemNPM:
-		return shape.HasNPM
-	default:
-		return false
 	}
+
+	return ecosystemDirs(shape, u.PackageEcosystem)[u.Directory]
 }
 
 // Diff compares an existing configuration (nil = file missing) against the
