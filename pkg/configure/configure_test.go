@@ -351,6 +351,7 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
 `
+
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/x\n"), 0o644); err != nil {
 		t.Fatal(err)
@@ -389,6 +390,7 @@ updates:
 	}
 
 	var grouping []string
+
 	for _, f := range result.Findings {
 		if string(f.Rule) == "dependabot-grouping-missing" {
 			grouping = append(grouping, f.Message)

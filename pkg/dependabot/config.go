@@ -337,6 +337,7 @@ func auditGroups(res *DecodeResult, groups any) bool {
 	}
 
 	unmodeled := false
+
 	for name := range names {
 		if !knownGroupNames[name] {
 			res.UnknownGroupNames = append(res.UnknownGroupNames, name)
