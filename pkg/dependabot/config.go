@@ -132,9 +132,9 @@ func (g *Groups) UnmarshalYAML(node *yaml.Node) error {
 // include, separator). User customization: preserved by Reconcile, never
 // generated, invisible to Diff — same contract as Labels.
 type CommitMessage struct {
-	Prefix    string   `yaml:"prefix,omitempty"`
-	Include   []string `yaml:"include,omitempty"`
-	Separator *string  `yaml:"separator,omitempty"`
+	Prefix    string  `yaml:"prefix,omitempty"`
+	Include   string  `yaml:"include,omitempty"`
+	Separator *string `yaml:"separator,omitempty"`
 }
 
 // Update is one entry under "updates:". A nil Schedule, a zero

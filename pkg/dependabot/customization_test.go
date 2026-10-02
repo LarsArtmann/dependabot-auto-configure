@@ -215,3 +215,131 @@ updates:
 		)
 	}
 }
+
+// commitMessageYAML is a canonical grouped config carrying the
+// commit-message customization. v0.3.0 moved it from "outside the known
+// schema" (suggest-only) to a modeled field with the same contract as
+// labels: decoded, preserved verbatim by Reconcile, never generated,
+// invisible to Diff.
+const commitMessageYAML = `version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+`
+
+func TestDecodeCommitMessageSafe(t *testing.T) {
+	t.Parallel()
+
+	res, err := dependabot.Decode([]byte(commitMessageYAML))
+	if err != nil {
+		t.Fatalf("Decode() error = %v", err)
+	}
+
+	if res.Unsafe {
+		t.Error("Decode() Unsafe = true for commit-message, want modeled and safe")
+	}
+
+	u := res.Config.Updates[0]
+	if u.CommitMessage == nil || u.CommitMessage.Prefix != "chore(deps)" ||
+		u.CommitMessage.Include != "scope" {
+		t.Errorf("Decode() commit-message not populated: %+v", u.CommitMessage)
+	}
+}
+
+func TestReconcilePreservesCommitMessage(t *testing.T) {
+	t.Parallel()
+
+	existing := mustConfig(t, commitMessageYAML)
+	desired, _ := dependabot.Generate(dependabot.RepoShape{GoModuleDirs: []string{""}})
+
+	got := dependabot.Reconcile(existing, desired)
+
+	u := got.Updates[got.Find(dependabot.EcosystemGoModules, "/")]
+	if u.CommitMessage == nil || u.CommitMessage.Prefix != "chore(deps)" {
+		t.Errorf("Reconcile() dropped commit-message: %+v", u.CommitMessage)
+	}
+}
+
+func TestEncodeDecodeCommitMessageRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	existing := mustConfig(t, commitMessageYAML)
+	desired, _ := dependabot.Generate(dependabot.RepoShape{GoModuleDirs: []string{""}})
+
+	got := dependabot.Reconcile(existing, desired)
+
+	encoded, err := got.Encode()
+	if err != nil {
+		t.Fatalf("Encode() error = %v", err)
+	}
+
+	if !strings.Contains(string(encoded), "commit-message:") {
+		t.Errorf("Encode() lost commit-message:\n%s", encoded)
+	}
+
+	redesired, _ := dependabot.Generate(dependabot.RepoShape{GoModuleDirs: []string{""}})
+	regot := dependabot.Reconcile(mustConfig(t, string(encoded)), redesired)
+
+	if !dependabot.Equal(got, regot) {
+		t.Errorf("reconcile not idempotent through encode:\nfirst: %+v\nsecond: %+v", got, regot)
+	}
+}
+
+func TestDecodeCommitMessageUnknownKeyUnsafe(t *testing.T) {
+	t.Parallel()
+
+	yaml := strings.Join([]string{
+		"version: 2",
+		"updates:",
+		"  - package-ecosystem: gomod",
+		"    directory: /",
+		"    commit-message:",
+		"      prefix: chore",
+		"      bogus: value",
+		"",
+	}, "\n")
+
+	res, err := dependabot.Decode([]byte(yaml))
+	if err != nil {
+		t.Fatalf("Decode() error = %v", err)
+	}
+
+	if !res.Unsafe {
+		t.Error("Decode() Unsafe = false for unknown commit-message key, want unsafe (rewrite would drop it)")
+	}
+}
+
+func TestDiffSilentOnCommitMessage(t *testing.T) {
+	t.Parallel()
+
+	existing := mustConfig(t, commitMessageYAML)
+	desired, _ := dependabot.Generate(dependabot.RepoShape{GoModuleDirs: []string{""}})
+
+	dec, err := dependabot.Decode([]byte(commitMessageYAML))
+	if err != nil {
+		t.Fatalf("Decode() error = %v", err)
+	}
+
+	issues := dependabot.Diff(
+		&existing,
+		dec,
+		desired,
+		dependabot.RepoShape{GoModuleDirs: []string{""}},
+		dependabot.CapInfo{},
+		".github/dependabot.yml",
+	)
+	if len(issues) != 0 {
+		t.Errorf("Diff() = %v, want no issues for canonical config carrying commit-message", issues)
+	}
+}
