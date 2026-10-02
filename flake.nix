@@ -54,8 +54,11 @@
 
       go-standard = {
         pname = "dependabot-auto-configure";
+        # Pin the toolchain floor: auto-pick resolved to go_1_26, which
+        # fails the SDK's encoding/json/v2 requirement (go >= 1.27).
+        goPkgAttr = "go_1_27";
         inherit version;
-        vendorHash = "sha256-V0nvJDKLRdwj2A31ZlNDZxYQ04bLCKde3IG6c5dpePQ=";
+        vendorHash = "sha256-LWPo7wHtMbQSpaV9fExDjsfsVR7noAngNO1cHptVk3U=";
 
         # Nixpkgs 26.11 dropped x86_64-darwin, so `nix flake check
         # --all-systems` fails while evaluating it; ship only supported systems.

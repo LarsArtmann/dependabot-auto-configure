@@ -219,9 +219,14 @@ func Reconcile(existing, desired Config) Config {
 // audited by the orphan rule instead of silently trusted.
 func ecosystemDirs(shape RepoShape, eco Ecosystem) map[string]bool {
 	var list []string
+
 	switch eco {
 	case EcosystemGoModules:
 		list = shape.GoModuleDirs
+	case EcosystemGitHubActions:
+		// A single root-level entry tracked by HasGitHubActions, not a
+		// directory list.
+		return map[string]bool{}
 	case EcosystemNPM:
 		list = shape.NPMDirs
 	case EcosystemPip:

@@ -144,17 +144,17 @@ func (d Detector) Shape() (dependabot.RepoShape, error) {
 // finalize resolves the collected facts into the repository shape: nested
 // package.json directories count as npm entries when a workspace
 // declaration exists anywhere or the directory has its own lockfile.
-func (w *walkResult) finalize() dependabot.RepoShape {
+func (walked *walkResult) finalize() dependabot.RepoShape {
 	shape := dependabot.RepoShape{
-		GoModuleDirs:     w.goModuleDirs,
-		HasGitHubActions: w.hasGitHubActions,
-		PipDirs:          w.pipDirs,
-		CargoDirs:        w.cargoDirs,
-		GradleDirs:       w.gradleDirs,
+		GoModuleDirs:     walked.goModuleDirs,
+		HasGitHubActions: walked.hasGitHubActions,
+		PipDirs:          walked.pipDirs,
+		CargoDirs:        walked.cargoDirs,
+		GradleDirs:       walked.gradleDirs,
 	}
 
-	for _, dir := range w.packageJSONDirs {
-		if dir == "" || w.workspacesFound || w.lockfileDirs[dir] {
+	for _, dir := range walked.packageJSONDirs {
+		if dir == "" || walked.workspacesFound || walked.lockfileDirs[dir] {
 			shape.NPMDirs = append(shape.NPMDirs, dir)
 		}
 	}
@@ -222,22 +222,22 @@ func (d Detector) skipDir(p, name string) bool {
 // classify records one walked file in the raw walk result. rel is a
 // slash-separated path relative to the repository root, so the checks are
 // identical on every operating system.
-func classify(rel string, w *walkResult) {
+func classify(rel string, walked *walkResult) {
 	if rel == "go.mod" {
-		w.goModuleDirs = append(w.goModuleDirs, "")
+		walked.goModuleDirs = append(walked.goModuleDirs, "")
 
 		return
 	}
 
 	if strings.HasSuffix(rel, "/go.mod") {
-		w.goModuleDirs = append(w.goModuleDirs, path.Dir(rel))
+		walked.goModuleDirs = append(walked.goModuleDirs, path.Dir(rel))
 
 		return
 	}
 
 	if strings.HasPrefix(rel, ".github/workflows/") &&
 		(strings.HasSuffix(rel, ".yml") || strings.HasSuffix(rel, ".yaml")) {
-		w.hasGitHubActions = true
+		walked.hasGitHubActions = true
 
 		return
 	}
@@ -245,13 +245,13 @@ func classify(rel string, w *walkResult) {
 	base := path.Base(rel)
 
 	if npmLockfileNames[base] {
-		w.lockfileDirs[manifestDir(rel)] = true
+		walked.lockfileDirs[manifestDir(rel)] = true
 
 		return
 	}
 
 	if kind, ok := manifestKinds[base]; ok {
-		w.markManifest(kind, manifestDir(rel))
+		walked.markManifest(kind, manifestDir(rel))
 	}
 }
 
