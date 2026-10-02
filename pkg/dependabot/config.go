@@ -189,8 +189,10 @@ type DecodeResult struct {
 	UnknownTopLevel []string
 
 	// UnknownEntryFields reports entries carrying fields outside the known
-	// schema (assignees, commit-message, ...) or schedule blocks with keys
-	// outside {interval, day, time, timezone}.
+	// schema (e.g. assignees), or unknown keys inside known blocks: schedule
+	// {interval, day, time, timezone}, commit-message {prefix, include,
+	// separator}, and canonical group values (minor-and-patch knows
+	// update-types, actions knows patterns).
 	UnknownEntryFields bool
 
 	// UnknownGroupNames lists group names other than the canonical two.
@@ -243,6 +245,16 @@ var knownGroupNames = map[string]bool{
 	GroupActions:       true,
 }
 
+// knownGroupFields is every group-value key this tool understands, per
+// canonical group name: type groups know only update-types, pattern groups
+// only patterns. Unknown keys inside a canonical group (e.g.
+// exclude-patterns, applies-to) are audited unsafe — a rewrite would
+// silently drop them, exactly like unknown schedule keys.
+var knownGroupFields = map[string]map[string]bool{
+	GroupMinorAndPatch: {"update-types": true},
+	GroupActions:       {"patterns": true},
+}
+
 // Decode parses YAML into a Config and audits it for constructs this tool
 // does not model. Decoding is deliberately lenient (unknown fields land in
 // the audit, not in an error) so existing configs are always readable.
@@ -272,9 +284,10 @@ func Decode(data []byte) (DecodeResult, error) {
 }
 
 // auditEntries flags updates entries carrying constructs outside the known
-// schema: unknown entry fields, unknown schedule keys, unknown group names.
-// Raw entries align with res.Config.Updates by document order; the per-entry
-// audit result is folded back into the typed entry.
+// schema: unknown entry fields, unknown keys inside known blocks (schedule,
+// commit-message, canonical group values), unknown group names. Raw entries
+// align with res.Config.Updates by document order; the per-entry audit
+// result is folded back into the typed entry.
 func auditEntries(res *DecodeResult, updates any) {
 	entries, _ := updates.([]any)
 
@@ -291,8 +304,8 @@ func auditEntries(res *DecodeResult, updates any) {
 }
 
 // auditEntry audits one updates entry for constructs outside the known
-// schema: unknown entry fields, unknown schedule keys, non-canonical or
-// unknown groups, unknown commit-message keys. It reports whether the
+// schema: unknown entry fields, unknown schedule, commit-message, and
+// group-value keys, non-canonical or unknown groups. It reports whether the
 // entry's groups mapping carries names outside the canonical model.
 func auditEntry(res *DecodeResult, entryMap map[string]any) bool {
 	for key := range entryMap {
@@ -308,7 +321,8 @@ func auditEntry(res *DecodeResult, entryMap map[string]any) bool {
 }
 
 // auditBlock flags unknown keys inside one known schema block (schedule,
-// commit-message): a rewrite would silently drop them.
+// commit-message, canonical group values): a rewrite would silently drop
+// them.
 func auditBlock(res *DecodeResult, block any, known map[string]bool) {
 	keys, ok := block.(map[string]any)
 	if !ok {
@@ -328,6 +342,9 @@ func auditBlock(res *DecodeResult, block any, known map[string]bool) {
 // Groups.UnmarshalYAML without failing the parse; auditing it unsafe here
 // means a rewrite can never drop the non-canonical shape — but it is not a
 // groups mapping at all, so it does not count as unmodeled group names.
+// Canonical names get the auditBlock treatment: unknown keys inside their
+// values (exclude-patterns, applies-to, ...) make the document unsafe, so
+// repair never silently drops them.
 func auditGroups(res *DecodeResult, groups any) bool {
 	names, ok := groups.(map[string]any)
 	if !ok {
@@ -338,11 +355,15 @@ func auditGroups(res *DecodeResult, groups any) bool {
 
 	unmodeled := false
 
-	for name := range names {
+	for name, value := range names {
 		if !knownGroupNames[name] {
 			res.UnknownGroupNames = append(res.UnknownGroupNames, name)
 			unmodeled = true
+
+			continue
 		}
+
+		auditBlock(res, value, knownGroupFields[name])
 	}
 
 	return unmodeled
