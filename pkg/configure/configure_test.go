@@ -415,12 +415,13 @@ updates:
 }
 
 // TestRunCanonicalGroupUnknownKeysSuggestOnly pins the verified silent-drop
-// bug (status report 2026-10-02 §d): unknown keys INSIDE a canonical group
-// value (exclude-patterns, applies-to, ...) are valid GitHub schema this
-// tool does not model. A repair run must treat the document as unsafe and
-// never rewrite — before the group-value audit, this exact fixture decoded
-// SAFE and the rewrite dropped exclude-patterns (unsafe_repair:false,
-// wrote:true). Findings for the repairable sibling entry still flow.
+// regression (status report 2026-10-02 §d): unknown keys INSIDE a canonical
+// group value (exclude-patterns, applies-to, ...) are valid GitHub schema
+// this tool does not model. A repair run must treat the document as unsafe
+// and never rewrite — before the group-value audit, this exact fixture
+// decoded SAFE and the rewrite dropped exclude-patterns
+// (unsafe_repair:false, wrote:true). Findings for the repairable sibling
+// entry still flow.
 func TestRunCanonicalGroupUnknownKeysSuggestOnly(t *testing.T) {
 	t.Parallel()
 

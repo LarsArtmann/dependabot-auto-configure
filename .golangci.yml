@@ -294,7 +294,7 @@ linters:
       - text: Version is a global variable
         linters:
           - gochecknoglobals
-      - text: (skippedSegments|githubAPIBase|githubAPIClient|knownEntryFields|knownScheduleFields|knownTopLevelFields|knownGroupNames|knownCommitMessageFields|npmLockfileNames|manifestKinds) is a global variable
+      - text: (skippedSegments|githubAPIBase|githubAPIClient|knownEntryFields|knownScheduleFields|knownTopLevelFields|knownGroupNames|knownGroupFields|knownCommitMessageFields|npmLockfileNames|manifestKinds) is a global variable
         linters:
           - gochecknoglobals
       - path: _test\.go
