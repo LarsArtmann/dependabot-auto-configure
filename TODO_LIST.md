@@ -18,6 +18,7 @@
 | Task                                                                                                                                           | Status       | Impact | Effort | Evidence                                                                                                                     |
 | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------ | ------ | ---------------------------------------------------------------------------------------------------------------------------- |
 | Push `master` to origin and verify: CI green on real runners (incl. the new windows matrix entry), Dependabot PR rebase, README badges resolve | 🔵 `BLOCKED` | High   | 15m    | origin/master (`f85ca82`) is CI-RED (vendorHash + lint); local HEAD carries the fixes — pushing needs explicit authorization |
+| Audit unknown keys INSIDE canonical group blocks (`exclude-patterns`, `applies-to`, ...): today a SAFE verdict + repair silently drops them. Extend the `auditBlock` pattern to group values (`minor-and-patch` knows only `update-types`; `actions` only `patterns`) so such configs become suggest-only | 🔴 `TODO` | High | 1-2h | Verified live 2026-10-02: `groups.minor-and-patch.exclude-patterns` + one repairable sibling entry → real run rewrote the file WITHOUT `exclude-patterns`, `unsafe_repair:false`. Violates the "never destroy user intent" hard rule and ROADMAP Non-goals. Demo: `docs/status/2026-10-02_12-08_issue-3-custom-group-false-positive.md` §d |
 
 ## Medium Impact
 
@@ -30,6 +31,8 @@
 | Task                                                                                  | Status    | Impact | Effort | Evidence                                                                            |
 | ------------------------------------------------------------------------------------- | --------- | ------ | ------ | ----------------------------------------------------------------------------------- |
 | Upstream to go-nix-helpers: apps lack `meta.description` (`nix flake check` warnings) | 🔴 `TODO` | Low    | 30m    | Warning on every app in `nix flake check --all-systems`; module-owned, not per-repo |
+| Run an actual fuzz campaign (`go test -fuzz=FuzzDecode -fuzztime=60s`) | 🔴 `TODO` | Low  | 15m | `fuzz_test.go` seeds cover list-form + custom-name groups (added 2026-10-02) but `-fuzz` was never executed |
+| Test the `auditEntries` raw↔typed alignment invariant (null/non-map entries) | 🔴 `TODO` | Low  | 30m | `pkg/dependabot/config.go` `auditEntries` comment documents the alignment; no test pins it |
 
 ---
 
