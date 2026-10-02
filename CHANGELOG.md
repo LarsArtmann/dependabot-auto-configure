@@ -22,6 +22,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   with the audit-only `Update.HasUnmodeledGroups`, so only entries with
   no groups mapping at all report the finding; the unknown names remain
   a separate unsafe-audit signal and repair stays suggest-only (issue #3)
+- Unknown keys INSIDE canonical group values (`exclude-patterns`,
+  `applies-to`, ...) are valid GitHub schema this tool does not model;
+  they now make the document audited unsafe so repair is suggest-only.
+  Before, such configs decoded SAFE and a repair rewrite silently
+  dropped the keys
+- A null `updates:` entry no longer misplaces or drops the per-entry
+  `HasUnmodeledGroups` audit fold: the typed decoder skips null list
+  items, so alignment is tracked over non-null entries only (previously
+  the raw index shifted the fold onto the wrong entry or dropped it
+  entirely, resurrecting the issue #3 false positive for that shape)
 
 ## [0.3.0] - 2026-10-02
 

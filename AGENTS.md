@@ -34,8 +34,10 @@ Sibling to `golangci-lint-auto-configure` and `oxlint-auto-configure`.
   and schedule `day`/`time`/`timezone` — are the exception: since v0.2.0 they
   are decoded, preserved verbatim by Reconcile, never generated, and invisible
   to Diff, so a config carrying them decodes Safe and repair converges
-  (`pkg/dependabot/customization_test.go`). Unknown schedule keys are audited
-  unsafe for the same reason: a rewrite would drop them.
+  (`pkg/dependabot/customization_test.go`). Unknown schedule keys, unknown
+  commit-message keys, and unknown keys INSIDE canonical group values
+  (`exclude-patterns`, `applies-to`, ...) are audited unsafe for the same
+  reason: a rewrite would drop them.
 - **Semantic idempotence, not byte idempotence.** A hand-written config that
   parses to the same `Config` is a no-op (`dependabot.Equal` on the reconcile
   result); quoting or indentation differences never trigger rewrites. Byte
@@ -73,6 +75,15 @@ Sibling to `golangci-lint-auto-configure` and `oxlint-auto-configure`.
   (`groups: {}`), null-valued canonical keys, and the list form count as
   "no groups mapping at all" and keep the finding, staying consistent with
   Reconcile's fill-on-safe-path.
+- Canonical group values carry a per-name key schema (`knownGroupFields`:
+  `minor-and-patch` knows only `update-types`, `actions` only `patterns`);
+  unknown keys inside them are audited unsafe (suggest-only). Non-mapping
+  canonical values (list, scalar) fail the typed parse — the corruption
+  path, also suggest-only; only null stays on the safe path. The
+  `auditEntries` raw↔typed fold tracks NON-NULL entries: go-faster/yaml
+  skips null `updates:` list items, so folding by raw index would shift
+  the flag onto the wrong entry (pinned by
+  `TestAuditEntriesRawTypedAlignment`).
 - `flake.nix` pins `goPkgAttr = "go_1_27"`: the go-standard auto-pick
   resolved to go_1_26, which fails the encoding/json/v2 floor.
 - `scripts/sweep.sh <projects-dir> [out.csv]` sweeps all local repos in
@@ -187,7 +198,7 @@ Non-obvious rules the flags enforce (empirically verified 2026-09-11):
 
 Table-driven tests for pure functions; integration tests with `t.TempDir`
 fixtures in `pkg/configure`. Coverage target: 80%+ on every package —
-currently detect 89.7%, configure 89.2%, dependabot 87.1%, provider 85.0%,
+currently detect 89.7%, configure 89.2%, dependabot 88.4%, provider 85.0%,
 cli 83.5% (detection's rewrite traded raw % for real-world branches).
 The
 `TestRun*` suite encodes the safety contract (check/dry-run/unsafe/no-op) —
