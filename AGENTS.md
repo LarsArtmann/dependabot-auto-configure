@@ -49,6 +49,29 @@ Sibling to `golangci-lint-auto-configure` and `oxlint-auto-configure`.
 - **Module cap = 20** (`dependabot.MaxModuleEntries`). Beyond that, generate
   root-only and emit `dependabot-modules-capped`. Do not raise silently.
 
+## Ecosystem model (v0.3.0)
+
+- `RepoShape` carries per-ecosystem directory lists (`GoModuleDirs`,
+  `NPMDirs`, `PipDirs`, `CargoDirs`, `GradleDirs`; "" = root) plus the
+  `HasGitHubActions` flag. There is no `HasNPM` boolean — npm is a
+  directory list like every other ecosystem.
+- npm membership: root always counts; a nested `package.json` counts when
+  any package.json declares `workspaces` OR its directory has a lockfile
+  (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `bun.lock[b]`).
+  A malformed package.json contributes no workspace knowledge — detection
+  only ever gets MORE conservative from a broken manifest.
+- `commit-message` is a modeled customization (prefix/include/separator)
+  with the labels contract: decoded, preserved verbatim, never generated,
+  invisible to Diff. Unknown keys INSIDE the block are audited unsafe.
+- List-form `groups:` decodes (Groups.UnmarshalYAML tolerates
+  non-mapping shapes) and is audited unsafe, so repair never rewrites it.
+  Do not "fix" this by generating a mapping — that would destroy intent.
+- `flake.nix` pins `goPkgAttr = "go_1_27"`: the go-standard auto-pick
+  resolved to go_1_26, which fails the encoding/json/v2 floor.
+- `scripts/sweep.sh <projects-dir> [out.csv]` sweeps all local repos in
+  CHECK mode into CSV. NEVER sweep without `--check` — plain runs repair
+  every repo they touch.
+
 ## Build
 
 The SDK imports `encoding/json/v2`; the go.mod floor is `go 1.27` and the

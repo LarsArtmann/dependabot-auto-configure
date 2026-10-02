@@ -19,13 +19,16 @@
 
 ## Repository detection
 
-| Feature                        | Status                | Notes                                                                         |
-| ------------------------------ | --------------------- | ----------------------------------------------------------------------------- |
-| Go module detection            | 🟢 `FULLY_FUNCTIONAL` | Root + nested `go.mod`, reported as directories; `pkg/detect/detect.go`       |
-| GitHub Actions detection       | 🟢 `FULLY_FUNCTIONAL` | `.github/workflows/*.yml` and `*.yaml`; `pkg/detect/detect.go:69`             |
-| npm detection (root only)      | 🟢 `FULLY_FUNCTIONAL` | Root `package.json` only; nested ones deliberately ignored (`detect_test.go`) |
-| Skip noise directories         | 🟢 `FULLY_FUNCTIONAL` | `testdata`, `vendor`, `node_modules`, `.git`, hidden dirs except `.github`    |
-| npm workspace member detection | ⚪ `PLANNED`          | Documented as future work at `pkg/detect/detect.go:36`; no code exists        |
+| Feature                        | Status                | Notes                                                                                                  |
+| ------------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------ |
+| Go module detection            | 🟢 `FULLY_FUNCTIONAL` | Root + nested `go.mod`, reported as directories; `pkg/detect/detect.go`                                |
+| GitHub Actions detection       | 🟢 `FULLY_FUNCTIONAL` | `.github/workflows/*.yml` and `*.yaml`; `pkg/detect/detect.go:69`                                      |
+| npm detection (root)           | 🟢 `FULLY_FUNCTIONAL` | Root `package.json` (`RepoShape.NPMDirs`)                                                              |
+| npm workspace member detection | 🟢 `FULLY_FUNCTIONAL` | Nested `package.json` counts when any `workspaces` declaration exists or a sibling lockfile is present |
+| pip detection                  | 🟢 `FULLY_FUNCTIONAL` | `requirements.txt`, `Pipfile`, `pyproject.toml` (`RepoShape.PipDirs`)                                  |
+| cargo detection                | 🟢 `FULLY_FUNCTIONAL` | `Cargo.toml` (`RepoShape.CargoDirs`)                                                                   |
+| gradle detection               | 🟢 `FULLY_FUNCTIONAL` | `build.gradle[.kts]`, `settings.gradle[.kts]` (`RepoShape.GradleDirs`)                                 |
+| Skip noise directories         | 🟢 `FULLY_FUNCTIONAL` | `testdata`, `vendor`, `node_modules`, `.git`, hidden dirs except `.github`                             |
 
 ## Configuration generation
 

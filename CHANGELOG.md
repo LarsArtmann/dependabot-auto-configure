@@ -8,6 +8,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Ecosystem detection for pip (`requirements.txt`, `Pipfile`,
+  `pyproject.toml`), cargo (`Cargo.toml`), and gradle
+  (`build.gradle[.kts]`, `settings.gradle[.kts]`); npm generation now
+  covers workspace members (any `workspaces` declaration, or a nested
+  `package.json` with its own lockfile) via `RepoShape.NPMDirs`
+  (replacing the root-only `HasNPM` flag)
+- `commit-message` entry customization is modeled: decoded, preserved
+  verbatim by Reconcile, never generated, invisible to Diff — same
+  contract as `labels`
+- List-form `groups:` (non-standard, seen in real configs) now decodes
+  instead of failing the parse; the document is audited unsafe so repair
+  stays suggest-only and the non-canonical shape survives
+- `scripts/sweep.sh`: run the tool in check mode across every local
+  repository and emit one CSV row per repo (archived dirs skipped)
+
 - Typed domain error system: every failure is a typed error with family
   (rejection/transient/corruption/infrastructure), machine-readable code,
   and structured context — `UnparseableConfigError`, `EncodeError`,
