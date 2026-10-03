@@ -42,6 +42,6 @@ require (
 	github.com/larsartmann/go-error-family v0.11.0
 	github.com/larsartmann/go-finding v1.13.0
 	github.com/larsartmann/go-finding/toolsdk v1.14.0
-	github.com/larsartmann/linter-autoconfigure-sdk v0.7.0
+	github.com/larsartmann/linter-autoconfigure-sdk v0.8.0
 	github.com/spf13/cobra v1.10.2
 )
