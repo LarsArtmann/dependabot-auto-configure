@@ -40,8 +40,8 @@ require (
 	github.com/go-faster/yaml v0.4.6
 	github.com/larsartmann/go-atomic-write v0.6.0
 	github.com/larsartmann/go-error-family v0.11.0
-	github.com/larsartmann/go-finding v1.13.0
-	github.com/larsartmann/go-finding/toolsdk v1.14.0
+	github.com/larsartmann/go-finding v1.14.0
+	github.com/larsartmann/go-finding/toolsdk v1.15.0
 	github.com/larsartmann/linter-autoconfigure-sdk v0.8.0
 	github.com/spf13/cobra v1.10.2
 )
