@@ -78,16 +78,16 @@
     "go-finding": {
       "flake": false,
       "locked": {
-        "lastModified": 1790100510,
-        "narHash": "sha256-9SIzXztAkNlCKIKmnHS9XldwPJZmcijr9Re0x5LSn0Y=",
+        "lastModified": 1791155944,
+        "narHash": "sha256-OozbIQ2QkR8nkn27ctce1+0b+Da1Yle9yNSoFc4ze7k=",
         "owner": "LarsArtmann",
         "repo": "go-finding",
-        "rev": "450824e9783d2ac74f04a388f178573f7ca953e6",
+        "rev": "a3d22d107ae77ab5a963cbcccd47a6e8a1cc0818",
         "type": "github"
       },
       "original": {
         "owner": "LarsArtmann",
-        "ref": "refs/tags/v1.13.0",
+        "ref": "refs/tags/v1.14.0",
         "repo": "go-finding",
         "type": "github"
       }
@@ -135,11 +135,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1790822859,
-        "narHash": "sha256-69xHQhAeMAD2wDXO7T2pcOZIF9Sga2W+JkmY2a11Ops=",
+        "lastModified": 1791594108,
+        "narHash": "sha256-XK4KceonkwD8LuMAt/vNrz982mXJM5jeHAxMwsUXXAQ=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "c59305bab2065cfecc4944690d9eedbb56f3a9fa",
+        "rev": "6510408d147d8c5e6d76043e899e9251756f6a75",
         "type": "github"
       },
       "original": {
