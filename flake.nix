@@ -26,7 +26,7 @@
 
     go-finding = {
       # v1.10.0 is the first tag carrying the toolsdk/ sub-module.
-      url = "github:LarsArtmann/go-finding?ref=refs/tags/v1.14.0";
+      url = "github:LarsArtmann/go-finding?ref=refs/tags/v1.15.0";
       flake = false;
     };
 
@@ -58,7 +58,7 @@
         # fails the SDK's encoding/json/v2 requirement (go >= 1.27).
         goPkgAttr = "go_1_27";
         inherit version;
-        vendorHash = "sha256-N+a+JmQORA9OZA2LUXWDTPaDylYusY3wWTlOi7M67FE=";
+        vendorHash = "sha256-vqjEz6KZOdsYwKBo6MmqRlpGEuG/uFbqD1DySELzG8A=";
 
         # Nixpkgs 26.11 dropped x86_64-darwin, so `nix flake check
         # --all-systems` fails while evaluating it; ship only supported systems.
