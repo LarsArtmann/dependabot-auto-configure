@@ -58,7 +58,7 @@
         # fails the SDK's encoding/json/v2 requirement (go >= 1.27).
         goPkgAttr = "go_1_27";
         inherit version;
-        vendorHash = "sha256-vqjEz6KZOdsYwKBo6MmqRlpGEuG/uFbqD1DySELzG8A=";
+        vendorHash = "sha256-UCyLmFMXo7W3RN+L+oFxUbNjAUR/SCWFd64XE9iCkkg=";
 
         # Nixpkgs 26.11 dropped x86_64-darwin, so `nix flake check
         # --all-systems` fails while evaluating it; ship only supported systems.
