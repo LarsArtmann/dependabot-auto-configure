@@ -38,7 +38,7 @@ require (
 require (
 	charm.land/fang/v2 v2.0.1
 	github.com/go-faster/yaml v0.4.6
-	github.com/larsartmann/go-atomic-write v0.6.1
+	github.com/larsartmann/go-atomic-write v0.6.2
 	github.com/larsartmann/go-error-family v0.12.0
 	github.com/larsartmann/go-finding v1.15.0
 	github.com/larsartmann/go-finding/toolsdk v1.16.0
