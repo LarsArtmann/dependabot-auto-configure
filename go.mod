@@ -28,7 +28,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/xo/terminfo v1.3.0 // indirect
+	github.com/xo/terminfo v1.3.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
@@ -40,8 +40,8 @@ require (
 	github.com/go-faster/yaml v0.4.6
 	github.com/larsartmann/go-atomic-write v0.6.2
 	github.com/larsartmann/go-error-family v0.12.0
-	github.com/larsartmann/go-finding v1.15.0
+	github.com/larsartmann/go-finding v1.15.1
 	github.com/larsartmann/go-finding/toolsdk v1.16.0
-	github.com/larsartmann/linter-autoconfigure-sdk v0.8.0
+	github.com/larsartmann/linter-autoconfigure-sdk v0.8.1
 	github.com/spf13/cobra v1.10.2
 )
