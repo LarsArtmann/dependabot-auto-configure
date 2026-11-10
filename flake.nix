@@ -26,12 +26,12 @@
 
     go-finding = {
       # v1.10.0 is the first tag carrying the toolsdk/ sub-module.
-      url = "github:LarsArtmann/go-finding?ref=refs/tags/v1.15.0";
+      url = "github:LarsArtmann/go-finding?ref=refs/tags/v1.15.1";
       flake = false;
     };
 
     linter-autoconfigure-sdk = {
-      url = "github:LarsArtmann/linter-autoconfigure-sdk?ref=refs/tags/v0.8.0";
+      url = "github:LarsArtmann/linter-autoconfigure-sdk?ref=refs/tags/v0.8.1";
       flake = false;
     };
   };

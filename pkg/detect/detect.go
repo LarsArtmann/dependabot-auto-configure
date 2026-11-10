@@ -5,7 +5,8 @@
 package detect
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"io/fs"
 	"os"
 	"path"
@@ -192,7 +193,7 @@ func (d Detector) classifyPackageJSON(rel string, walked *walkResult) error {
 	}
 
 	var pkg struct {
-		Workspaces json.RawMessage `json:"workspaces"`
+		Workspaces jsontext.Value `json:"workspaces"`
 	}
 
 	if err := json.Unmarshal(data, &pkg); err == nil {

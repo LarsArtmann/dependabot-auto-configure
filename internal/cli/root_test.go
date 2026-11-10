@@ -3,7 +3,7 @@ package cli_test
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/json/v2"
 	"errors"
 	"os"
 	"path/filepath"
@@ -269,7 +269,6 @@ func TestReportWriteFailureSurfaces(t *testing.T) {
 	}
 }
 
-//nolint:paralleltest // t.Chdir mutates process state, so it cannot run in parallel
 func TestExecuteRunsAgainstWorkingDirectory(t *testing.T) {
 	root := t.TempDir()
 
