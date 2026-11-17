@@ -62,6 +62,9 @@ could never fire — the tool's own findings gate became noise.
 - Encode must stay deterministic: the yaml encoder emits inline maps
   sorted, so decode→encode is byte-stable (pinned by fuzz: 1.1M+
   executions of the round-trip invariant, zero failures).
+- Decode is single-pass since this ADR: one typed `Unmarshal` whose
+  inline maps capture the unmodeled remainder; the pre-v0.4.0 second
+  raw parse (the raw↔typed fold) is gone.
 - `Equal` normalizes before comparing (`semanticConfig`/`semanticNode`):
   node position/style/comment metadata and empty-vs-absent lists do not
   count. Any future node-carrying field must extend the normalizer.

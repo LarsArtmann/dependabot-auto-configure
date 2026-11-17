@@ -28,7 +28,9 @@ structure, producing tighter configs for large monorepos.
 Raw ideas:
 
 - Detect ecosystems from directory contents rather than single files
-- Smarter cap behavior: summarize or tier entries instead of root-only
+- Smarter cap behavior: summarize or tier entries instead of root-only —
+  e.g. generate a `directories` glob entry for >20-module repos (the field
+  is modeled since v0.4.0; the cap still generates root-only)
 - `--root` defaulting to the git toplevel instead of the CWD
 
 ### 3. Frictionless distribution
@@ -46,16 +48,34 @@ Raw ideas:
   ships a `completion` subcommand for shells)
 - Social preview image for the repo
 
+## Open questions
+
+Decisions only the owner can make; designs parked here until answered:
+
+- **Pruning orphan entries** (43 info findings, the largest remaining
+  bucket after v0.4.0): add an opt-in `--prune-orphans` (CLI flag +
+  BuildFlow repair knob), or keep orphan entries human-decisions
+  forever? Safe semantics if built: prune ONLY entries in ecosystems
+  this tool models (gomod, github-actions, npm, pip, cargo, gradle)
+  whose detection found nothing — never entries in undetected
+  ecosystems (docker, terraform, ...), where "orphan" usually means
+  "this tool is blind", and default OFF so the never-destroy-intent
+  contract is unchanged.
+
 ## Non-goals
 
 Things we are deliberately NOT pursuing and why:
 
-- **Modeling or rewriting unknown config constructs** (registries, custom
-  groups, further schedule keys): the suggest-only safety contract is the
-  product. Silence about user intent is the failure mode this tool exists
-  to prevent. Modeled customizations (`labels`, schedule
-  `day`/`time`/`timezone`) are the deliberate exception — each one is
-  decoded, preserved verbatim, and covered by round-trip tests.
+- **Normalizing or rewriting unknown config constructs** (registries,
+  custom groups, further schedule keys): since v0.4.0 unknown constructs
+  ride along VERBATIM as raw nodes and repair fills around them — but
+  they are never interpreted, validated, or regenerated. Turning
+  passthrough into typed modeling remains a non-goal unless a finding
+  needs it: each typed field is a new maintenance surface, and the
+  passthrough already preserves everything. Suggest-only now fires only
+  for shapes a rewrite cannot reproduce (list-form `groups:`, aliases,
+  merge keys, nulls) — that narrowed contract is the product
+  (ADR 0002).
 - **Creating commits or pull requests**: this tool writes (at most) one
   config file; lifecycle automation belongs to Dependabot itself.
 - **Network calls beyond the opt-in security-fixes flag**: file-level

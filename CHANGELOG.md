@@ -16,6 +16,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.4.0] - 2026-11-17
 
+### Fixed
+
+- CI lint gate: `wrapcheck` false-positived on the mandated
+  `go-error-family` wrap constructors (fleet precedent: exempt the
+  package by signature regex, as `golangci-lint-auto-configure` does);
+  the blanket per-file exclusion became one line-scoped `nolint` at the
+  genuine raw return in `Groups.UnmarshalYAML`
+
 ### Changed
 
 - **Verbatim passthrough for unmodeled schema (the big autofix unlock).**

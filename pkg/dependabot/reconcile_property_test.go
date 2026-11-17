@@ -274,6 +274,17 @@ func TestReconcilePreservesEveryModeledField(t *testing.T) {
 		// hand-made node positions) decides equality.
 		normalized := deepCopyConfig(t, out)
 
+		// The decode(encode(x)) round-trip is semantic identity — the
+		// same contract repair's no-op check relies on.
+		if !dependabot.Equal(out, normalized) {
+			t.Fatalf(
+				"iteration %d: decode(encode(x)) is not Equal to x\nout:       %+v\nnormalized: %+v",
+				i,
+				out,
+				normalized,
+			)
+		}
+
 		assertUnmodeledPreserved(t, i, pristine.Unmodeled, normalized.Unmodeled, "config")
 
 		if len(out.Updates) < len(pristine.Updates) {
