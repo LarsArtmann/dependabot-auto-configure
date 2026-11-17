@@ -13,7 +13,7 @@ import (
 	toolsdk "github.com/larsartmann/go-finding/toolsdk"
 )
 
-const unsafeSelfConfig = `version: 2
+const unmodeledSelfConfig = `version: 2
 updates:
   - package-ecosystem: gomod
     directory: /
@@ -23,6 +23,18 @@ updates:
 registries:
   - type: npm-registry
     url: https://registry.example.com
+`
+
+// listFormSelfConfig carries the one remaining unsafe shape: a
+// non-mapping `groups:` value, which no rewrite can carry verbatim.
+const listFormSelfConfig = `version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      - minor-and-patch
 `
 
 func writeGoMod(t *testing.T, dir string) {
@@ -208,7 +220,11 @@ func TestRepairIsIdempotentOnCanonicalConfig(t *testing.T) {
 	}
 }
 
-func TestRepairUnsafeConfigIsSuggestOnly(t *testing.T) {
+// TestRepairCarriesUnmodeledConstructsThrough pins the v0.4.0 passthrough
+// at the BuildFlow boundary: unmodeled schema (unknown entry fields,
+// top-level registries) no longer blocks repair — the write lands, the
+// constructs survive, and the second repair is the canonical no-op.
+func TestRepairCarriesUnmodeledConstructsThrough(t *testing.T) {
 	t.Parallel()
 
 	root := newGoModuleFixture(t)
@@ -218,7 +234,50 @@ func TestRepairUnsafeConfigIsSuggestOnly(t *testing.T) {
 		t.Fatalf("create .github dir: %v", err)
 	}
 
-	if err := os.WriteFile(path, []byte(unsafeSelfConfig), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte(unmodeledSelfConfig), 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	result, err := repairWithRoot(t, root, false)
+	if err != nil {
+		t.Fatalf("Repair: %v", err)
+	}
+
+	if !strings.Contains(result.Description, "wrote grouped weekly") {
+		t.Errorf("Description = %q, want the write-through", result.Description)
+	}
+
+	after := configBytes(t, root)
+	for _, want := range []string{"keep-me", "registries:", "npm-registry", "groups:"} {
+		if !strings.Contains(after, want) {
+			t.Errorf("repaired config lost %q:\n%s", want, after)
+		}
+	}
+
+	second, err := repairWithRoot(t, root, false)
+	if err != nil {
+		t.Fatalf("second Repair: %v", err)
+	}
+
+	if !strings.Contains(second.Description, "already canonical") {
+		t.Errorf("second Description = %q, want the canonical no-op", second.Description)
+	}
+}
+
+// TestRepairListFormGroupsIsSuggestOnly pins the remaining unsafe shape at
+// the BuildFlow boundary: a non-mapping `groups:` value cannot be carried
+// verbatim, so repair must hold back.
+func TestRepairListFormGroupsIsSuggestOnly(t *testing.T) {
+	t.Parallel()
+
+	root := newGoModuleFixture(t)
+
+	path := filepath.Join(root, configure.DefaultConfigPath)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatalf("create .github dir: %v", err)
+	}
+
+	if err := os.WriteFile(path, []byte(listFormSelfConfig), 0o644); err != nil {
 		t.Fatalf("write config: %v", err)
 	}
 
