@@ -270,6 +270,55 @@ updates:
 	}
 }
 
+// TestDecodeNullInUnmodeledUnsafe pins the null round-trip break found by
+// fuzzing (input "0: {0}"): the encoder renders a captured null scalar as
+// an empty string, which re-decodes as !!str — nulls inside unmodeled
+// subtrees cannot ride along verbatim, so they are audited unsafe.
+func TestDecodeNullInUnmodeledUnsafe(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		yaml string
+		want string
+	}{
+		{
+			name: "null value in a flow mapping (fuzzer input)",
+			yaml: "0: {0}",
+			want: "null value",
+		},
+		{
+			name: "bare unmodeled null value",
+			yaml: "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    extra:\n",
+			want: "null value",
+		},
+		{
+			name: "null mapping key inside an unmodeled value",
+			yaml: "version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    ignore:\n      ~: value\n",
+			want: "null mapping key",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			res, err := dependabot.Decode([]byte(tt.yaml))
+			if err != nil {
+				t.Fatalf("Decode() error = %v", err)
+			}
+
+			if !res.Unsafe {
+				t.Fatal("Decode() Unsafe = false for a null inside an unmodeled key, want true")
+			}
+
+			if len(res.UnsafeReasons) != 1 || !strings.Contains(res.UnsafeReasons[0], tt.want) {
+				t.Errorf("Decode() UnsafeReasons = %v, want one %q reason", res.UnsafeReasons, tt.want)
+			}
+		})
+	}
+}
+
 // TestDecodeAnchorDefinitionInUnmodeledSafe pins that an anchor DEFINITION
 // inside an unmodeled value is fine: it re-emits with its anchor intact,
 // and nothing dangling can result (typed fields inline their values).

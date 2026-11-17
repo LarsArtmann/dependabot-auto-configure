@@ -33,7 +33,10 @@ Sibling to `golangci-lint-auto-configure` and `oxlint-auto-configure`.
   configs full of unmodeled schema. `DecodeResult.Unsafe` fires only for
   shapes no rewrite can reproduce: list-form `groups:`, YAML aliases or
   merge keys inside captured unmodeled subtrees (an alias dangles when
-  its anchor sits in a typed field). `UnsafeReasons` names each. Unsafe
+  its anchor sits in a typed field), and null scalars inside captured
+  subtrees (the encoder renders a null as `''`, which re-decodes as a
+  string — found by fuzzing, complex mapping keys included).
+  `UnsafeReasons` names each. Unsafe
   repair is suggest-only, tested in `pkg/configure/configure_test.go`
   and `pkg/dependabot/passthrough_test.go`.
 - **Semantic idempotence, not byte idempotence.** A hand-written config that

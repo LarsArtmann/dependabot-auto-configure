@@ -415,6 +415,10 @@ func scanUnmodeledNode(reasons []string, where string, node yaml.Node) []string 
 				continue
 			}
 
+			if keyNode.Kind != yaml.ScalarNode {
+				reasons = scanUnmodeledNode(reasons, where+" key", *keyNode)
+			}
+
 			reasons = scanUnmodeledNode(reasons, where, *node.Content[i+1])
 		}
 	case yaml.SequenceNode:

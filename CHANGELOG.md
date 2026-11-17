@@ -32,10 +32,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   unknown keys inside canonical groups — all of them now repair, filling
   missing canonical fields while dropping nothing
 - `DecodeResult.Unsafe` shrinks to shapes a rewrite cannot reproduce
-  verbatim: the list form of `groups:`, and YAML aliases or merge keys
+  verbatim: the list form of `groups:`, YAML aliases or merge keys
   inside captured unmodeled subtrees (an alias can dangle when its
   anchor sits in a typed field; a merge key re-encodes with its tag
-  spelled out). `UnsafeReasons` names each one; the three `Unknown*`
+  spelled out), and null scalars anywhere inside captured subtrees,
+  complex mapping keys included (the encoder renders a null as an empty
+  string, which re-decodes as a string; found by fuzzing).
+  `UnsafeReasons` names each one; the three `Unknown*`
   audit fields and the raw-key second parse are gone
 - `directories` (the glob-list alternative to `directory`) is modeled:
   entries using it validate, count as covering the directories their

@@ -37,10 +37,14 @@ could never fire — the tool's own findings gate became noise.
    safe.
 2. **Unsafe now means "a rewrite cannot reproduce this verbatim"**, and
    only that: the list form of `groups:` (no typed representation of
-   the shape), and YAML aliases or merge keys inside captured unmodeled
+   the shape), YAML aliases or merge keys inside captured unmodeled
    subtrees (an alias re-emitted verbatim dangles when its anchor is
    defined in a typed field; a merge key re-encodes with its tag spelled
-   out). `DecodeResult.UnsafeReasons` names each.
+   out), and null scalars anywhere inside captured subtrees, complex
+   mapping keys included (the encoder renders a null as `''`, which
+   re-decodes as a string; found by fuzzing after the 1.1M-exec clean
+   run — corpus seeding with real-world shapes still pays).
+   `DecodeResult.UnsafeReasons` names each.
 3. **`directories` (the glob alternative to `directory`) is typed.** It
    needs semantics (validation, entry matching, orphan detection), not
    just preservation: entries using it must validate, must count as
@@ -72,5 +76,6 @@ could never fire — the tool's own findings gate became noise.
   preserved. Comment loss is now the only rewrite-visible change beyond
   formatting.
 - ADR 0001's gate survives for the narrowed unsafe set (list-form
-  groups, aliases, merge keys) and for invalid entries; its "unknown
+  groups, aliases, merge keys, nulls in captured subtrees) and for
+  invalid entries; its "unknown
   keys" rationale is retired by the passthrough.
