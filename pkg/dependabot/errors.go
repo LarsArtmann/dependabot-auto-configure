@@ -8,18 +8,15 @@ import (
 )
 
 // DecodeStage names the lenient pass that failed while reading an existing
-// configuration document. Decode always runs two passes: parsing the
-// document into a Config, then auditing its raw keys for constructs this
-// tool does not model.
+// configuration document. Since v0.4.0 Decode runs a single typed pass
+// (unmodeled constructs ride along as raw nodes instead of being audited
+// from a second raw parse), so only the parse stage remains.
 type DecodeStage string
 
-// The two decode passes.
+// The decode pass.
 const (
 	// DecodeStageParse fails when the document is not readable YAML.
 	DecodeStageParse DecodeStage = "parse"
-	// DecodeStageInspect fails when the raw-key audit cannot read the
-	// document shape.
-	DecodeStageInspect DecodeStage = "inspect"
 )
 
 // UnparseableConfigError reports a configuration document this tool cannot
@@ -36,10 +33,6 @@ type UnparseableConfigError struct {
 
 // Error renders the failure with the pass that failed and its cause.
 func (e *UnparseableConfigError) Error() string {
-	if e.Stage == DecodeStageInspect {
-		return "inspect dependabot config keys: " + e.Cause.Error()
-	}
-
 	return "parse dependabot config: " + e.Cause.Error()
 }
 
@@ -86,7 +79,9 @@ type RequiredField string
 // Required entry fields.
 const (
 	FieldPackageEcosystem RequiredField = "package-ecosystem"
-	FieldDirectory        RequiredField = "directory"
+	// FieldDirectory covers both spellings of the requirement: a single
+	// directory or the glob-list directories.
+	FieldDirectory RequiredField = "directory or directories"
 )
 
 // InvalidEntryError reports one updates entry missing required fields.

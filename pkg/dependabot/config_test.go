@@ -11,12 +11,10 @@ func TestDecodeCanonicalConfig(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name           string
-		yaml           string
-		wantUnsafe     bool
-		wantUnknownTop []string
-		wantGroups     bool
-		wantUpdates    int
+		name        string
+		yaml        string
+		wantGroups  bool
+		wantUpdates int
 	}{
 		{
 			name: "canonical grouped config decodes clean",
@@ -37,15 +35,13 @@ updates:
 			wantGroups:  true,
 		},
 		{
-			name:           "unknown top-level key is audited unsafe",
-			yaml:           "version: 2\nregistries:\n  npm: {}\nupdates: []\n",
-			wantUnsafe:     true,
-			wantUnknownTop: []string{"registries"},
+			name:        "unknown top-level key rides along",
+			yaml:        "version: 2\nregistries:\n  npm: {}\nupdates: []\n",
+			wantUpdates: 0,
 		},
 		{
-			name:        "unknown entry field is audited unsafe",
-			yaml:        "version: 2\nupdates:\n  - package-ecosystem: npm\n    directory: /\n    assignees:\n      - someone\n",
-			wantUnsafe:  true,
+			name: "unknown entry field rides along",
+			yaml: "version: 2\nupdates:\n  - package-ecosystem: npm\n    directory: /\n    assignees:\n      - someone\n",
 			wantUpdates: 1,
 		},
 		{
@@ -60,11 +56,10 @@ updates:
     labels:
       - dependencies
 `,
-			wantUnsafe:  false,
 			wantUpdates: 1,
 		},
 		{
-			name: "unknown group name is audited unsafe",
+			name: "unknown group name rides along",
 			yaml: `version: 2
 updates:
   - package-ecosystem: npm
@@ -74,7 +69,6 @@ updates:
         patterns:
           - "*"
 `,
-			wantUnsafe:  true,
 			wantUpdates: 1,
 		},
 		{
@@ -97,8 +91,8 @@ updates:
 				t.Errorf("Decode() updates = %d, want %d", len(dec.Config.Updates), tt.wantUpdates)
 			}
 
-			if dec.Unsafe != tt.wantUnsafe {
-				t.Errorf("Decode() unsafe = %v, want %v", dec.Unsafe, tt.wantUnsafe)
+			if dec.Unsafe {
+				t.Errorf("Decode() unsafe = true, want false (unmodeled constructs ride along verbatim)")
 			}
 
 			if tt.wantGroups && (len(dec.Config.Updates) == 0 || dec.Config.Updates[0].Groups.Empty()) {
@@ -116,8 +110,8 @@ updates:
 // TestDecodeCustomNamedGroupsFlagsEntry pins the false-positive fix behind
 // the grouping-missing finding: GitHub's schema allows arbitrary group
 // names, so an entry whose groups use names outside the canonical model
-// must carry the audit flag distinguishing "has groups this tool cannot
-// see" from "has no groups at all" — per entry, not per document.
+// must report "has groups this tool cannot see" — per entry, not per
+// document — while the names ride in Groups.Unmodeled, safe to repair.
 func TestDecodeCustomNamedGroupsFlagsEntry(t *testing.T) {
 	t.Parallel()
 
@@ -142,24 +136,24 @@ updates:
 		t.Fatalf("Decode() error = %v", err)
 	}
 
-	if !dec.Unsafe {
-		t.Error("Decode() Unsafe = false for custom group names, want true (rewrite would drop them)")
-	}
-
-	if len(dec.UnknownGroupNames) != 1 || dec.UnknownGroupNames[0] != "gomod" {
-		t.Errorf("Decode() UnknownGroupNames = %v, want [gomod]", dec.UnknownGroupNames)
+	if dec.Unsafe {
+		t.Error("Decode() Unsafe = true for custom group names, want false (carried verbatim)")
 	}
 
 	if len(dec.Config.Updates) != 2 {
 		t.Fatalf("Decode() updates = %d, want 2", len(dec.Config.Updates))
 	}
 
-	if !dec.Config.Updates[0].HasUnmodeledGroups {
-		t.Error("Decode() entry 0 HasUnmodeledGroups = false, want true (groups mapping with unknown names)")
+	if !dec.Config.Updates[0].HasUnmodeledGroups() {
+		t.Error("Decode() entry 0 HasUnmodeledGroups() = false, want true (groups mapping with unknown names)")
 	}
 
-	if dec.Config.Updates[1].HasUnmodeledGroups {
-		t.Error("Decode() entry 1 HasUnmodeledGroups = true, want false (no groups mapping at all)")
+	if _, carried := dec.Config.Updates[0].Groups.Unmodeled["gomod"]; !carried {
+		t.Error("Decode() entry 0 Groups.Unmodeled has no \"gomod\", want the custom name carried")
+	}
+
+	if dec.Config.Updates[1].HasUnmodeledGroups() {
+		t.Error("Decode() entry 1 HasUnmodeledGroups() = true, want false (no groups mapping at all)")
 	}
 
 	if !dec.Config.Updates[0].Groups.Empty() {
@@ -232,31 +226,30 @@ func TestDecodeGroupShapesFlagMatrix(t *testing.T) {
 				t.Fatalf("Decode() updates = %d, want 1", len(dec.Config.Updates))
 			}
 
-			if got := dec.Config.Updates[0].HasUnmodeledGroups; got != tt.wantFlag {
-				t.Errorf("Decode() HasUnmodeledGroups = %v, want %v", got, tt.wantFlag)
+			if got := dec.Config.Updates[0].HasUnmodeledGroups(); got != tt.wantFlag {
+				t.Errorf("Decode() HasUnmodeledGroups() = %v, want %v", got, tt.wantFlag)
 			}
 		})
 	}
 }
 
-// TestDecodeUnknownGroupValueKeysUnsafe pins the group-value half of the
-// unsafe audit: canonical group names carry a known key schema
-// (minor-and-patch knows update-types, actions knows patterns), and
-// unknown keys inside them (exclude-patterns, applies-to, ...) are valid
-// GitHub schema this tool does not model. They must make the document
-// unsafe so repair never silently drops them; the modeled names keep
-// decoding and the entry keeps its groups, so the grouping-missing
-// suppression is untouched.
-func TestDecodeUnknownGroupValueKeysUnsafe(t *testing.T) {
+// TestDecodeUnmodeledGroupValueKeysCarried pins the group-value half of the
+// passthrough: canonical group names carry a typed key schema
+// (minor-and-patch knows update-types, actions knows patterns), and keys
+// inside them outside that schema (exclude-patterns, applies-to, ...) are
+// valid GitHub schema this tool does not type. They ride in the group's
+// Unmodeled map, so repair fills missing canonical fields without dropping
+// them; the modeled names keep decoding and the entry keeps its groups, so
+// the grouping-missing suppression is untouched.
+func TestDecodeUnmodeledGroupValueKeysCarried(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name       string
 		groupsYAML string
-		wantUnsafe bool
 	}{
 		{
-			name: "unknown key inside minor-and-patch is audited unsafe",
+			name: "unknown key inside minor-and-patch is carried",
 			groupsYAML: `      minor-and-patch:
         update-types:
           - minor
@@ -264,28 +257,24 @@ func TestDecodeUnknownGroupValueKeysUnsafe(t *testing.T) {
         exclude-patterns:
           - go.mod
 `,
-			wantUnsafe: true,
 		},
 		{
-			name: "unknown key inside actions is audited unsafe",
+			name: "unknown key inside actions is carried",
 			groupsYAML: `      actions:
         patterns:
           - "*"
         applies-to:
           - security-updates
 `,
-			wantUnsafe: true,
 		},
 		{
-			name: "canonical keys only stay safe",
-			groupsYAML: `      minor-and-patch:
-        update-types:
-          - minor
-      actions:
+			name: "update-types inside actions is carried too",
+			groupsYAML: `      actions:
         patterns:
           - "*"
+        update-types:
+          - minor
 `,
-			wantUnsafe: false,
 		},
 	}
 
@@ -308,35 +297,45 @@ func TestDecodeUnknownGroupValueKeysUnsafe(t *testing.T) {
 				t.Fatalf("Decode() error = %v", err)
 			}
 
-			if dec.Unsafe != tt.wantUnsafe {
-				t.Errorf("Decode() unsafe = %v, want %v", dec.Unsafe, tt.wantUnsafe)
-			}
-
-			if len(dec.UnknownGroupNames) != 0 {
-				t.Errorf("Decode() UnknownGroupNames = %v, want none (names are canonical)", dec.UnknownGroupNames)
+			if dec.Unsafe {
+				t.Errorf("Decode() unsafe = true, want false (group-value keys ride along verbatim)")
 			}
 
 			if len(dec.Config.Updates) != 1 {
 				t.Fatalf("Decode() updates = %d, want 1", len(dec.Config.Updates))
 			}
 
-			if dec.Config.Updates[0].HasUnmodeledGroups {
-				t.Error("Decode() HasUnmodeledGroups = true, want false (canonical names are modeled)")
+			if dec.Config.Updates[0].HasUnmodeledGroups() {
+				t.Error("Decode() HasUnmodeledGroups() = true, want false (names are canonical)")
 			}
 
 			if dec.Config.Updates[0].Groups.Empty() {
 				t.Error("Decode() groups empty, want the modeled canonical groups kept")
+			}
+
+			encoded, err := dec.Config.Encode()
+			if err != nil {
+				t.Fatalf("Encode() error = %v", err)
+			}
+
+			redecoded, err := dependabot.Decode(encoded)
+			if err != nil {
+				t.Fatalf("re-Decode() error = %v", err)
+			}
+
+			if !dependabot.Equal(dec.Config, redecoded.Config) {
+				t.Errorf("round-trip lost group-value keys:\n%s", encoded)
 			}
 		})
 	}
 }
 
 // TestDecodeCanonicalGroupValueNonMappingIsUnparseable pins the corruption
-// boundary under the group-value audit: a canonical name whose value is not
-// a mapping (list, scalar) fails the typed parse, so repair is suggest-only
-// via the unparseable path and the malformed shape can never be rewritten.
-// A null value is the documented exception: it decodes to "no modeled
-// group" and stays on the safe path.
+// boundary under the group-value passthrough: a canonical name whose value
+// is not a mapping (list, scalar) fails the typed parse, so repair is
+// suggest-only via the unparseable path and the malformed shape can never
+// be rewritten. A null value is the documented exception: it decodes to "no
+// modeled group" and stays on the safe path.
 func TestDecodeCanonicalGroupValueNonMappingIsUnparseable(t *testing.T) {
 	t.Parallel()
 
@@ -375,16 +374,13 @@ func TestDecodeCanonicalGroupValueNonMappingIsUnparseable(t *testing.T) {
 	}
 }
 
-// TestAuditEntriesRawTypedAlignment pins the raw↔typed alignment invariant
-// documented on auditEntries: the typed decoder skips null updates items,
-// so the per-entry HasUnmodeledGroups fold must track non-null entries. A
-// null entry before an unmodeled-groups entry must neither shift nor drop
-// the flag. Non-null non-mapping entries fail the typed parse, keeping
-// alignment total for every decodable document.
-func TestAuditEntriesRawTypedAlignment(t *testing.T) {
+// TestDecodeUpdatesShapes pins the updates-list parse boundary: null items
+// are skipped by the typed decoder, and scalar or mapping forms of
+// `updates:` fail the parse (the corruption path, suggest-only).
+func TestDecodeUpdatesShapes(t *testing.T) {
 	t.Parallel()
 
-	t.Run("null entry does not shift the fold", func(t *testing.T) {
+	t.Run("null entry does not disturb the typed decode", func(t *testing.T) {
 		t.Parallel()
 
 		dec, err := dependabot.Decode([]byte(`version: 2
@@ -405,8 +401,8 @@ updates:
 			t.Fatalf("Decode() updates = %d, want 1 (the null item is skipped)", len(dec.Config.Updates))
 		}
 
-		if !dec.Config.Updates[0].HasUnmodeledGroups {
-			t.Error("Decode() HasUnmodeledGroups = false after a null entry, want true (raw index would misalign)")
+		if !dec.Config.Updates[0].HasUnmodeledGroups() {
+			t.Error("Decode() HasUnmodeledGroups() = false after a null entry, want true")
 		}
 	})
 

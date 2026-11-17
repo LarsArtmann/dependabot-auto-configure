@@ -80,6 +80,9 @@ updates:
           - "*"
 `),
 	)
+	f.Add([]byte("version: 2\nx-common: &common\n  a: 1\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    extra: *common\n"))
+	f.Add([]byte("version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    sched2:\n      <<: {interval: weekly}\n"))
+	f.Add([]byte("version: 2\nupdates:\n  - package-ecosystem: github-actions\n    directories:\n      - \"/\"\n      - \".github/actions/*/*\"\n"))
 
 	f.Fuzz(func(t *testing.T, data []byte) {
 		res, err := dependabot.Decode(data)
@@ -87,12 +90,32 @@ updates:
 			return
 		}
 
-		unsafeSignals := len(res.UnknownTopLevel) > 0 ||
-			res.UnknownEntryFields ||
-			len(res.UnknownGroupNames) > 0
+		// The Unsafe verdict must always agree with the individual reasons,
+		// and a safe decode must round-trip verbatim through Encode.
+		if res.Unsafe != (len(res.UnsafeReasons) > 0) {
+			t.Fatalf("Unsafe = %v but reasons = %v for input %q", res.Unsafe, res.UnsafeReasons, data)
+		}
 
-		if res.Unsafe != unsafeSignals {
-			t.Fatalf("Unsafe = %v but audit signals = %v for input %q", res.Unsafe, unsafeSignals, data)
+		if res.Unsafe {
+			return
+		}
+
+		encoded, encErr := res.Config.Encode()
+		if encErr != nil {
+			t.Fatalf("Encode() error = %v for input %q", encErr, data)
+		}
+
+		again, decErr := dependabot.Decode(encoded)
+		if decErr != nil {
+			t.Fatalf("re-Decode() error = %v for input %q, output %q", decErr, data, encoded)
+		}
+
+		if again.Unsafe {
+			t.Fatalf("safe config re-decoded unsafe, reasons = %v for input %q, output %q", again.UnsafeReasons, data, encoded)
+		}
+
+		if !dependabot.Equal(res.Config, again.Config) {
+			t.Fatalf("round-trip changed the config for input %q, output %q", data, encoded)
 		}
 	})
 }

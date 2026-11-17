@@ -2,6 +2,7 @@ package dependabot
 
 import (
 	"fmt"
+	"path"
 	"reflect"
 	"sort"
 	"strings"
@@ -172,16 +173,16 @@ func scheduleMissing(u Update) bool {
 
 // Reconcile merges desired entries into an existing configuration without
 // destroying user intent: existing entries keep their non-canonical choices
-// (a monthly schedule stays monthly), only missing fields are filled from
-// the desired counterpart, missing entries are appended, and orphan entries
-// (configurations for ecosystems this tool did not detect) are preserved.
-// Reconcile assumes a safe (schema-known) existing config; callers gate it
-// on DecodeResult.Unsafe.
+// (a monthly schedule stays monthly, unmodeled fields ride along verbatim),
+// only missing fields are filled from the desired counterpart, missing
+// entries are appended, and orphan entries (configurations for ecosystems
+// this tool did not detect) are preserved. Reconcile assumes a safe
+// (round-trippable) existing config; callers gate it on DecodeResult.Unsafe.
 func Reconcile(existing, desired Config) Config {
-	out := Config{Version: CurrentVersion}
+	out := Config{Version: CurrentVersion, Unmodeled: existing.Unmodeled}
 
 	for _, update := range existing.Updates {
-		idx := desired.Find(update.PackageEcosystem, update.Directory)
+		idx := desiredIndexOf(update, desired)
 
 		if scheduleMissing(update) && idx >= 0 {
 			if update.Schedule == nil {
@@ -195,7 +196,7 @@ func Reconcile(existing, desired Config) Config {
 			update.OpenPullRequestsLimit = desired.Updates[idx].OpenPullRequestsLimit
 		}
 
-		if update.Groups.Empty() && idx >= 0 {
+		if update.Groups.Empty() && !update.HasUnmodeledGroups() && idx >= 0 {
 			update.Groups = desiredGroups(update.PackageEcosystem)
 		}
 
@@ -211,6 +212,19 @@ func Reconcile(existing, desired Config) Config {
 	}
 
 	return out
+}
+
+// desiredIndexOf returns the index of the desired entry an existing entry
+// covers (same ecosystem; the desired directory is the entry's directory or
+// matched by its `directories` globs), or -1 for user-managed entries.
+func desiredIndexOf(update Update, desired Config) int {
+	for i, want := range desired.Updates {
+		if update.PackageEcosystem == want.PackageEcosystem && update.coversDir(want.Directory) {
+			return i
+		}
+	}
+
+	return -1
 }
 
 // ecosystemDirs maps the canonical Dependabot directory of every detected
@@ -248,13 +262,29 @@ func ecosystemDirs(shape RepoShape, eco Ecosystem) map[string]bool {
 }
 
 // entryDetected reports whether an existing updates entry corresponds to
-// something detection found.
+// something detection found. Entries using the glob `directories` form
+// match any detected directory their patterns cover; an unparseable
+// pattern counts as detected (a false orphan is noise, a false entry-
+// missing would duplicate coverage).
 func entryDetected(u Update, shape RepoShape) bool {
 	if u.PackageEcosystem == EcosystemGitHubActions {
 		return shape.HasGitHubActions
 	}
 
-	return ecosystemDirs(shape, u.PackageEcosystem)[u.Directory]
+	detected := ecosystemDirs(shape, u.PackageEcosystem)
+	if detected[u.Directory] {
+		return true
+	}
+
+	for _, pattern := range u.Directories {
+		for dir := range detected {
+			if match, err := path.Match(pattern, dir); err != nil || match {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // Diff compares an existing configuration (nil = file missing) against the
@@ -295,11 +325,13 @@ func Diff(
 
 	if invalid := dec.Config.Validate(); invalid != nil {
 		issues = append(issues, ConfigIssue{
-			Rule:       "dependabot-entry-invalid",
-			Message:    fmt.Sprintf("existing config has an invalid entry and was left untouched: %v", invalid),
-			Severity:   finding.SeverityError,
+			Rule: "dependabot-entry-invalid",
+			Message: fmt.Sprintf("existing config has an invalid entry and was left untouched: %v", invalid),
+			// Warning, not error: repair refuses to write these by design,
+			// so a higher severity would be a permanent gate failure.
+			Severity:   finding.SeverityWarning,
 			File:       file,
-			Suggestion: "give every updates entry a package-ecosystem and a directory, or remove the broken entry",
+			Suggestion: "give every updates entry a package-ecosystem and a directory (or directories), or remove the broken entry",
 		})
 	}
 
@@ -391,8 +423,8 @@ func Diff(
 // entryIssues reports the canonical fields an existing entry is missing:
 // schedule interval, explicit PR limit, and update groups. Entries whose
 // groups use names outside the canonical model are not "missing" groups —
-// the audit flag Update.HasUnmodeledGroups holds the grouping-missing
-// finding, and DecodeResult.UnknownGroupNames reports the names instead.
+// Update.HasUnmodeledGroups holds the grouping-missing finding, and since
+// v0.4.0 the names ride in Groups.Unmodeled, preserved verbatim.
 func entryIssues(got Update, want Update, file finding.FilePath) []autoconfigure.ConfigIssue {
 	var issues []autoconfigure.ConfigIssue
 
@@ -425,7 +457,7 @@ func entryIssues(got Update, want Update, file finding.FilePath) []autoconfigure
 		})
 	}
 
-	if got.Groups.Empty() && !got.HasUnmodeledGroups {
+	if got.Groups.Empty() && !got.HasUnmodeledGroups() {
 		issues = append(issues, ConfigIssue{
 			Rule: "dependabot-grouping-missing",
 			Message: fmt.Sprintf(
