@@ -68,6 +68,11 @@ const (
 // verbatim re-encode cannot reproduce faithfully.
 const mergeKeyTag = "!!merge"
 
+// nullTag identifies YAML null scalars (~, null, or empty): the encoder
+// renders a captured null as an empty string, which re-decodes as !!str —
+// a null inside an unmodeled subtree cannot round-trip verbatim.
+const nullTag = "!!null"
+
 // Schedule controls when Dependabot runs an updates entry. Day, Time, and
 // Timezone are user customizations: decoded, preserved verbatim by Reconcile,
 // and never generated — the canonical form schedules a plain weekly interval.
@@ -380,11 +385,13 @@ func auditGroupsShape(reasons []string, groups *Groups, where string) []string {
 	return reasons
 }
 
-// scanUnmodeledNode reports alias and merge-key nodes inside one captured
-// unmodeled value. An alias re-emitted verbatim dangles whenever its anchor
-// is defined inside a typed field (the typed re-encode strips anchors), and
-// a merge key re-encodes with its tag spelled out — a shape GitHub rejects.
-// Both are vanishingly rare in dependabot.yml; suggest-only is the safe call.
+// scanUnmodeledNode reports alias, merge-key, and null nodes inside one
+// captured unmodeled value. An alias re-emitted verbatim dangles whenever its
+// anchor is defined inside a typed field (the typed re-encode strips
+// anchors), a merge key re-encodes with its tag spelled out — a shape GitHub
+// rejects — and a null scalar re-encodes as an empty string (found by
+// fuzzing: input "0: {0}"). All are vanishingly rare in dependabot.yml;
+// suggest-only is the safe call.
 func scanUnmodeledNode(reasons []string, where string, node yaml.Node) []string {
 	switch node.Kind {
 	case yaml.AliasNode:
@@ -400,14 +407,26 @@ func scanUnmodeledNode(reasons []string, where string, node yaml.Node) []string 
 				continue
 			}
 
+			if keyNode.Tag == nullTag {
+				reasons = append(
+					reasons, fmt.Sprintf("null mapping key inside unmodeled %s cannot be carried verbatim", where),
+				)
+
+				continue
+			}
+
 			reasons = scanUnmodeledNode(reasons, where, *node.Content[i+1])
 		}
 	case yaml.SequenceNode:
 		for _, child := range node.Content {
 			reasons = scanUnmodeledNode(reasons, where, *child)
 		}
-	case yaml.DocumentNode, yaml.ScalarNode:
-		// Leaf shapes carry no nested aliases or merge keys.
+	case yaml.ScalarNode:
+		if node.Tag == nullTag {
+			reasons = append(reasons, fmt.Sprintf("null value inside unmodeled %s cannot be carried verbatim", where))
+		}
+	case yaml.DocumentNode:
+		// Leaf shapes carry no nested aliases, merge keys, or nulls.
 	}
 
 	return reasons

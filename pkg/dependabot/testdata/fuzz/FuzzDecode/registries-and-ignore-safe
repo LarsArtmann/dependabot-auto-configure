@@ -1,12 +1,2 @@
 go test fuzz v1
-[]byte(`version: 2
-registries:
-  github:
-    type: npm-registry
-    url: https://npm.pkg.github.com
-updates:
-  - package-ecosystem: npm
-    directory: /
-    ignore:
-      - dependency-name: left-pad
-`)
+[]byte("version: 2\nregistries:\n  github:\n    type: npm-registry\n    url: https://npm.pkg.github.com\nupdates:\n  - package-ecosystem: npm\n    directory: /\n    ignore:\n      - dependency-name: left-pad\n")

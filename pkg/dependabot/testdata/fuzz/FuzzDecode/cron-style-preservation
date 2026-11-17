@@ -1,9 +1,2 @@
 go test fuzz v1
-[]byte(`version: 2
-updates:
-  - package-ecosystem: gomod
-    directory: /
-    schedule:
-      interval: weekly
-      cron: "0 6 * * 1"
-`)
+[]byte("version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    schedule:\n      interval: weekly\n      cron: \"0 6 * * 1\"\n")

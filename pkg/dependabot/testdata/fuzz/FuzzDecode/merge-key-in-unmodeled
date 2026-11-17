@@ -1,8 +1,2 @@
 go test fuzz v1
-[]byte(`version: 2
-updates:
-  - package-ecosystem: gomod
-    directory: /
-    ignore:
-      <<: { dependency-name: foo }
-`)
+[]byte("version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    ignore:\n      <<: { dependency-name: foo }\n")

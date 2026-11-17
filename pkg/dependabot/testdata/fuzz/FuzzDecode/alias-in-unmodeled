@@ -1,10 +1,2 @@
 go test fuzz v1
-[]byte(`version: 2
-x-templates: &tpl
-  reviewers:
-    - lars
-updates:
-  - package-ecosystem: npm
-    directory: /
-    reviewers: *tpl
-`)
+[]byte("version: 2\nx-templates: &tpl\n  reviewers:\n    - lars\nupdates:\n  - package-ecosystem: npm\n    directory: /\n    reviewers: *tpl\n")

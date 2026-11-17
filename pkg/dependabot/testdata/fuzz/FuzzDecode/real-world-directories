@@ -1,12 +1,2 @@
 go test fuzz v1
-[]byte(`version: 2
-updates:
-  - package-ecosystem: github-actions
-    directory: /
-    schedule:
-      interval: weekly
-  - package-ecosystem: pip
-    directories:
-      - "/"
-      - "/docs/**"
-`)
+[]byte("version: 2\nupdates:\n  - package-ecosystem: github-actions\n    directory: /\n    schedule:\n      interval: weekly\n  - package-ecosystem: pip\n    directories:\n      - \"/\"\n      - \"/docs/**\"\n")
