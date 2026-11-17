@@ -28,11 +28,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1788450739,
-        "narHash": "sha256-glZLQlzIn1fXH6PazR2iUmTo7kzzyYSshrWhLS9TqCU=",
+        "lastModified": 1790898470,
+        "narHash": "sha256-zTwuwezD0w3hpga6a6P8emidzAZFyWqlNeRBlpWOOl8=",
         "owner": "hercules-ci",
         "repo": "flake-parts",
-        "rev": "31729ca8cbdb4fa927b34e5f4353e6a83f39e993",
+        "rev": "024633cd702b10285db5cb19b40ad48d2399ba60",
         "type": "github"
       },
       "original": {
@@ -98,21 +98,20 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "systems": "systems",
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1789630646,
-        "narHash": "sha256-rCkNGhVw3bEgdoP+SgbRT/I21YNQRDq6X+Y4OQHOjXE=",
+        "lastModified": 1794486138,
+        "narHash": "sha256-HDfh6/BvNiemjTl4G5G5wkxFQ2DeY6ShBOuNWV0k87s=",
         "owner": "LarsArtmann",
         "repo": "go-nix-helpers",
-        "rev": "19fc8e5986d59f57ff8780fcbc5623fb412c345f",
+        "rev": "1a553ce7ad5a9e84b7e04a60e68ab81ff5dd6ab8",
         "type": "github"
       },
       "original": {
         "owner": "LarsArtmann",
         "repo": "go-nix-helpers",
-        "rev": "19fc8e5986d59f57ff8780fcbc5623fb412c345f",
+        "rev": "1a553ce7ad5a9e84b7e04a60e68ab81ff5dd6ab8",
         "type": "github"
       }
     },
@@ -158,21 +157,6 @@
         "go-nix-helpers": "go-nix-helpers",
         "linter-autoconfigure-sdk": "linter-autoconfigure-sdk",
         "nixpkgs": "nixpkgs"
-      }
-    },
-    "systems": {
-      "locked": {
-        "lastModified": 1681028828,
-        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
-        "owner": "nix-systems",
-        "repo": "default",
-        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-systems",
-        "repo": "default",
-        "type": "github"
       }
     },
     "treefmt-nix": {
