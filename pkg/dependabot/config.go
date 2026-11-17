@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"path"
+	"strconv"
 
 	"github.com/go-faster/yaml"
 )
@@ -94,9 +95,11 @@ type TypeGroup struct {
 }
 
 // PatternGroup groups updates by dependency name pattern. Keys outside the
-// modeled set ride in Unmodeled.
+// modeled set ride in Unmodeled. Patterns is omitempty so a group carrying
+// only unmodeled keys (e.g. actions with update-types) re-encodes without
+// inventing an empty pattern list that would match nothing.
 type PatternGroup struct {
-	Patterns []string `yaml:"patterns"`
+	Patterns []string `yaml:"patterns,omitempty"`
 
 	// Unmodeled carries group keys outside the modeled set, verbatim (see
 	// Schedule.Unmodeled).
@@ -193,8 +196,11 @@ type CommitMessage struct {
 // of them (see Config.Validate). Fields this tool does not type at all
 // (ignore, reviewers, allow, target-branch, ...) ride in Unmodeled.
 type Update struct {
-	PackageEcosystem      Ecosystem `yaml:"package-ecosystem"`
-	Directory             string    `yaml:"directory"`
+	PackageEcosystem Ecosystem `yaml:"package-ecosystem"`
+	// Directory is omitempty: entries using the glob `directories`
+	// alternative carry no single directory, and an emitted empty
+	// "" would be a schema violation.
+	Directory             string    `yaml:"directory,omitempty"`
 	Directories           []string  `yaml:"directories,omitempty"`
 	Schedule              *Schedule `yaml:"schedule,omitempty"`
 	OpenPullRequestsLimit int       `yaml:"open-pull-requests-limit,omitempty"`
@@ -309,30 +315,30 @@ func auditUnrepresentable(cfg Config) []string {
 	}
 
 	for i := range cfg.Updates {
-		u := &cfg.Updates[i]
+		update := &cfg.Updates[i]
 		where := fmt.Sprintf("entry %d", i)
 
-		for key := range u.Unmodeled {
-			reasons = scanUnmodeledNode(reasons, fmt.Sprintf("%s key %q", where, key), u.Unmodeled[key])
+		for key := range update.Unmodeled {
+			reasons = scanUnmodeledNode(reasons, fmt.Sprintf("%s key %q", where, key), update.Unmodeled[key])
 		}
 
-		if u.Schedule != nil {
-			for key := range u.Schedule.Unmodeled {
+		if update.Schedule != nil {
+			for key := range update.Schedule.Unmodeled {
 				reasons = scanUnmodeledNode(
-					reasons, fmt.Sprintf("%s schedule key %q", where, key), u.Schedule.Unmodeled[key],
+					reasons, fmt.Sprintf("%s schedule key %q", where, key), update.Schedule.Unmodeled[key],
 				)
 			}
 		}
 
-		if u.CommitMessage != nil {
-			for key := range u.CommitMessage.Unmodeled {
+		if update.CommitMessage != nil {
+			for key := range update.CommitMessage.Unmodeled {
 				reasons = scanUnmodeledNode(
-					reasons, fmt.Sprintf("%s commit-message key %q", where, key), u.CommitMessage.Unmodeled[key],
+					reasons, fmt.Sprintf("%s commit-message key %q", where, key), update.CommitMessage.Unmodeled[key],
 				)
 			}
 		}
 
-		reasons = auditGroupsShape(reasons, u.Groups, where)
+		reasons = auditGroupsShape(reasons, update.Groups, where)
 	}
 
 	return reasons
@@ -351,13 +357,13 @@ func auditGroupsShape(reasons []string, groups *Groups, where string) []string {
 	}
 
 	for name := range groups.Unmodeled {
-		reasons = scanUnmodeledNode(reasons, fmt.Sprintf("%s group %q", where, name), groups.Unmodeled[name])
+		reasons = scanUnmodeledNode(reasons, where+" group "+strconv.Quote(name), groups.Unmodeled[name])
 	}
 
 	if groups.MinorAndPatch != nil {
 		for key := range groups.MinorAndPatch.Unmodeled {
 			reasons = scanUnmodeledNode(
-					reasons, fmt.Sprintf("%s group %q key %q", where, GroupMinorAndPatch, key),
+				reasons, fmt.Sprintf("%s group %q key %q", where, GroupMinorAndPatch, key),
 				groups.MinorAndPatch.Unmodeled[key],
 			)
 		}
@@ -366,7 +372,7 @@ func auditGroupsShape(reasons []string, groups *Groups, where string) []string {
 	if groups.Actions != nil {
 		for key := range groups.Actions.Unmodeled {
 			reasons = scanUnmodeledNode(
-					reasons, fmt.Sprintf("%s group %q key %q", where, GroupActions, key), groups.Actions.Unmodeled[key],
+				reasons, fmt.Sprintf("%s group %q key %q", where, GroupActions, key), groups.Actions.Unmodeled[key],
 			)
 		}
 	}
@@ -400,6 +406,8 @@ func scanUnmodeledNode(reasons []string, where string, node yaml.Node) []string 
 		for _, child := range node.Content {
 			reasons = scanUnmodeledNode(reasons, where, *child)
 		}
+	case yaml.DocumentNode, yaml.ScalarNode:
+		// Leaf shapes carry no nested aliases or merge keys.
 	}
 
 	return reasons

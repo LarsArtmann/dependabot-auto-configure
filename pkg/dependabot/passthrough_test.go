@@ -107,7 +107,11 @@ func TestPassthroughRepairFillsCanonicalFieldsWithoutDropping(t *testing.T) {
 	}
 
 	if root.OpenPullRequestsLimit != dependabot.DefaultOpenPullRequestsLimit {
-		t.Errorf("Reconcile() limit = %d, want filled to %d", root.OpenPullRequestsLimit, dependabot.DefaultOpenPullRequestsLimit)
+		t.Errorf(
+			"Reconcile() limit = %d, want filled to %d",
+			root.OpenPullRequestsLimit,
+			dependabot.DefaultOpenPullRequestsLimit,
+		)
 	}
 
 	if root.HasUnmodeledGroups() {

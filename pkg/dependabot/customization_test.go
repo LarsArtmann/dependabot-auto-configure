@@ -74,7 +74,7 @@ func TestDecodeUnknownScheduleKeyCarriedSafe(t *testing.T) {
 		"      interval: weekly",
 		"      cron: \"0 6 * * 1\"",
 		"",
-		}, "\n")
+	}, "\n")
 
 	res, err := dependabot.Decode([]byte(yaml))
 	if err != nil {
@@ -320,7 +320,7 @@ func TestDecodeCommitMessageUnknownKeyCarriedSafe(t *testing.T) {
 		"      prefix: chore",
 		"      prefix-development: chore(dev-deps)",
 		"",
-		}, "\n")
+	}, "\n")
 
 	res, err := dependabot.Decode([]byte(yaml))
 	if err != nil {

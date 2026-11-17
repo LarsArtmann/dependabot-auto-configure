@@ -40,8 +40,8 @@ updates:
 			wantUpdates: 0,
 		},
 		{
-			name: "unknown entry field rides along",
-			yaml: "version: 2\nupdates:\n  - package-ecosystem: npm\n    directory: /\n    assignees:\n      - someone\n",
+			name:        "unknown entry field rides along",
+			yaml:        "version: 2\nupdates:\n  - package-ecosystem: npm\n    directory: /\n    assignees:\n      - someone\n",
 			wantUpdates: 1,
 		},
 		{

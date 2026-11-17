@@ -444,7 +444,7 @@ func Diff(
 
 	if invalid := dec.Config.Validate(); invalid != nil {
 		issues = append(issues, ConfigIssue{
-			Rule: "dependabot-entry-invalid",
+			Rule:    "dependabot-entry-invalid",
 			Message: fmt.Sprintf("existing config has an invalid entry and was left untouched: %v", invalid),
 			// Warning, not error: repair refuses to write these by design,
 			// so a higher severity would be a permanent gate failure.

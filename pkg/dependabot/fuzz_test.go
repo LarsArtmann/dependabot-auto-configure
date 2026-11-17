@@ -80,9 +80,21 @@ updates:
           - "*"
 `),
 	)
-	f.Add([]byte("version: 2\nx-common: &common\n  a: 1\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    extra: *common\n"))
-	f.Add([]byte("version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    sched2:\n      <<: {interval: weekly}\n"))
-	f.Add([]byte("version: 2\nupdates:\n  - package-ecosystem: github-actions\n    directories:\n      - \"/\"\n      - \".github/actions/*/*\"\n"))
+	f.Add(
+		[]byte(
+			"version: 2\nx-common: &common\n  a: 1\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    extra: *common\n",
+		),
+	)
+	f.Add(
+		[]byte(
+			"version: 2\nupdates:\n  - package-ecosystem: gomod\n    directory: /\n    sched2:\n      <<: {interval: weekly}\n",
+		),
+	)
+	f.Add(
+		[]byte(
+			"version: 2\nupdates:\n  - package-ecosystem: github-actions\n    directories:\n      - \"/\"\n      - \".github/actions/*/*\"\n",
+		),
+	)
 
 	f.Fuzz(func(t *testing.T, data []byte) {
 		res, err := dependabot.Decode(data)
@@ -111,7 +123,12 @@ updates:
 		}
 
 		if again.Unsafe {
-			t.Fatalf("safe config re-decoded unsafe, reasons = %v for input %q, output %q", again.UnsafeReasons, data, encoded)
+			t.Fatalf(
+				"safe config re-decoded unsafe, reasons = %v for input %q, output %q",
+				again.UnsafeReasons,
+				data,
+				encoded,
+			)
 		}
 
 		if !dependabot.Equal(res.Config, again.Config) {
