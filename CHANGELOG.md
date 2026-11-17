@@ -14,24 +14,54 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - Nothing yet.
 
+## [0.4.0] - 2026-11-17
+
+### Changed
+
+- **Verbatim passthrough for unmodeled schema (the big autofix unlock).**
+  Every construct outside the typed model now rides along as raw YAML
+  nodes (`Unmodeled` maps on `Config`, `Update`, `Schedule`,
+  `CommitMessage`, `TypeGroup`, `PatternGroup`, and `Groups`): decoded,
+  preserved verbatim by `Reconcile`, re-emitted by `Encode`, never
+  generated, invisible to `Diff`. A fleet sweep found 34 of 300 local
+  repos suggest-only-forever on valid GitHub schema this tool never
+  typed — `ignore` (14), `reviewers` (8), `assignees` (5),
+  `commit-message.prefix-development` (5), `target-branch` (4),
+  `auto-merge`, `allow`, `versioning-strategy`, `cooldown`, top-level
+  `registries`/`enable-beta-ecosystems`, custom-named groups, and
+  unknown keys inside canonical groups — all of them now repair, filling
+  missing canonical fields while dropping nothing
+- `DecodeResult.Unsafe` shrinks to shapes a rewrite cannot reproduce
+  verbatim: the list form of `groups:`, and YAML aliases or merge keys
+  inside captured unmodeled subtrees (an alias can dangle when its
+  anchor sits in a typed field; a merge key re-encodes with its tag
+  spelled out). `UnsafeReasons` names each one; the three `Unknown*`
+  audit fields and the raw-key second parse are gone
+- `directories` (the glob-list alternative to `directory`) is modeled:
+  entries using it validate, count as covering the directories their
+  patterns match (no duplicate entries appended, canonical fields
+  filled), and orphan detection glob-matches against detection. An
+  unparseable pattern counts as covering — a duplicate entry would
+  break Dependabot, a missed fill is only info
+- `dependabot-entry-invalid` is warning severity, not error: repair
+  refuses to write these by design, so error severity was a permanent
+  findings-gate failure (unfixable-by-design must sit below the
+  fail-on threshold)
+- `Equal` is now truly semantic: position, style, and comment metadata
+  inside carried nodes, plus empty-vs-absent lists, no longer count —
+  a decoded config equals its own round-trip
+
 ### Fixed
 
-- `dependabot-grouping-missing` no longer fires for entries grouped
-  under custom names (GitHub's schema allows arbitrary group names, only
-  `minor-and-patch` and `actions` are modeled): Decode flags such entries
-  with the audit-only `Update.HasUnmodeledGroups`, so only entries with
-  no groups mapping at all report the finding; the unknown names remain
-  a separate unsafe-audit signal and repair stays suggest-only (issue #3)
-- Unknown keys INSIDE canonical group values (`exclude-patterns`,
-  `applies-to`, ...) are valid GitHub schema this tool does not model;
-  they now make the document audited unsafe so repair is suggest-only.
-  Before, such configs decoded SAFE and a repair rewrite silently
-  dropped the keys
-- A null `updates:` entry no longer misplaces or drops the per-entry
-  `HasUnmodeledGroups` audit fold: the typed decoder skips null list
-  items, so alignment is tracked over non-null entries only (previously
-  the raw index shifted the fold onto the wrong entry or dropped it
-  entirely, resurrecting the issue #3 false positive for that shape)
+- Encode no longer invents `directory: ""` for entries using the
+  `directories` form, and no longer fabricates `patterns: []` or
+  `update-types: []` when a canonical group carries only unmodeled keys
+  (e.g. `actions: {update-types: [...]}`) — an empty pattern list could
+  make the group match nothing
+- `Reconcile` no longer grafts a canonical group onto an entry that has
+  custom-named groups: the user grouped on purpose; the finding stays
+  suppressed and the groups stay untouched (previously masked by the
+  document being unsafe)
 
 ## [0.3.0] - 2026-10-02
 
