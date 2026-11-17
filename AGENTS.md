@@ -224,8 +224,13 @@ Non-obvious rules the flags enforce (empirically verified 2026-09-11):
 
 Table-driven tests for pure functions; integration tests with `t.TempDir`
 fixtures in `pkg/configure`. Coverage target: 80%+ on every package —
-currently detect 89.7%, configure 89.2%, dependabot 88.4%, provider 85.0%,
-cli 83.5% (detection's rewrite traded raw % for real-world branches).
+currently (v0.4.0, after the passthrough work) dependabot 90.8%,
+version 95.5%, detect 86.7%, configure 86.4%, provider 82.4%, cli 80.6%.
+Seeded randomized properties pin Reconcile (idempotence, preservation of
+modeled fields AND Unmodeled passthrough, mutation-tested) and
+`FuzzDecode` pins the parse boundary; its corpus in
+`pkg/dependabot/testdata/fuzz/FuzzDecode/` runs on plain `go test` —
+extend it with real-world shapes (it found the null round-trip break).
 The
 `TestRun*` suite encodes the safety contract (check/dry-run/unsafe/no-op) —
 extend it when adding behavior.

@@ -397,30 +397,7 @@ func scanUnmodeledNode(reasons []string, where string, node yaml.Node) []string 
 	case yaml.AliasNode:
 		return append(reasons, fmt.Sprintf("YAML alias inside unmodeled %s cannot be carried verbatim", where))
 	case yaml.MappingNode:
-		for i := 0; i+1 < len(node.Content); i += 2 {
-			keyNode := node.Content[i]
-			if keyNode.Tag == mergeKeyTag || keyNode.Value == "<<" {
-				reasons = append(
-					reasons, fmt.Sprintf("merge key inside unmodeled %s cannot be carried verbatim", where),
-				)
-
-				continue
-			}
-
-			if keyNode.Tag == nullTag {
-				reasons = append(
-					reasons, fmt.Sprintf("null mapping key inside unmodeled %s cannot be carried verbatim", where),
-				)
-
-				continue
-			}
-
-			if keyNode.Kind != yaml.ScalarNode {
-				reasons = scanUnmodeledNode(reasons, where+" key", *keyNode)
-			}
-
-			reasons = scanUnmodeledNode(reasons, where, *node.Content[i+1])
-		}
+		return scanUnmodeledMapping(reasons, where, node)
 	case yaml.SequenceNode:
 		for _, child := range node.Content {
 			reasons = scanUnmodeledNode(reasons, where, *child)
@@ -434,6 +411,42 @@ func scanUnmodeledNode(reasons []string, where string, node yaml.Node) []string 
 	}
 
 	return reasons
+}
+
+// scanUnmodeledMapping audits one captured mapping: every key is checked
+// (null and merge keys break the re-encode exactly like null values),
+// complex keys are descended like values, and scalar keys need no walk.
+func scanUnmodeledMapping(reasons []string, where string, node yaml.Node) []string {
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		keyNode := node.Content[i]
+
+		if reason := unrepresentableKeyReason(keyNode); reason != "" {
+			reasons = append(reasons, fmt.Sprintf("%s inside unmodeled %s cannot be carried verbatim", reason, where))
+
+			continue
+		}
+
+		if keyNode.Kind != yaml.ScalarNode {
+			reasons = scanUnmodeledNode(reasons, where+" key", *keyNode)
+		}
+
+		reasons = scanUnmodeledNode(reasons, where, *node.Content[i+1])
+	}
+
+	return reasons
+}
+
+// unrepresentableKeyReason names why a mapping key cannot survive the
+// re-encode, or "" when it can.
+func unrepresentableKeyReason(keyNode *yaml.Node) string {
+	switch {
+	case keyNode.Tag == mergeKeyTag || keyNode.Value == "<<":
+		return "merge key"
+	case keyNode.Tag == nullTag:
+		return "null mapping key"
+	default:
+		return ""
+	}
 }
 
 // Encode renders the canonical YAML: two-space indent, stable field order
