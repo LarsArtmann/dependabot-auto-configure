@@ -23,10 +23,13 @@ bounded configuration.
 - Generates weekly grouped updates (minor+patch in one PR, actions by
   pattern) with an explicit `open-pull-requests-limit: 5`
 - Repairs existing configs by filling only what is missing — a monthly
-  schedule you chose stays monthly, and your `labels` / `commit-message`,
-  schedule `day`/`time`/`timezone` are preserved verbatim
-- Refuses to rewrite configs containing constructs it does not model
-  (registries, custom groups): those get findings, not silent drops
+  schedule you chose stays monthly, and everything else you wrote
+  (`labels`, `commit-message`, schedule `day`/`time`/`timezone`, and any
+  schema this tool never typed — `registries`, `ignore`, `reviewers`,
+  `target-branch`, custom-named groups, ...) is carried through verbatim
+- Refuses to rewrite only what a rewrite cannot reproduce verbatim
+  (non-mapping `groups:`, YAML anchors): those get findings, not silent
+  drops ([ADR 0002](docs/adr/0002-verbatim-passthrough-for-unmodeled-schema.md))
 - Optional `--enable-security-fixes` flips on Dependabot security updates
   for the repo via the GitHub API (needs `GITHUB_TOKEN`/`GH_TOKEN`)
 

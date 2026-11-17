@@ -1,6 +1,6 @@
 # ADR 0001: Unsafe configs are suggest-only
 
-- Status: accepted
+- Status: accepted (scope narrowed by [ADR 0002](0002-verbatim-passthrough-for-unmodeled-schema.md): unmodeled constructs are carried verbatim since v0.4.0; this gate now covers only non-round-trippable shapes and invalid entries)
 - Date: 2026-09-11 (decision implemented in v0.1.0; recorded as ADR 2026-09-17)
 - Deciders: Lars Artmann
 

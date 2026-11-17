@@ -26,32 +26,35 @@ Sibling to `golangci-lint-auto-configure` and `oxlint-auto-configure`.
 - **Never destroy user intent.** Existing non-canonical choices (monthly
   schedules, custom limits, orphan entries for ecosystems we did not detect)
   are preserved byte-for-value. Only _missing_ fields are filled.
-- **Unsafe configs are suggest-only.** When `Decode` reports unknown top-level
-  keys, unknown entry fields, or unknown group names (`DecodeResult.Unsafe`),
-  repair MUST NOT write. A rewrite would silently drop the user's
-  customizations (registries, custom groups). This is tested in
-  `pkg/configure/configure_test.go`. Modeled customizations — entry `labels`
-  and schedule `day`/`time`/`timezone` — are the exception: since v0.2.0 they
-  are decoded, preserved verbatim by Reconcile, never generated, and invisible
-  to Diff, so a config carrying them decodes Safe and repair converges
-  (`pkg/dependabot/customization_test.go`). Unknown schedule keys, unknown
-  commit-message keys, and unknown keys INSIDE canonical group values
-  (`exclude-patterns`, `applies-to`, ...) are audited unsafe for the same
-  reason: a rewrite would drop them.
+- **Unsafe = cannot round-trip, nothing else.** Since v0.4.0 every
+  construct outside the typed model is captured as raw `yaml.Node`s
+  (the `Unmodeled` inline maps — see below) and carried verbatim through
+  Reconcile/Encode, so a rewrite drops NOTHING and repair converges on
+  configs full of unmodeled schema. `DecodeResult.Unsafe` fires only for
+  shapes no rewrite can reproduce: list-form `groups:`, YAML aliases or
+  merge keys inside captured unmodeled subtrees (an alias dangles when
+  its anchor sits in a typed field). `UnsafeReasons` names each. Unsafe
+  repair is suggest-only, tested in `pkg/configure/configure_test.go`
+  and `pkg/dependabot/passthrough_test.go`.
 - **Semantic idempotence, not byte idempotence.** A hand-written config that
   parses to the same `Config` is a no-op (`dependabot.Equal` on the reconcile
-  result); quoting or indentation differences never trigger rewrites. Byte
-  comparison is only the secondary fast path.
+  result); quoting, indentation, node position/comment metadata, and
+  empty-vs-absent lists never trigger rewrites. Byte comparison is only
+  the secondary fast path. `Equal` normalizes via `semanticConfig`/
+  `semanticNode` — extend those when adding node-carrying fields, or
+  cross-decode comparisons silently break.
 - **Invalid entries are suggest-only too.** `Config.Validate` gates repair:
-  an existing entry missing `package-ecosystem` or `directory` gets a
-  `dependabot-entry-invalid` finding and the file is never rewritten.
+  an existing entry missing `package-ecosystem` or both `directory` and
+  `directories` gets a `dependabot-entry-invalid` finding (WARNING
+  severity — unfixable-by-design must sit below the fail-on threshold,
+  BuildFlow gotcha #156) and the file is never rewritten.
   `Diff` owns the issue vocabulary; findings always flow through it.
 - **Skip directories with a `testdata` / `vendor` / `node_modules` / `.git`
   segment** during detection (see `pkg/detect/detect.go`).
 - **Module cap = 20** (`dependabot.MaxModuleEntries`). Beyond that, generate
   root-only and emit `dependabot-modules-capped`. Do not raise silently.
 
-## Ecosystem model (v0.3.0)
+## Config model (v0.4.0)
 
 - `RepoShape` carries per-ecosystem directory lists (`GoModuleDirs`,
   `NPMDirs`, `PipDirs`, `CargoDirs`, `GradleDirs`; "" = root) plus the
@@ -62,28 +65,48 @@ Sibling to `golangci-lint-auto-configure` and `oxlint-auto-configure`.
   (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `bun.lock[b]`).
   A malformed package.json contributes no workspace knowledge — detection
   only ever gets MORE conservative from a broken manifest.
-- `commit-message` is a modeled customization (prefix/include/separator)
-  with the labels contract: decoded, preserved verbatim, never generated,
-  invisible to Diff. Unknown keys INSIDE the block are audited unsafe.
-- List-form `groups:` decodes (Groups.UnmarshalYAML tolerates
-  non-mapping shapes) and is audited unsafe, so repair never rewrites it.
-  Do not "fix" this by generating a mapping — that would destroy intent.
-- Custom-named groups (`groups: <any-name>:`) set the per-entry audit flag
-  `Update.HasUnmodeledGroups` (yaml:"-", never generated), which suppresses
-  `dependabot-grouping-missing` — the entry HAS groups (issue #3). Unknown
-  names still make the document unsafe (suggest-only). Empty mappings
-  (`groups: {}`), null-valued canonical keys, and the list form count as
-  "no groups mapping at all" and keep the finding, staying consistent with
-  Reconcile's fill-on-safe-path.
-- Canonical group values carry a per-name key schema (`knownGroupFields`:
-  `minor-and-patch` knows only `update-types`, `actions` only `patterns`);
-  unknown keys inside them are audited unsafe (suggest-only). Non-mapping
-  canonical values (list, scalar) fail the typed parse — the corruption
-  path, also suggest-only; only null stays on the safe path. The
-  `auditEntries` raw↔typed fold tracks NON-NULL entries: go-faster/yaml
-  skips null `updates:` list items, so folding by raw index would shift
-  the flag onto the wrong entry (pinned by
-  `TestAuditEntriesRawTypedAlignment`).
+- **Verbatim passthrough is the core mechanism.** Every struct that maps a
+  YAML mapping carries `Unmodeled map[string]yaml.Node` tagged
+  `yaml:",inline"` (Config, Update, Schedule, CommitMessage, TypeGroup,
+  PatternGroup, Groups). go-faster/yaml's inline-map decode captures
+  unknown keys as nodes and its encoder re-emits them sorted and
+  deterministically (byte-stable across decode→encode — verified by fuzz).
+  Contract: decoded, preserved verbatim by Reconcile, re-emitted by Encode,
+  never generated, invisible to Diff. This is what made 34/300 fleet repos
+  (ignore/reviewers/assignees/target-branch/registries/custom groups/...)
+  repairable instead of suggest-only-forever. Do NOT add a typed field just
+  to "support" a new schema key — the passthrough already preserves it.
+  Value-side line comments on unmodeled keys survive; head comments on keys
+  do not (same as typed fields — rewrites never preserved comments).
+- List-form `groups:` decodes (Groups.UnmarshalYAML tolerates non-mapping
+  shapes and sets `Groups.NonMapping`) and is audited unsafe, so repair
+  never rewrites it. Do not "fix" this by generating a mapping — that
+  would destroy intent.
+- Custom-named groups ride in `Groups.Unmodeled`; `Update.HasUnmodeledGroups()`
+  (derived, not a stored flag anymore) suppresses
+  `dependabot-grouping-missing` — the entry HAS groups (issue #3) — and
+  Reconcile must NOT graft canonical groups onto such an entry (the user
+  grouped on purpose). Empty mappings (`groups: {}`), null-valued canonical
+  keys, and the list form count as "no groups mapping at all" and keep the
+  finding.
+- Canonical group values (`minor-and-patch`, `actions`) are typed
+  (`update-types`, `patterns` — both omitempty so a group carrying only
+  unmodeled keys never fabricates an empty list); other keys inside them
+  (`exclude-patterns`, `applies-to`, `actions.update-types`, ...) ride in
+  the group's Unmodeled. Non-mapping canonical values (list, scalar) fail
+  the typed parse — the corruption path, also suggest-only; only null
+  stays on the safe path.
+- `directories` (glob-list alternative to `directory`) is a typed,
+  preserved-verbatim field. `Update.coversDir`/`Config.Find` treat an entry
+  as covering any directory its patterns match (an UNPARSEABLE pattern
+  counts as covering — a duplicate entry breaks Dependabot, a missed fill
+  is only info); orphan detection (`entryDetected`) glob-matches against
+  the detected shape the same way. `Validate` accepts either spelling.
+- `DecodeStageInspect` is gone: Decode is a single typed pass plus
+  `auditUnrepresentable`, which walks only the captured Unmodeled maps
+  (alias/merge-key scan) and the Groups.NonMapping flag. There is no
+  raw↔typed fold anymore — the old null-entry alignment hazard is
+  structurally gone.
 - `flake.nix` pins `goPkgAttr = "go_1_27"`: the go-standard auto-pick
   resolved to go_1_26, which fails the encoding/json/v2 floor.
 - `scripts/sweep.sh <projects-dir> [out.csv]` sweeps all local repos in
