@@ -179,20 +179,34 @@ func TestRunCheckDoesNotWrite(t *testing.T) {
 	}
 }
 
-func TestRunUnsafeConfigIsSuggestOnly(t *testing.T) {
+// TestRunRegistriesConfigRepairsWithPassthrough pins the v0.4.0 headline:
+// a config carrying top-level keys outside the typed model (registries —
+// real GitHub schema, previously suggest-only forever) now repairs, keeps
+// the registries block verbatim, and converges on the second run.
+func TestRunRegistriesConfigRepairsWithPassthrough(t *testing.T) {
 	t.Parallel()
 
-	unsafe := "version: 2\nregistries:\n  npm: {}\nupdates: []\n"
-	root := repoWithConfig(t, unsafe)
+	withRegistries := `version: 2
+registries:
+  npm:
+    type: npm-registry
+    url: https://registry.npmjs.org
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+`
+	root := repoWithConfig(t, withRegistries)
 
 	result := run(t, root, configure.Options{})
 
-	if !result.UnsafeRepair {
-		t.Fatal("Run() UnsafeRepair = false, want true for unknown top-level keys")
+	if result.UnsafeRepair {
+		t.Fatal("Run() UnsafeRepair = true for a registries config, want passthrough repair")
 	}
 
-	if result.Wrote {
-		t.Error("Run() rewrote an unsafe config")
+	if !result.Wrote {
+		t.Fatal("Run() did not repair a registries config")
 	}
 
 	got, err := os.ReadFile(filepath.Join(root, ".github", "dependabot.yml"))
@@ -200,8 +214,15 @@ func TestRunUnsafeConfigIsSuggestOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if string(got) != unsafe {
-		t.Error("Run() modified an unsafe config file")
+	for _, want := range []string{"registries:", "npm-registry", "github-actions", "/modules/types"} {
+		if !strings.Contains(string(got), want) {
+			t.Errorf("repaired config missing %q:\n%s", want, got)
+		}
+	}
+
+	second := run(t, root, configure.Options{})
+	if !second.Unchanged || second.Wrote {
+		t.Errorf("second Run() = wrote=%v unchanged=%v, want convergent no-write", second.Wrote, second.Unchanged)
 	}
 }
 
@@ -328,9 +349,10 @@ updates:
 
 // TestRunCustomNamedGroupsNoFalseGroupingFinding pins issue #3: GitHub's
 // schema allows arbitrary group names, so an entry grouped under a custom
-// name must NOT report dependabot-grouping-missing. The run stays
-// suggest-only (the unknown name makes the document unsafe), and an entry
-// that truly lacks groups still warns.
+// name must NOT report dependabot-grouping-missing. Since v0.4.0 the
+// custom names ride along verbatim, so the run is repairable (the
+// github-actions sibling without groups fills in), and the custom-named
+// gomod entry is never touched.
 func TestRunCustomNamedGroupsNoFalseGroupingFinding(t *testing.T) {
 	t.Parallel()
 
@@ -378,14 +400,13 @@ updates:
 		t.Fatal(err)
 	}
 
-	result := run(t, root, configure.Options{Check: true})
+	result := run(t, root, configure.Options{})
 
-	if !result.UnsafeRepair || result.Wrote || result.PlannedWrite {
-		t.Errorf(
-			"Run() = unsafe=%v wrote=%v planned=%v, want suggest-only",
+	if result.UnsafeRepair || !result.Wrote {
+		t.Fatalf(
+			"Run() = unsafe=%v wrote=%v, want passthrough repair",
 			result.UnsafeRepair,
 			result.Wrote,
-			result.PlannedWrite,
 		)
 	}
 
@@ -409,20 +430,24 @@ updates:
 		t.Fatal(err)
 	}
 
-	if string(got) != config {
-		t.Error("Run() modified an unsafe config file")
+	if !strings.Contains(string(got), "gomod:\n        patterns:\n          - \"*\"") {
+		t.Errorf("Run() dropped the custom-named group:\n%s", got)
+	}
+
+	second := run(t, root, configure.Options{})
+	if !second.Unchanged || second.Wrote {
+		t.Errorf("second Run() = wrote=%v unchanged=%v, want convergent no-write", second.Wrote, second.Unchanged)
 	}
 }
 
-// TestRunCanonicalGroupUnknownKeysSuggestOnly pins the verified silent-drop
-// regression (status report 2026-10-02 §d): unknown keys INSIDE a canonical
-// group value (exclude-patterns, applies-to, ...) are valid GitHub schema
-// this tool does not model. A repair run must treat the document as unsafe
-// and never rewrite — before the group-value audit, this exact fixture
-// decoded SAFE and the rewrite dropped exclude-patterns
-// (unsafe_repair:false, wrote:true). Findings for the repairable sibling
-// entry still flow.
-func TestRunCanonicalGroupUnknownKeysSuggestOnly(t *testing.T) {
+// TestRunCanonicalGroupUnknownKeysCarriedThroughRepair pins the verified
+// silent-drop regression (status report 2026-10-02 §d) under the v0.4.0
+// model: unknown keys INSIDE a canonical group value (exclude-patterns,
+// applies-to, ...) are valid GitHub schema this tool does not type. Before
+// the group-value audit, this exact fixture decoded SAFE and the rewrite
+// DROPPED exclude-patterns. Now the keys ride in Unmodeled maps: repair
+// fills the repairable sibling entry and exclude-patterns lands on disk.
+func TestRunCanonicalGroupUnknownKeysCarriedThroughRepair(t *testing.T) {
 	t.Parallel()
 
 	config := `version: 2
@@ -446,17 +471,12 @@ updates:
 
 	result := run(t, root, configure.Options{})
 
-	if !result.UnsafeRepair || result.Wrote || result.PlannedWrite {
-		t.Errorf(
-			"Run() = unsafe=%v wrote=%v planned=%v, want suggest-only",
-			result.UnsafeRepair,
-			result.Wrote,
-			result.PlannedWrite,
-		)
+	if result.UnsafeRepair {
+		t.Fatal("Run() UnsafeRepair = true for group-value passthrough, want repair")
 	}
 
-	if len(result.Findings) == 0 {
-		t.Error("Run() produced no findings, want at least the repairable sibling entry's repairs")
+	if !result.Wrote {
+		t.Fatal("Run() did not repair the repairable sibling entry")
 	}
 
 	abs := filepath.Join(root, configure.DefaultConfigPath)
@@ -466,8 +486,15 @@ updates:
 		t.Fatal(err)
 	}
 
-	if string(got) != config {
-		t.Error("Run() rewrote a config carrying unknown group-value keys")
+	for _, want := range []string{"exclude-patterns:", "go.mod", "/modules/types", "interval: weekly"} {
+		if !strings.Contains(string(got), want) {
+			t.Errorf("repaired config missing %q:\n%s", want, got)
+		}
+	}
+
+	second := run(t, root, configure.Options{})
+	if !second.Unchanged || second.Wrote {
+		t.Errorf("second Run() = wrote=%v unchanged=%v, want convergent no-write", second.Wrote, second.Unchanged)
 	}
 }
 

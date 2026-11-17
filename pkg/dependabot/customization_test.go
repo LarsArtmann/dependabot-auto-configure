@@ -58,7 +58,11 @@ func TestDecodeCustomizationsSafe(t *testing.T) {
 	}
 }
 
-func TestDecodeUnknownScheduleKeyUnsafe(t *testing.T) {
+// TestDecodeUnknownScheduleKeyCarriedSafe pins the v0.4.0 passthrough for
+// schedule: a key outside the modeled four (cron, ...) is valid GitHub
+// schema this tool does not type; it rides in Schedule.Unmodeled and a
+// repair rewrite drops nothing, so the config is safe to repair.
+func TestDecodeUnknownScheduleKeyCarriedSafe(t *testing.T) {
 	t.Parallel()
 
 	yaml := strings.Join([]string{
@@ -68,17 +72,21 @@ func TestDecodeUnknownScheduleKeyUnsafe(t *testing.T) {
 		"    directory: /",
 		"    schedule:",
 		"      interval: weekly",
-		"      bogus: value",
+		"      cron: \"0 6 * * 1\"",
 		"",
-	}, "\n")
+		}, "\n")
 
 	res, err := dependabot.Decode([]byte(yaml))
 	if err != nil {
 		t.Fatalf("Decode() error = %v", err)
 	}
 
-	if !res.Unsafe {
-		t.Error("Decode() Unsafe = false for unknown schedule key, want true (rewrite would silently drop it)")
+	if res.Unsafe {
+		t.Error("Decode() Unsafe = true for unknown schedule key, want false (carried verbatim)")
+	}
+
+	if _, carried := res.Config.Updates[0].Schedule.Unmodeled["cron"]; !carried {
+		t.Error("Decode() schedule Unmodeled missing \"cron\"")
 	}
 }
 
@@ -296,7 +304,11 @@ func TestEncodeDecodeCommitMessageRoundTrip(t *testing.T) {
 	}
 }
 
-func TestDecodeCommitMessageUnknownKeyUnsafe(t *testing.T) {
+// TestDecodeCommitMessageUnknownKeyCarriedSafe pins the v0.4.0
+// passthrough for commit-message: a key outside the modeled three
+// (prefix-development, ...) rides in CommitMessage.Unmodeled, safe to
+// repair.
+func TestDecodeCommitMessageUnknownKeyCarriedSafe(t *testing.T) {
 	t.Parallel()
 
 	yaml := strings.Join([]string{
@@ -306,17 +318,21 @@ func TestDecodeCommitMessageUnknownKeyUnsafe(t *testing.T) {
 		"    directory: /",
 		"    commit-message:",
 		"      prefix: chore",
-		"      bogus: value",
+		"      prefix-development: chore(dev-deps)",
 		"",
-	}, "\n")
+		}, "\n")
 
 	res, err := dependabot.Decode([]byte(yaml))
 	if err != nil {
 		t.Fatalf("Decode() error = %v", err)
 	}
 
-	if !res.Unsafe {
-		t.Error("Decode() Unsafe = false for unknown commit-message key, want unsafe (rewrite would drop it)")
+	if res.Unsafe {
+		t.Error("Decode() Unsafe = true for unknown commit-message key, want false (carried verbatim)")
+	}
+
+	if _, carried := res.Config.Updates[0].CommitMessage.Unmodeled["prefix-development"]; !carried {
+		t.Error("Decode() commit-message Unmodeled missing \"prefix-development\"")
 	}
 }
 

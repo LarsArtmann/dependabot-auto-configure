@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/go-faster/yaml"
 	"github.com/larsartmann/go-finding"
 	autoconfigure "github.com/larsartmann/linter-autoconfigure-sdk"
 )
@@ -158,10 +159,128 @@ func desiredGroups(eco Ecosystem) *Groups {
 
 // Equal reports whether two configs are semantically identical (same
 // version and same entries in the same order). Formatting differences
-// (quoting, indentation) do not count, so a hand-written but semantically
-// canonical config is a no-op, never a rewrite.
+// (quoting, indentation, node positions and comments inside carried
+// unmodeled nodes, empty-vs-absent lists) do not count, so a hand-written
+// but semantically canonical config is a no-op, never a rewrite.
 func Equal(a, b Config) bool {
-	return reflect.DeepEqual(a, b)
+	return reflect.DeepEqual(semanticConfig(a), semanticConfig(b))
+}
+
+// semanticConfig copies c into a canonical comparable form: raw YAML nodes
+// stripped of position, style, and comment metadata, and empty-or-nil
+// collections normalized to nil. Comparison then sees content only.
+func semanticConfig(c Config) Config {
+	out := c
+	out.Unmodeled = semanticNodeMap(c.Unmodeled)
+	out.Updates = copyUpdatesSemantic(c.Updates)
+
+	return out
+}
+
+func copyUpdatesSemantic(updates []Update) []Update {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	out := make([]Update, len(updates))
+	for i, u := range updates {
+		u.Directories = normalizeStrings(u.Directories)
+		u.Labels = normalizeStrings(u.Labels)
+		u.Unmodeled = semanticNodeMap(u.Unmodeled)
+
+		if u.Schedule != nil {
+			schedule := *u.Schedule
+			schedule.Unmodeled = semanticNodeMap(schedule.Unmodeled)
+			u.Schedule = &schedule
+		}
+
+		if u.CommitMessage != nil {
+			commitMessage := *u.CommitMessage
+			commitMessage.Unmodeled = semanticNodeMap(commitMessage.Unmodeled)
+			u.CommitMessage = &commitMessage
+		}
+
+		if u.Groups != nil {
+			groups := *u.Groups
+			groups.Unmodeled = semanticNodeMap(groups.Unmodeled)
+
+			if groups.MinorAndPatch != nil {
+				group := *groups.MinorAndPatch
+				group.UpdateTypes = normalizeUpdateTypes(group.UpdateTypes)
+				group.Unmodeled = semanticNodeMap(group.Unmodeled)
+				groups.MinorAndPatch = &group
+			}
+
+			if groups.Actions != nil {
+				group := *groups.Actions
+				group.Patterns = normalizeStrings(group.Patterns)
+				group.Unmodeled = semanticNodeMap(group.Unmodeled)
+				groups.Actions = &group
+			}
+
+			u.Groups = &groups
+		}
+
+		out[i] = u
+	}
+
+	return out
+}
+
+func normalizeStrings(values []string) []string {
+	if len(values) == 0 {
+		return nil
+	}
+
+	return values
+}
+
+func normalizeUpdateTypes(values []UpdateType) []UpdateType {
+	if len(values) == 0 {
+		return nil
+	}
+
+	return values
+}
+
+func semanticNodeMap(m map[string]yaml.Node) map[string]yaml.Node {
+	if len(m) == 0 {
+		return nil
+	}
+
+	out := make(map[string]yaml.Node, len(m))
+	for key, node := range m {
+		out[key] = semanticNode(node)
+	}
+
+	return out
+}
+
+// semanticNode copies node with position, style, and comment metadata
+// zeroed, recursively through content and aliases: two nodes compare equal
+// when their content is equal, wherever it sat in the file.
+func semanticNode(node yaml.Node) yaml.Node {
+	node.Line, node.Column, node.Style = 0, 0, 0
+	node.HeadComment, node.LineComment, node.FootComment = "", "", ""
+
+	if node.Alias != nil {
+		alias := semanticNode(*node.Alias)
+		node.Alias = &alias
+	}
+
+	if node.Content != nil {
+		node.Content = make([]*yaml.Node, len(node.Content))
+		for i, child := range node.Content {
+			if child == nil {
+				continue
+			}
+
+			semantic := semanticNode(*child)
+			node.Content[i] = &semantic
+		}
+	}
+
+	return node
 }
 
 // scheduleMissing reports whether an entry has no usable schedule: either
