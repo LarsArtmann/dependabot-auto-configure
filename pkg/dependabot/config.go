@@ -353,7 +353,7 @@ func auditGroupsShape(reasons []string, groups *Groups, where string) []string {
 	}
 
 	if groups.NonMapping {
-		reasons = append(reasons, fmt.Sprintf("%s groups must be a mapping, not a list or scalar", where))
+		reasons = append(reasons, where+" groups must be a mapping, not a list or scalar")
 	}
 
 	for name := range groups.Unmodeled {

@@ -62,24 +62,24 @@ func TestDecodeUnmodeledConstructsSafe(t *testing.T) {
 		t.Errorf("Decode() top-level Unmodeled = %v, want registries + enable-beta-ecosystems", res.Config.Unmodeled)
 	}
 
-	u := res.Config.Updates[0]
+	entry := res.Config.Updates[0]
 	for _, key := range []string{
 		"reviewers", "assignees", "target-branch", "auto-merge", "allow", "ignore",
 	} {
-		if _, carried := u.Unmodeled[key]; !carried {
+		if _, carried := entry.Unmodeled[key]; !carried {
 			t.Errorf("Decode() entry Unmodeled missing %q", key)
 		}
 	}
 
-	if _, carried := u.Schedule.Unmodeled["cron"]; !carried {
+	if _, carried := entry.Schedule.Unmodeled["cron"]; !carried {
 		t.Error("Decode() schedule Unmodeled missing \"cron\"")
 	}
 
-	if _, carried := u.CommitMessage.Unmodeled["prefix-development"]; !carried {
+	if _, carried := entry.CommitMessage.Unmodeled["prefix-development"]; !carried {
 		t.Error("Decode() commit-message Unmodeled missing \"prefix-development\"")
 	}
 
-	if !u.HasUnmodeledGroups() {
+	if !entry.HasUnmodeledGroups() {
 		t.Error("Decode() HasUnmodeledGroups() = false, want true (custom name go-deps)")
 	}
 }
@@ -342,8 +342,9 @@ func TestFindDirectoriesCoversRoot(t *testing.T) {
 	got := dependabot.Reconcile(cfg, desired)
 
 	actions := 0
-	for _, u := range got.Updates {
-		if u.PackageEcosystem == dependabot.EcosystemGitHubActions {
+
+	for _, update := range got.Updates {
+		if update.PackageEcosystem == dependabot.EcosystemGitHubActions {
 			actions++
 		}
 	}
@@ -444,6 +445,7 @@ func TestDiffOrphanDetectionForDirectoriesGlobs(t *testing.T) {
 			)
 
 			sawOrphan := false
+
 			for _, issue := range issues {
 				if issue.Rule == "dependabot-entry-orphan" {
 					sawOrphan = true

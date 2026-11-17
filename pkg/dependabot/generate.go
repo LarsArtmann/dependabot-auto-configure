@@ -182,26 +182,26 @@ func copyUpdatesSemantic(updates []Update) []Update {
 		return nil
 	}
 
-	out := make([]Update, len(updates))
-	for i, u := range updates {
-		u.Directories = normalizeStrings(u.Directories)
-		u.Labels = normalizeStrings(u.Labels)
-		u.Unmodeled = semanticNodeMap(u.Unmodeled)
+	out := make([]Update, 0, len(updates))
+	for _, update := range updates {
+		update.Directories = normalizeStrings(update.Directories)
+		update.Labels = normalizeStrings(update.Labels)
+		update.Unmodeled = semanticNodeMap(update.Unmodeled)
 
-		if u.Schedule != nil {
-			schedule := *u.Schedule
+		if update.Schedule != nil {
+			schedule := *update.Schedule
 			schedule.Unmodeled = semanticNodeMap(schedule.Unmodeled)
-			u.Schedule = &schedule
+			update.Schedule = &schedule
 		}
 
-		if u.CommitMessage != nil {
-			commitMessage := *u.CommitMessage
+		if update.CommitMessage != nil {
+			commitMessage := *update.CommitMessage
 			commitMessage.Unmodeled = semanticNodeMap(commitMessage.Unmodeled)
-			u.CommitMessage = &commitMessage
+			update.CommitMessage = &commitMessage
 		}
 
-		if u.Groups != nil {
-			groups := *u.Groups
+		if update.Groups != nil {
+			groups := *update.Groups
 			groups.Unmodeled = semanticNodeMap(groups.Unmodeled)
 
 			if groups.MinorAndPatch != nil {
@@ -218,10 +218,10 @@ func copyUpdatesSemantic(updates []Update) []Update {
 				groups.Actions = &group
 			}
 
-			u.Groups = &groups
+			update.Groups = &groups
 		}
 
-		out[i] = u
+		out = append(out, update)
 	}
 
 	return out
@@ -269,15 +269,19 @@ func semanticNode(node yaml.Node) yaml.Node {
 	}
 
 	if node.Content != nil {
-		node.Content = make([]*yaml.Node, len(node.Content))
-		for i, child := range node.Content {
+		content := make([]*yaml.Node, 0, len(node.Content))
+		for _, child := range node.Content {
 			if child == nil {
+				content = append(content, nil)
+
 				continue
 			}
 
-			semantic := semanticNode(*child)
-			node.Content[i] = &semantic
+			normalized := semanticNode(*child)
+			content = append(content, &normalized)
 		}
+
+		node.Content = content
 	}
 
 	return node
