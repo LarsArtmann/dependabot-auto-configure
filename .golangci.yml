@@ -242,6 +242,11 @@ linters:
       max-distance: 15
       min-name-length: 2
     wrapcheck:
+      ignore-sig-regexps:
+        # ef.Wrap* constructors ARE the wrap (erraudit-mandated); wrapcheck
+        # cannot know that, so the fleet precedent (golangci-lint-auto-
+        # configure) exempts the errorfamily package by import path.
+        - github\.com/larsartmann/go-error-family\.
       ignore-sigs:
         - .Errorf(
         - errors.New(
@@ -282,11 +287,6 @@ linters:
         linters:
           - wrapcheck
           - tagliatelle
-      - path: pkg/dependabot/config\.go
-        text: error returned from external package is unwrapped
-        linters:
-          - wrapcheck
-          - err113
       - path: pkg/configure/configure\.go
         linters:
           - tagliatelle
