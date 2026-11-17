@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte(`version: 2
+registries:
+  github:
+    type: npm-registry
+    url: https://npm.pkg.github.com
+updates:
+  - package-ecosystem: npm
+    directory: /
+    ignore:
+      - dependency-name: left-pad
+`)

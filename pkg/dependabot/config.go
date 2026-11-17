@@ -166,7 +166,7 @@ func (g *Groups) UnmarshalYAML(node *yaml.Node) error {
 
 	var p plain
 	if err := node.Decode(&p); err != nil {
-		return err
+		return err //nolint:wrapcheck // Decode wraps this in UnparseableConfigError at the parse boundary
 	}
 
 	*g = Groups(p)

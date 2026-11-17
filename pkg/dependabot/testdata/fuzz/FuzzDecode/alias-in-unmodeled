@@ -1,0 +1,10 @@
+go test fuzz v1
+[]byte(`version: 2
+x-templates: &tpl
+  reviewers:
+    - lars
+updates:
+  - package-ecosystem: npm
+    directory: /
+    reviewers: *tpl
+`)

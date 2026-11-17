@@ -1,17 +1,36 @@
 package dependabot_test
 
 import (
+	"fmt"
 	"math/rand"
 	"reflect"
 	"slices"
 	"testing"
 
+	"github.com/go-faster/yaml"
 	"github.com/larsartmann/dependabot-auto-configure/pkg/dependabot"
 )
 
+// scalarNode builds a hand-made scalar yaml.Node, the stand-in for a
+// captured unmodeled value.
+func scalarNode(value string) yaml.Node {
+	return yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: value}
+}
+
+// seqNode builds a hand-made sequence yaml.Node of scalar items.
+func seqNode(items ...string) yaml.Node {
+	node := yaml.Node{Kind: yaml.SequenceNode, Tag: "!!seq"}
+	for _, item := range items {
+		node.Content = append(node.Content, &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: item})
+	}
+
+	return node
+}
+
 // randomExistingConfig builds a plausible user config: canonical entries,
 // entries missing canonical fields, entries with custom schedules or
-// labels, and orphan entries for undetected directories.
+// labels, orphan entries for undetected directories, and unmodeled fields
+// at the top, entry, and schedule levels (the v0.4.0 passthrough).
 func randomExistingConfig(rng *rand.Rand) dependabot.Config {
 	ecosystems := []dependabot.Ecosystem{
 		dependabot.EcosystemGoModules,
@@ -37,6 +56,10 @@ func randomExistingConfig(rng *rand.Rand) dependabot.Config {
 				sched.Day = "monday"
 			}
 
+			if rng.Intn(5) == 0 {
+				sched.Unmodeled = map[string]yaml.Node{"cron": scalarNode("0 6 * * 1")}
+			}
+
 			update.Schedule = sched
 		}
 
@@ -52,7 +75,21 @@ func randomExistingConfig(rng *rand.Rand) dependabot.Config {
 			update.Labels = []string{"dependencies"}
 		}
 
+		if rng.Intn(3) == 0 {
+			update.Unmodeled = map[string]yaml.Node{
+				"target-branch": scalarNode("main"),
+			}
+
+			if rng.Intn(2) == 0 {
+				update.Unmodeled["reviewers"] = seqNode("larsartmann", "dependabot[bot]")
+			}
+		}
+
 		cfg.Updates = append(cfg.Updates, update)
+	}
+
+	if rng.Intn(3) == 0 {
+		cfg.Unmodeled = map[string]yaml.Node{"enable-beta-ecosystems": scalarNode("true")}
 	}
 
 	return cfg
@@ -232,12 +269,20 @@ func TestReconcilePreservesEveryModeledField(t *testing.T) {
 
 		out := dependabot.Reconcile(existing, desired)
 
+		// Wire-normalized copy of the result: both sides of the Unmodeled
+		// comparison then come from Encode/Decode, so only content (not
+		// hand-made node positions) decides equality.
+		normalized := deepCopyConfig(t, out)
+
+		assertUnmodeledPreserved(t, i, pristine.Unmodeled, normalized.Unmodeled, "config")
+
 		if len(out.Updates) < len(pristine.Updates) {
 			t.Fatalf("iteration %d: reconcile dropped entries: %d -> %d", i, len(pristine.Updates), len(out.Updates))
 		}
 
 		for j, want := range pristine.Updates {
 			assertEntryPreserved(t, i, j, want, out.Updates[j], desired)
+			assertEntryUnmodeledPreserved(t, i, j, want, normalized.Updates[j])
 		}
 	}
 }
@@ -282,6 +327,97 @@ func assertEntryPreserved(
 	assertSchedulePreserved(t, iteration, want, got, idx)
 	assertLimitPreserved(t, iteration, want, got, desired, idx)
 	assertGroupsPreserved(t, iteration, want, got, idx)
+}
+
+// assertEntryUnmodeledPreserved demands the entry's captured unmodeled
+// nodes survive Reconcile byte-for-value on the wire: normalized (Encode/
+// Decode round-tripped) nodes must match content-wise, entry and schedule.
+func assertEntryUnmodeledPreserved(
+	t *testing.T,
+	iteration int,
+	index int,
+	want dependabot.Update,
+	got dependabot.Update,
+) {
+	t.Helper()
+
+	assertUnmodeledPreserved(t, iteration, want.Unmodeled, got.Unmodeled, fmt.Sprintf("entry %d", index))
+
+	if want.Schedule != nil && got.Schedule != nil {
+		assertUnmodeledPreserved(
+			t,
+			iteration,
+			want.Schedule.Unmodeled,
+			got.Schedule.Unmodeled,
+			fmt.Sprintf("entry %d schedule", index),
+		)
+	}
+}
+
+// assertUnmodeledPreserved demands every captured unmodeled key of want
+// survives in got with content-equal nodes. A missing or changed key means
+// Reconcile destroyed user intent the passthrough promised to carry.
+func assertUnmodeledPreserved(
+	t *testing.T,
+	iteration int,
+	want map[string]yaml.Node,
+	got map[string]yaml.Node,
+	where string,
+) {
+	t.Helper()
+
+	if len(want) != len(got) {
+		t.Fatalf(
+			"iteration %d: %s unmodeled keys changed: %d -> %d",
+			iteration,
+			where,
+			len(want),
+			len(got),
+		)
+	}
+
+	for key, wantNode := range want {
+		gotNode, ok := got[key]
+		if !ok {
+			t.Fatalf("iteration %d: %s unmodeled key %q dropped", iteration, where, key)
+		}
+
+		if !nodeContentEqual(wantNode, gotNode) {
+			t.Fatalf(
+				"iteration %d: %s unmodeled key %q changed: %s -> %s",
+				iteration,
+				where,
+				key,
+				wantNode.Value,
+				gotNode.Value,
+			)
+		}
+	}
+}
+
+// nodeContentEqual compares two nodes by content only — kind, tag, value,
+// style, and children — ignoring position metadata (both sides arrive from
+// independent Encode/Decode passes whose line numbers may shift).
+func nodeContentEqual(want yaml.Node, got yaml.Node) bool {
+	if want.Kind != got.Kind || want.Tag != got.Tag || want.Value != got.Value || want.Style != got.Style {
+		return false
+	}
+
+	if len(want.Content) != len(got.Content) {
+		return false
+	}
+
+	for i := range want.Content {
+		if (want.Content[i] == nil) != (got.Content[i] == nil) {
+			return false
+		}
+
+		if want.Content[i] != nil && !nodeContentEqual(*want.Content[i], *got.Content[i]) {
+			return false
+		}
+	}
+
+	return true
 }
 
 // assertSchedulePreserved allows only one schedule change: filling an empty
