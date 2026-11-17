@@ -632,6 +632,49 @@ updates:
 	}
 }
 
+// TestRunDirectoriesEntryNoDuplicate pins the nixpkgs-shaped scenario: a
+// github-actions entry using the glob `directories` form already covers the
+// root, so repair fills its missing canonical fields without appending a
+// duplicate github-actions entry.
+func TestRunDirectoriesEntryNoDuplicate(t *testing.T) {
+	t.Parallel()
+
+	config := `version: 2
+updates:
+  - package-ecosystem: github-actions
+    directories:
+      - "/"
+      - ".github/actions/*/*"
+    schedule:
+      interval: weekly
+`
+	root := repoWithConfig(t, config)
+
+	result := run(t, root, configure.Options{})
+
+	if result.UnsafeRepair || !result.Wrote {
+		t.Fatalf("Run() = unsafe=%v wrote=%v, want repair", result.UnsafeRepair, result.Wrote)
+	}
+
+	got, err := os.ReadFile(filepath.Join(root, ".github", "dependabot.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if strings.Count(string(got), "package-ecosystem: github-actions") != 1 {
+		t.Errorf("repaired config duplicated the github-actions entry:\n%s", got)
+	}
+
+	if !strings.Contains(string(got), ".github/actions/*/*") {
+		t.Errorf("repaired config dropped the directories globs:\n%s", got)
+	}
+
+	second := run(t, root, configure.Options{})
+	if !second.Unchanged || second.Wrote {
+		t.Errorf("second Run() = wrote=%v unchanged=%v, want convergent no-write", second.Wrote, second.Unchanged)
+	}
+}
+
 // TestMarshalJSONResultPinsWireShape documents the --json contract at the
 // library boundary: snake_case keys are a released contract (the sweep
 // script consumes them), so this table is intentionally excluded from the
